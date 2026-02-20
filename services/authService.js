@@ -27,9 +27,9 @@ export async function loginApi({ email, password }) {
         }
 
         return {
-            user: data.data,
-            token: data.token.access_token,
-            refresh_token: data.token.refresh_token,
+            user: data?.data,
+            token: data?.token.access_token,
+            refresh_token: data?.token.refresh_token,
         };
     } catch (error) {
         // Bắt lỗi từ axios
@@ -54,9 +54,6 @@ export async function loginByGoogleApi(idToken) {
         );
 
         const data = response.data;
-
-        console.log("response.data",response.data)
-console.log("data?.data.token.access_token",data.token)
 
 
         if (data.status !== 'OK') {
@@ -104,15 +101,17 @@ export async function logoutApi() {
 }
 
 // ✅ Hàm gửi OTP
-export async function sendOtpApi({ user_name, email, password }) {
+export async function sendOtpApi({ user_name, email, password, phone, address,birthday,gender }) {
     try {
         const response = await axios.post(
-            'https://youtube-fullstack-nodejs-forbeginer.onrender.com/api/auth/register/send-otp',
-            { user_name, email, password },
+            `${API_BASE_URL}/auth/register/send-otp`,
+            { user_name, email, password, phone, address,birthday,gender },
             {
                 headers: {
-                    'Content-Type': 'application/json',
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
                 },
+                withCredentials: true,
             }
         );
 
@@ -128,16 +127,17 @@ export async function sendOtpApi({ user_name, email, password }) {
     }
 }
 
-export async function confirmOtpApi(otp) {
+export async function confirmOtpApi(email, otp) {
     try {
         const response = await axios.post(
-            'https://youtube-fullstack-nodejs-forbeginer.onrender.com/api/auth/register/confirm',
-            { otp },
+            `${API_BASE_URL}/auth/register/confirm`,
+            { email, otp: String(otp) },
             {
                 headers: {
-                    'Content-Type': 'application/json',
-                    Accept: '*/*',
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
                 },
+                withCredentials: true,
             }
         );
 
@@ -182,12 +182,14 @@ export async function apiCall(url, options = {}) {
 export async function forgotPasswordApi({ email }) {
     try {
         const response = await axios.post(
-            'https://youtube-fullstack-nodejs-forbeginer.onrender.com/api/auth/forgot-password',
+           `${API_BASE_URL}/auth/forgot-password`,
             { email },
             {
                 headers: {
-                    'Content-Type': 'application/json',
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
                 },
+                withCredentials: true,
             }
         );
 
@@ -251,12 +253,14 @@ export async function changePasswordApi({ old_password, new_password }) {
 export async function resetPasswordApi({ email, otp, newPassword }) {
     try {
         const response = await axios.post(
-            'https://youtube-fullstack-nodejs-forbeginer.onrender.com/api/auth/reset-password',
+            `${API_BASE_URL}/auth/reset-password`,
             { email, otp, newPassword },
             {
-                headers: {
-                    'Content-Type': 'application/json',
+                  headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
                 },
+                withCredentials: true,
             }
         );
 
