@@ -13,7 +13,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Mail, Lock, Eye, EyeOff, Home } from 'lucide-react-native';
 import { useDispatch, useSelector } from 'react-redux';
-import { loginUser, loginByGoogle } from '../store/slices/authSlice';
+import { loginUser, loginByGoogle,clearError } from '../store/slices/authSlice';
 import { useNavigation } from '@react-navigation/native';
 import { handleLoginSuccess } from '../utils/authUtils';
 import Toast from 'react-native-toast-message';
@@ -56,10 +56,11 @@ const LoginScreen = () => {
 
    
     useEffect(() => {
-        if (error) {
-            Alert.alert('Đăng Nhập Thất Bại', error);
-        }
-    }, [error]);
+    if (!error) return;
+
+    Alert.alert('Đăng Nhập Thất Bại', error);
+    dispatch(clearError());
+}, [error, dispatch]);
 
     // Tự động chuyển về HomePage khi đăng nhập thành công
     useEffect(() => {
@@ -210,9 +211,9 @@ const LoginScreen = () => {
                     </TouchableOpacity>
 
                     {/* Google Sign-In Button */}
-                    <View style={{ marginTop: 12, alignItems: 'center' }}>
+                    <View style={{ marginTop: 12, alignItems: 'center', borderRadius: 50, overflow: "hidden" }}>
                         <GoogleSigninButton
-                            style={{ width: 230, height: 48 }}
+                            style={{ width: 295, height: 54 }}
                             size={GoogleSigninButton.Size.Wide}
                             color={GoogleSigninButton.Color.Light}
                             onPress={handleGoogleSignIn}

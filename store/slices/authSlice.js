@@ -19,10 +19,9 @@ export const loginUser = createAsyncThunk(
       const response = await loginApi({ email, password });
 
       // Save token to AsyncStorage
-      await AsyncStorage.setItem("token", response.token.access_token);
-      await AsyncStorage.setItem("refreshToken", response.token.refresh_token);
+      await AsyncStorage.setItem("token", response.token);
+      await AsyncStorage.setItem("refreshToken", response.refresh_token);
       await AsyncStorage.setItem("user", JSON.stringify(response.user));
-
       return response;
     } catch (error) {
       return rejectWithValue(error.message);
@@ -35,8 +34,6 @@ export const loginByGoogle = createAsyncThunk(
   async ({ idToken }, { rejectWithValue }) => {
     try {
       const response = await loginByGoogleApi(idToken);
-
-      console.log("response hehe", response);
 
       // ✅ đúng cấu trúc backend trả về
       await AsyncStorage.setItem("token", response.token);
@@ -53,9 +50,9 @@ export const loginByGoogle = createAsyncThunk(
 // Async thunk for sending OTP
 export const sendOtp = createAsyncThunk(
   "auth/sendOtp",
-  async ({ user_name, email, password }, { rejectWithValue }) => {
+  async ({ user_name, email, password, phone, address,birthday,gender }, { rejectWithValue }) => {
     try {
-      const response = await sendOtpApi({ user_name, email, password });
+      const response = await sendOtpApi({ user_name, email, password, phone, address,birthday,gender });
       return response.message;
     } catch (error) {
       return rejectWithValue(error.message);
@@ -66,9 +63,10 @@ export const sendOtp = createAsyncThunk(
 // Async thunk for confirming OTP
 export const confirmOtp = createAsyncThunk(
   "auth/confirmOtp",
-  async (otp, { rejectWithValue }) => {
+  async ({ email, otp }, { rejectWithValue }) => {
     try {
-      const response = await confirmOtpApi(otp);
+      console.log("otp",otp)
+      const response = await confirmOtpApi(email, otp);
       return response.message;
     } catch (error) {
       return rejectWithValue(error.message);
