@@ -1,7 +1,7 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_BASE_URL = 'http://192.168.1.6:3001';
+const API_BASE_URL = 'http://10.0.2.2:3001';
 // Hàm đăng nhập
 export async function loginApi({ email, password }) {
     try {
@@ -29,6 +29,44 @@ export async function loginApi({ email, password }) {
         return {
             user: data.data,
             token: data.token.access_token,
+            refresh_token: data.token.refresh_token,
+        };
+    } catch (error) {
+        // Bắt lỗi từ axios
+        throw new Error(error.response?.data?.message || error.message || 'Login failed');
+    }
+}
+
+export async function loginByGoogleApi(idToken) {
+    try {
+         
+        const response = await axios.post(
+             `${API_BASE_URL}/auth/google`,
+            {idToken},
+            {
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                },
+                withCredentials: true,
+
+            }
+        );
+
+        const data = response.data;
+
+        console.log("response.data",response.data)
+console.log("data?.data.token.access_token",data.token)
+
+
+        if (data.status !== 'OK') {
+            throw new Error(data.message || 'Login failed');
+        }
+
+        return {
+            user: data?.data,
+            token: data?.token.access_token,
+            refresh_token: data?.token.refresh_token,
         };
     } catch (error) {
         // Bắt lỗi từ axios
@@ -56,6 +94,7 @@ export async function logoutApi() {
       "refreshToken",
       "user",
     ]);
+   
 
     return response.data;
 
