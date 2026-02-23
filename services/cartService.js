@@ -1,6 +1,7 @@
 // cartService.js
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+const API_BASE_URL = 'http://10.0.2.2:3001';
 
 export async function getCartByUserApi() {
     try {
@@ -9,11 +10,13 @@ export async function getCartByUserApi() {
             throw new Error('Bạn cần đăng nhập để xem giỏ hàng');
         }
 
-        const response = await axios.get('https://youtube-fullstack-nodejs-forbeginer.onrender.com/api/cart', {
+        const response = await axios.get(
+            `${API_BASE_URL}/cart`, {
             headers: {
                 Accept: 'application/json',
                 Authorization: `Bearer ${token}`,
             },
+            withCredentials: true,
         });
 
         return response.data.data;
@@ -33,13 +36,14 @@ export async function addToCartApi({ product_id, quantity }) {
         }
 
         const response = await axios.post(
-            'https://youtube-fullstack-nodejs-forbeginer.onrender.com/api/cart/add',
+             `${API_BASE_URL}/cart/add`,
             { product_id, quantity },
             {
                 headers: {
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${token}`,
                 },
+                withCredentials: true
             }
         );
 
@@ -60,13 +64,14 @@ export async function updateCartApi({ product_id, quantity }) {
         }
 
         const response = await axios.put(
-            `https://youtube-fullstack-nodejs-forbeginer.onrender.com/api/cart/update`,
+            `${API_BASE_URL}/cart/update`,
             { product_id, quantity },
             {
                 headers: {
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${token}`,
                 },
+                withCredentials: true,
             }
         );
 
@@ -79,7 +84,7 @@ export async function updateCartApi({ product_id, quantity }) {
     }
 }
 
-export async function removeFromCartApi(product_id) {
+export async function removeFromCartApi({product_ids}) {
     try {
         const token = await AsyncStorage.getItem('token');
         if (!token) {
@@ -87,12 +92,14 @@ export async function removeFromCartApi(product_id) {
         }
 
         const response = await axios.delete(
-            `https://youtube-fullstack-nodejs-forbeginer.onrender.com/api/cart/remove/${product_id}`,
+            `${API_BASE_URL}/cart/remove`,
+             { product_ids },
             {
                 headers: {
                     Accept: 'application/json',
                     Authorization: `Bearer ${token}`,
                 },
+                withCredentials: true
             }
         );
 

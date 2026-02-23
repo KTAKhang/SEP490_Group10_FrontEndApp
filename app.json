@@ -4,6 +4,7 @@
     "slug": "my-shop-apps",
     "owner": "thachkien",
     "version": "1.0.0",
+    "scheme": "shopapp",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",

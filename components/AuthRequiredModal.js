@@ -7,7 +7,7 @@ import {
     Modal,
     Dimensions,
 } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import { MaterialIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { COLORS } from '../constants/colors';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -40,7 +40,7 @@ const AuthRequiredModal = ({ visible, onClose, title, message, actionText = 'Đ�
                         colors={[COLORS.primary, COLORS.secondary]}
                         style={styles.header}
                     >
-                        <Icon name="lock" size={40} color={COLORS.white} />
+                        <MaterialIcons name="lock" size={40} color={COLORS.white} />
                         <Text style={styles.title}>{title || 'Yêu cầu đăng nhập'}</Text>
                     </LinearGradient>
 
@@ -54,7 +54,7 @@ const AuthRequiredModal = ({ visible, onClose, title, message, actionText = 'Đ�
                                 style={styles.loginButton}
                                 onPress={handleLogin}
                             >
-                                <Icon name="login" size={20} color={COLORS.white} />
+                                <MaterialIcons name="login" size={20} color={COLORS.white} />
                                 <Text style={styles.loginButtonText}>{actionText}</Text>
                             </TouchableOpacity>
 
@@ -62,7 +62,7 @@ const AuthRequiredModal = ({ visible, onClose, title, message, actionText = 'Đ�
                                 style={styles.registerButton}
                                 onPress={handleRegister}
                             >
-                                <Icon name="person-add" size={20} color={COLORS.primary} />
+                                <MaterialIcons name="person-add" size={20} color={COLORS.primary} />
                                 <Text style={styles.registerButtonText}>Đăng ký</Text>
                             </TouchableOpacity>
                         </View>

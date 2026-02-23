@@ -1,11 +1,11 @@
 import React from 'react';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import {
     View,
     Text,
     ActivityIndicator,
     StyleSheet,
     Modal,
-    SafeAreaView,
     StatusBar
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
