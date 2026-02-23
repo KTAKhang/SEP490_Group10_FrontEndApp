@@ -1,5 +1,6 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+const API_BASE_URL = 'http://10.0.2.2:3001';
 
 
 export async function getOrderByUserApi(page = 1, limit = 5, search = '') {
@@ -35,27 +36,29 @@ export async function getOrderByUserApi(page = 1, limit = 5, search = '') {
     }
 }
 
-export async function createOrderApi({ selected_product_ids, receiverInfo }) {
+export async function createOrderApi({ selected_product_ids, receiverInfo, payment_method,city }) {
     try {
         const token = await AsyncStorage.getItem('token');
 
+        const isMobile=true;
+         console.log("selected_product_ids",selected_product_ids)
+          console.log("receiverInfo",receiverInfo)
+        console.log("city",city)
+
         const response = await axios.post(
-            'https://youtube-fullstack-nodejs-forbeginer.onrender.com/api/order/create',
+            `${API_BASE_URL}/order/create`,
+            { selected_product_ids, receiverInfo, payment_method,city,isMobile },
             {
-                selected_product_ids,
-                receiverInfo,
-            },
-            {
-                headers: {
+               headers: {
                     'Content-Type': 'application/json',
-                    Accept: 'application/json',
                     Authorization: `Bearer ${token}`,
                 },
+                withCredentials: true
             }
         );
 
         const data = response.data;
-
+ console.log("response.data",response.data)
         if (!data.success) {
             throw new Error(data.message || 'Tạo đơn hàng thất bại');
         }
@@ -66,6 +69,36 @@ export async function createOrderApi({ selected_product_ids, receiverInfo }) {
         throw new Error(error.response?.data?.message || error.message || 'Lỗi không xác định khi tạo đơn hàng');
     }
 }
+
+export async function checkShippingApi({ selected_product_ids, city}) {
+    try {
+        const token = await AsyncStorage.getItem('token');
+        // console.log("selected_product_ids",selected_product_ids)
+        // console.log("city",city)
+        const response = await axios.post(
+            `${API_BASE_URL}/shipping/check`,
+            { selected_product_ids, city },
+            {
+               headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`,
+                },
+                withCredentials: true
+            }
+        );
+        const data = response.data;
+        if (data.status!= "OK") {
+            throw new Error(data.message || 'Tạo đơn hàng thất bại');
+        }
+
+        return data;
+    } catch (error) {
+        console.error('checkShippingApi error:', error);
+        throw new Error(error.response?.data?.message || error.message || 'Lỗi không xác định khi tạo đơn hàng');
+    }
+}
+
+
 
 export async function cancelOrderApi(order_id) {
     try {
