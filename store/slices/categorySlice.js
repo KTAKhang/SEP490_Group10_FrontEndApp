@@ -6,11 +6,10 @@ export const fetchCategoriesAsync = createAsyncThunk(
     async ({ page, limit }, { rejectWithValue }) => {
         try {
             const response = await getCategories({ page, limit });
-            // Backend trả về { status, data, pagination } với data là mảng categories
-            const list = Array.isArray(response.data) ? response.data : [];
-            return list;
+            // Backend trả về mảng danh mục trong response.data (không phải data.categories)
+            return response.data ?? [];
         } catch (error) {
-            if (__DEV__) console.warn('Category API:', error?.message || error);
+            console.error('API error:', error);
             return rejectWithValue(error.message);
         }
     }
@@ -32,14 +31,13 @@ const categorySlice = createSlice({
             })
             .addCase(fetchCategoriesAsync.fulfilled, (state, action) => {
                 state.isLoading = false;
+                // Backend đã filter status: true; giữ filter an toàn phòng response thay đổi
                 const list = Array.isArray(action.payload) ? action.payload : [];
-                const activeCategories = list.filter(cat => cat && cat.status === true);
-                state.categories = activeCategories;
+                state.categories = list.filter(category => category.status !== false);
             })
             .addCase(fetchCategoriesAsync.rejected, (state, action) => {
                 state.isLoading = false;
-                state.error = action.payload;
-                state.categories = [];
+                state.error = action.payload;  // Lưu thông báo lỗi nếu có
             });
     },
 });

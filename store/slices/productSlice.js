@@ -3,7 +3,7 @@ import {
     getProducts,
     getProductById,
     getProductsByCategory,
-    getTopSoldProducts
+    getFeaturedProducts,
 } from '../../services/productService';
 
 // Initial state cho product
@@ -25,14 +25,23 @@ const initialState = {
 
 export const fetchProductsAsync = createAsyncThunk(
     'product/fetchProducts',
-    async ({ page, limit, isAllProducts = false, search = null }, { rejectWithValue }) => {
+    async ({ page, limit, isAllProducts = false, search = null, categoryId = null }, { rejectWithValue }) => {
         try {
-            const response = await getProducts({ page, limit, search });
-            const products = response.data?.products ?? [];
-            const pagination = response.data?.total ?? { totalProduct: 0, currentPage: 1, totalPage: 1 };
-            return { products, pagination, isAllProducts, page };
+            const response = await getProducts({ page, limit, search, category: categoryId || undefined });
+            const pag = response.pagination || {};
+            return {
+                products: response.data || [],
+                pagination: {
+                    currentPage: pag.page ?? page,
+                    totalPage: pag.totalPages ?? 1,
+                    total: pag.total ?? 0,
+                    hasMore: (pag.page ?? page) < (pag.totalPages ?? 1),
+                },
+                isAllProducts,
+                page,
+            };
         } catch (error) {
-            if (__DEV__) console.warn('Products API:', error?.message || error);
+            console.error('API error:', error);
             return rejectWithValue(error.message);
         }
     }
@@ -40,12 +49,21 @@ export const fetchProductsAsync = createAsyncThunk(
 
 export const fetchProductsByCategoryAsync = createAsyncThunk(
     'product/fetchProductsByCategory',
-    async ({ category_name, page, limit }, { rejectWithValue }) => {
+    async ({ categoryId, page, limit, search = '' }, { rejectWithValue }) => {
         try {
-            const response = await getProductsByCategory({ category_name, page, limit });
-            const products = response.data?.products ?? [];
-            const pagination = response.data?.total ?? { totalProduct: 0, currentPage: 1, totalPage: 1 };
-            return { products, pagination, isAllProducts: true, page };
+            const response = await getProductsByCategory({ categoryId, page, limit, search });
+            const pag = response.pagination || {};
+            return {
+                products: response.data || [],
+                pagination: {
+                    currentPage: pag.page ?? page,
+                    totalPage: pag.totalPages ?? 1,
+                    total: pag.total ?? 0,
+                    hasMore: (pag.page ?? page) < (pag.totalPages ?? 1),
+                },
+                isAllProducts: true,
+                page,
+            };
         } catch (error) {
             console.error('fetchProductsByCategoryAsync error:', error);
             return rejectWithValue(error.message);
@@ -69,11 +87,10 @@ export const fetchProductByIdAsync = createAsyncThunk(
 
 export const fetchTopSoldProductsAsync = createAsyncThunk(
     'product/fetchTopSoldProducts',
-    async ({ page = 1, limit = 10, search = null }, { rejectWithValue }) => {
+    async (_, { rejectWithValue }) => {
         try {
-            const response = await getTopSoldProducts({ page, limit, search });
-            const products = response.data?.products ?? [];
-            return { products, pagination: response.data?.total ?? {} };
+            const response = await getFeaturedProducts();
+            return { products: response.data || [] };
         } catch (error) {
             console.error('fetchTopSoldProductsAsync error:', error);
             return rejectWithValue(error.message);
@@ -108,39 +125,22 @@ const productSlice = createSlice({
             .addCase(fetchProductsAsync.fulfilled, (state, action) => {
                 state.isLoading = false;
                 state.error = null;
-                const activeProducts = Array.isArray(action.payload.products) ? action.payload.products : [];
+                const activeProducts = action.payload.products || [];
+                const pag = action.payload.pagination || {};
 
                 if (action.payload.isAllProducts) {
-                    const p = action.payload.pagination || {};
-                    const currentPage = p.currentPage ?? 1;
-                    const totalPage = p.totalPage ?? 1;
-                    const limit = 6; // ITEMS_PER_PAGE from AllProductsScreen
-
-                    if (action.payload.page === 1) {
-                        state.allActiveProducts = activeProducts;
-                        state.allProducts = activeProducts.slice(0, limit);
-                    } else {
-                        // Client-side pagination: get next page from cached active products
-                        const startIndex = (action.payload.page - 1) * limit;
-                        const endIndex = startIndex + limit;
-                        const nextPageProducts = state.allActiveProducts.slice(startIndex, endIndex);
-
-                        // Append to displayed products
-                        const previousCount = state.allProducts.length;
-                        state.allProducts = [...state.allProducts, ...nextPageProducts];
-                    }
-
-                    state.pagination.currentPage = currentPage;
-                    state.pagination.totalPages = totalPage;
-                    state.pagination.hasMore = currentPage < totalPage;
+                    state.allProducts = activeProducts;
+                    state.allActiveProducts = [];
+                    state.pagination.currentPage = pag.currentPage ?? action.payload.page;
+                    state.pagination.totalPages = pag.totalPage ?? 1;
+                    state.pagination.hasMore = pag.hasMore ?? false;
                 } else {
-                    state.products = Array.isArray(activeProducts) ? activeProducts : [];
+                    state.products = activeProducts;
                 }
             })
             .addCase(fetchProductsAsync.rejected, (state, action) => {
                 state.isLoading = false;
                 state.error = action.payload;
-                state.products = [];
             })
             // Fetch Products By Category
             .addCase(fetchProductsByCategoryAsync.pending, (state) => {
@@ -150,31 +150,13 @@ const productSlice = createSlice({
             .addCase(fetchProductsByCategoryAsync.fulfilled, (state, action) => {
                 state.isLoading = false;
                 state.error = null;
-                const activeProducts = Array.isArray(action.payload.products) ? action.payload.products : [];
+                const activeProducts = action.payload.products || [];
+                const pag = action.payload.pagination || {};
 
-                const p = action.payload.pagination || {};
-                const currentPage = p.currentPage ?? 1;
-                const totalPage = p.totalPage ?? 1;
-                const limit = 6; // ITEMS_PER_PAGE from AllProductsScreen
-
-                if (action.payload.page === 1) {
-                    state.allActiveProducts = activeProducts;
-                    state.allProducts = activeProducts.slice(0, limit);
-                } else {
-                    // Client-side pagination: get next page from cached active products
-                    const startIndex = (action.payload.page - 1) * limit;
-                    const endIndex = startIndex + limit;
-                    const nextPageProducts = state.allActiveProducts.slice(startIndex, endIndex);
-
-                    // Append to displayed products
-                    const previousCount = state.allProducts.length;
-                    state.allProducts = [...state.allProducts, ...nextPageProducts];
-                }
-
-                // Update pagination based on active products count
-                state.pagination.currentPage = currentPage;
-                state.pagination.totalPages = totalPage;
-                state.pagination.hasMore = currentPage < totalPage;
+                state.allProducts = activeProducts;
+                state.pagination.currentPage = pag.currentPage ?? action.payload.page;
+                state.pagination.totalPages = pag.totalPage ?? 1;
+                state.pagination.hasMore = pag.hasMore ?? false;
             })
             .addCase(fetchProductsByCategoryAsync.rejected, (state, action) => {
                 state.isLoading = false;
@@ -203,7 +185,8 @@ const productSlice = createSlice({
             .addCase(fetchTopSoldProductsAsync.fulfilled, (state, action) => {
                 state.isLoadingTopSold = false;
                 state.error = null;
-                state.topSoldProducts = Array.isArray(action.payload?.products) ? action.payload.products : [];
+                // Products are already filtered for status = true in productService
+                state.topSoldProducts = action.payload.products;
             })
             .addCase(fetchTopSoldProductsAsync.rejected, (state, action) => {
                 state.isLoadingTopSold = false;

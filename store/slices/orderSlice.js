@@ -2,33 +2,74 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import {
   createOrderApi,
   getOrderByUserApi,
+  getMyOrderByIdApi,
   cancelOrderApi,
   returnOrderApi,
+  retryPaymentApi,
   checkShippingApi,
 } from "../../services/orderService";
 import * as Linking from "expo-linking";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+
 export const fetchOrderByUser = createAsyncThunk(
   "order/fetchOrderByUser",
   async (
-    { page = 1, limit = 5, isLoadMore = false, search = "" } = {},
-    { rejectWithValue },
+    {
+      page = 1,
+      limit = 10,
+      isLoadMore = false,
+      status_names = "",
+      search = "",
+      sortBy = "createdAt",
+      sortOrder = "desc",
+    } = {},
+    { rejectWithValue }
   ) => {
     try {
-      const response = await getOrderByUserApi(page, limit, search);
-      return { ...response, isLoadMore, page };
+      const options = { status_names, search, sortBy, sortOrder };
+      const response = await getOrderByUserApi(page, limit, options);
+      return { ...response, isLoadMore, page: response.page };
     } catch (error) {
       console.error("fetchOrderByUser error:", error);
       return rejectWithValue(error.message || "Failed to fetch orders");
     }
-  },
+  }
+);
+
+export const fetchOrderDetailByUser = createAsyncThunk(
+  "order/fetchOrderDetailByUser",
+  async (orderId, { rejectWithValue }) => {
+    try {
+      console.log(
+        "[orderSlice] fetchOrderDetailByUser called, orderId:",
+        orderId,
+        typeof orderId
+      );
+      const order = await getMyOrderByIdApi(orderId);
+      console.log(
+        "[orderSlice] fetchOrderDetailByUser fulfilled, order?",
+        !!order,
+        "details.length:",
+        order?.details?.length ?? 0
+      );
+      return order;
+    } catch (error) {
+      console.error(
+        "[orderSlice] fetchOrderDetailByUser error:",
+        error?.message
+      );
+      return rejectWithValue(
+        error.message || "Failed to fetch order detail"
+      );
+    }
+  }
 );
 
 export const createOrder = createAsyncThunk(
   "order/createOrder",
   async (
     { selected_product_ids, receiverInfo, payment_method, city },
-    { rejectWithValue },
+    { rejectWithValue }
   ) => {
     try {
       console.log("createOrder slice");
@@ -55,7 +96,7 @@ export const createOrder = createAsyncThunk(
     } catch (error) {
       return rejectWithValue(error.message);
     }
-  },
+  }
 );
 
 export const checkShipping = createAsyncThunk(
@@ -71,8 +112,9 @@ export const checkShipping = createAsyncThunk(
     } catch (error) {
       return rejectWithValue(error.message);
     }
-  },
+  }
 );
+
 export const cancelOrder = createAsyncThunk(
   "order/cancelOrder",
   async (order_id, { rejectWithValue }) => {
@@ -82,7 +124,7 @@ export const cancelOrder = createAsyncThunk(
     } catch (error) {
       return rejectWithValue(error.message);
     }
-  },
+  }
 );
 
 export const returnOrder = createAsyncThunk(
@@ -94,7 +136,23 @@ export const returnOrder = createAsyncThunk(
     } catch (error) {
       return rejectWithValue(error.message);
     }
-  },
+  }
+);
+
+export const retryPayment = createAsyncThunk(
+  "order/retryPayment",
+  async (order_id, { rejectWithValue }) => {
+    try {
+      const response = await retryPaymentApi(order_id);
+      return {
+        order_id,
+        message: response.message,
+        paymentUrl: response.paymentUrl,
+      };
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
 );
 
 const initialState = {
@@ -111,10 +169,13 @@ const initialState = {
   cancelMessage: null,
   returnSuccess: false,
   returnMessage: null,
+  orderDetail: null,
+  detailLoading: false,
+  detailError: null,
+  retryPaymentUrl: null,
   shippingType: null,
   shippingFee: 0,
   totalWeight: 0,
-  // Pagination states
   currentPage: 1,
   totalPages: 1,
   hasMore: true,
@@ -139,6 +200,13 @@ const orderSlice = createSlice({
       state.cancelMessage = null;
       state.returnSuccess = false;
       state.returnMessage = null;
+      state.orderDetail = null;
+      state.detailLoading = false;
+      state.detailError = null;
+      state.retryPaymentUrl = null;
+      state.shippingType = null;
+      state.shippingFee = 0;
+      state.totalWeight = 0;
       state.currentPage = 1;
       state.totalPages = 1;
       state.hasMore = true;
@@ -149,14 +217,17 @@ const orderSlice = createSlice({
       state.totalPages = 1;
       state.hasMore = true;
       state.total = 0;
-
       state.cancelSuccess = false;
       state.cancelMessage = null;
+    },
+    clearOrderDetail: (state) => {
+      state.orderDetail = null;
+      state.detailLoading = false;
+      state.detailError = null;
     },
   },
   extraReducers: (builder) => {
     builder
-      // Fetch orders by user
       .addCase(fetchOrderByUser.pending, (state, action) => {
         const { isLoadMore } = action.meta.arg || {};
         if (isLoadMore) {
@@ -175,7 +246,6 @@ const orderSlice = createSlice({
           state.isLoading = false;
         }
 
-        // Extract orders and pagination info
         let orders = [];
         let paginationInfo = {};
 
@@ -202,16 +272,12 @@ const orderSlice = createSlice({
           };
         }
 
-        // Update orders list
         if (isLoadMore && page > 1) {
-          // Append new orders to existing ones
           state.orders = [...state.orders, ...orders];
         } else {
-          // Replace orders (first load or refresh)
           state.orders = orders;
         }
 
-        // Update pagination info
         state.total = paginationInfo.total;
         state.currentPage = paginationInfo.currentPage;
         state.totalPages = paginationInfo.totalPages;
@@ -269,7 +335,6 @@ const orderSlice = createSlice({
         state.newOrderId = null;
         state.error = action.payload;
       })
-      // Cancel order
       .addCase(cancelOrder.pending, (state) => {
         state.isLoading = true;
         state.cancelSuccess = false;
@@ -281,11 +346,10 @@ const orderSlice = createSlice({
         state.cancelSuccess = true;
         state.cancelMessage = action.payload.message;
 
-        // Cập nhật trạng thái đơn hàng trong danh sách
         state.orders = state.orders.map((order) =>
           order._id === action.payload.order_id
             ? { ...order, status: "cancelled" }
-            : order,
+            : order
         );
       })
       .addCase(cancelOrder.rejected, (state, action) => {
@@ -294,7 +358,6 @@ const orderSlice = createSlice({
         state.cancelMessage = null;
         state.error = action.payload;
       })
-      // Return order
       .addCase(returnOrder.pending, (state) => {
         state.isLoading = true;
         state.returnSuccess = false;
@@ -306,11 +369,10 @@ const orderSlice = createSlice({
         state.returnSuccess = true;
         state.returnMessage = action.payload.message;
 
-        // Cập nhật trạng thái đơn hàng trong danh sách
         state.orders = state.orders.map((order) =>
           order._id === action.payload.order_id
             ? { ...order, status: "returned" }
-            : order,
+            : order
         );
       })
       .addCase(returnOrder.rejected, (state, action) => {
@@ -318,9 +380,38 @@ const orderSlice = createSlice({
         state.returnSuccess = false;
         state.returnMessage = null;
         state.error = action.payload;
+      })
+      .addCase(fetchOrderDetailByUser.pending, (state) => {
+        state.detailLoading = true;
+        state.detailError = null;
+      })
+      .addCase(fetchOrderDetailByUser.fulfilled, (state, action) => {
+        state.detailLoading = false;
+        state.orderDetail = action.payload;
+        state.detailError = null;
+        console.log(
+          "[orderSlice] fulfilled: orderDetail.details.length=",
+          action.payload?.details?.length ?? 0
+        );
+      })
+      .addCase(fetchOrderDetailByUser.rejected, (state, action) => {
+        state.detailLoading = false;
+        state.orderDetail = null;
+        state.detailError = action.payload;
+        console.log("[orderSlice] rejected:", action.payload);
+      })
+      .addCase(retryPayment.fulfilled, (state, action) => {
+        state.retryPaymentUrl = action.payload?.paymentUrl ?? null;
+      })
+      .addCase(retryPayment.rejected, (state) => {
+        state.retryPaymentUrl = null;
       });
   },
 });
 
-export const { clearOrderState, resetPagination } = orderSlice.actions;
+export const {
+  clearOrderState,
+  resetPagination,
+  clearOrderDetail,
+} = orderSlice.actions;
 export default orderSlice.reducer;

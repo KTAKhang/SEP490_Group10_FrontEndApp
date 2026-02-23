@@ -17,7 +17,7 @@ export const loginUser = createAsyncThunk(
   async ({ email, password }, { rejectWithValue }) => {
     try {
       const response = await loginApi({ email, password });
-
+console.log("response",response)
       // Save token to AsyncStorage
       await AsyncStorage.setItem("token", response.token);
       await AsyncStorage.setItem("refreshToken", response.refresh_token);

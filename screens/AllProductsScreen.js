@@ -10,55 +10,54 @@ import {
     Dimensions,
     TextInput,
     Modal,
-    Alert,
+    ScrollView,
+    Platform,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchProductsAsync, fetchProductsByCategoryAsync, resetAllProducts } from '../store/slices/productSlice';
 import ProductCard from '../components/ProductCard';
 import CategorySection from '../components/CategorySection';
-import { InlineLoading, FooterLoading } from '../components/Loading';
+import { InlineLoading } from '../components/Loading';
+import Icon from 'react-native-vector-icons/MaterialIcons';
 import { MaterialIcons } from '@expo/vector-icons';
 import { COLORS } from '../constants/colors';
 import { LinearGradient } from 'expo-linear-gradient';
-
-const { width, height } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
+const ITEMS_PER_PAGE = 6;
+const MAX_PAGE_BUTTONS = 5;
 
 const AllProductsScreen = ({ navigation, route }) => {
     const dispatch = useDispatch();
     const { allProducts, isLoading, pagination } = useSelector((state) => state.product);
-    const { categories } = useSelector((state) => state.category); // Lấy categories từ store
+    const { categories } = useSelector((state) => state.category);
     const [refreshing, setRefreshing] = useState(false);
     const [searchText, setSearchText] = useState('');
     const [isSearchVisible, setIsSearchVisible] = useState(false);
-    const [currentSearch, setCurrentSearch] = useState(''); // Track current search term for API
-    const ITEMS_PER_PAGE = 6;
+    const [currentSearch, setCurrentSearch] = useState('');
 
-    // Get category info from route params (for display only)
+    // Backend lọc theo category bằng ObjectId
+    const categoryId = route.params?.categoryId;
     const categoryName = route.params?.categoryName;
 
     useEffect(() => {
-
-
-        if (categoryName) {
-            // If navigated with categoryName, fetch products by category
+        if (categoryId) {
             dispatch(fetchProductsByCategoryAsync({
-                category_name: categoryName,
+                categoryId,
                 page: 1,
-                limit: ITEMS_PER_PAGE
+                limit: ITEMS_PER_PAGE,
             }));
         } else {
-            // Otherwise, fetch all products
             dispatch(fetchProductsAsync({
                 page: 1,
                 limit: ITEMS_PER_PAGE,
                 isAllProducts: true,
-                search: null
+                search: null,
             }));
         }
         return () => {
             dispatch(resetAllProducts());
         };
-    }, [dispatch, categoryName]);
+    }, [dispatch, categoryId]);
 
 
 
@@ -67,51 +66,42 @@ const AllProductsScreen = ({ navigation, route }) => {
     const handleRefresh = useCallback(() => {
         setRefreshing(true);
         dispatch(resetAllProducts());
-
-        if (categoryName) {
-            // Refresh category products
+        if (categoryId) {
             dispatch(fetchProductsByCategoryAsync({
-                category_name: categoryName,
+                categoryId,
                 page: 1,
-                limit: ITEMS_PER_PAGE
+                limit: ITEMS_PER_PAGE,
+                search: currentSearch || '',
             }));
         } else {
-            // Refresh all products or search results
             dispatch(fetchProductsAsync({
                 page: 1,
                 limit: ITEMS_PER_PAGE,
                 isAllProducts: true,
-                search: currentSearch
+                search: currentSearch || null,
             }));
         }
         setRefreshing(false);
-    }, [dispatch, currentSearch, categoryName]);
+    }, [dispatch, currentSearch, categoryId]);
 
-    const handleLoadMore = useCallback(() => {
-        // Additional conditions to prevent unnecessary loading
-        if (!isLoading && pagination.hasMore && allProducts.length >= ITEMS_PER_PAGE) {
-            const pageToLoad = pagination.currentPage + 1;
-
-
-
-            if (categoryName && !currentSearch) {
-                // Load more category products
-                dispatch(fetchProductsByCategoryAsync({
-                    category_name: categoryName,
-                    page: pageToLoad,
-                    limit: ITEMS_PER_PAGE
-                }));
-            } else {
-                // Load more all products or search results
-                dispatch(fetchProductsAsync({
-                    page: pageToLoad,
-                    limit: ITEMS_PER_PAGE,
-                    isAllProducts: true,
-                    search: currentSearch
-                }));
-            }
+    const goToPage = useCallback((page) => {
+        if (page < 1 || page > (pagination.totalPages || 1) || isLoading) return;
+        if (categoryId) {
+            dispatch(fetchProductsByCategoryAsync({
+                categoryId,
+                page,
+                limit: ITEMS_PER_PAGE,
+                search: currentSearch || '',
+            }));
+        } else {
+            dispatch(fetchProductsAsync({
+                page,
+                limit: ITEMS_PER_PAGE,
+                isAllProducts: true,
+                search: currentSearch || null,
+            }));
         }
-    }, [isLoading, pagination.hasMore, pagination.currentPage, currentSearch, categoryName, dispatch, allProducts.length]);
+    }, [categoryId, currentSearch, dispatch, isLoading, pagination.totalPages]);
 
     const handleSearchPress = () => {
         setSearchText(currentSearch || ''); // Set current search when opening modal
@@ -125,19 +115,29 @@ const AllProductsScreen = ({ navigation, route }) => {
     };
 
     const handleSearch = () => {
-        if (searchText.trim() !== currentSearch) {
-            setCurrentSearch(searchText.trim());
-            const searchToUse = searchText.trim() || null;
+        const term = searchText.trim();
+        if (term !== currentSearch) {
+            setCurrentSearch(term);
+            setSearchText(term);
             dispatch(resetAllProducts());
-            setIsSearchVisible(false); // Close modal before starting search
-            dispatch(fetchProductsAsync({
-                page: 1,
-                limit: ITEMS_PER_PAGE,
-                isAllProducts: true,
-                search: searchToUse
-            }));
+            setIsSearchVisible(false);
+            if (categoryId) {
+                dispatch(fetchProductsByCategoryAsync({
+                    categoryId,
+                    page: 1,
+                    limit: ITEMS_PER_PAGE,
+                    search: term,
+                }));
+            } else {
+                dispatch(fetchProductsAsync({
+                    page: 1,
+                    limit: ITEMS_PER_PAGE,
+                    isAllProducts: true,
+                    search: term || null,
+                }));
+            }
         } else {
-            setIsSearchVisible(false); // Close modal if search term is same
+            setIsSearchVisible(false);
         }
     };
 
@@ -147,12 +147,11 @@ const AllProductsScreen = ({ navigation, route }) => {
             setCurrentSearch('');
             dispatch(resetAllProducts());
 
-            if (categoryName) {
-                // Return to category filtering
+            if (categoryId) {
                 dispatch(fetchProductsByCategoryAsync({
-                    category_name: categoryName,
+                    categoryId,
                     page: 1,
-                    limit: ITEMS_PER_PAGE
+                    limit: ITEMS_PER_PAGE,
                 }));
             } else {
                 // Return to all products
@@ -179,6 +178,7 @@ const AllProductsScreen = ({ navigation, route }) => {
                         <TouchableOpacity
                             style={styles.searchCloseButton}
                             onPress={handleSearchClose}
+                            activeOpacity={0.7}
                         >
                             <MaterialIcons name="arrow-back" size={24} color="#0D364C" />
                         </TouchableOpacity>
@@ -198,8 +198,8 @@ const AllProductsScreen = ({ navigation, route }) => {
                             returnKeyType="search"
                         />
                         {searchText.length > 0 && (
-                            <TouchableOpacity onPress={clearSearch} style={styles.clearButton}>
-                                <MaterialIcons name="clear" size={20} color="#A0A0A0" />
+                            <TouchableOpacity onPress={clearSearch} style={styles.clearButton} activeOpacity={0.7}>
+                                <Icon name="close" size={20} color="#A0A0A0" />
                             </TouchableOpacity>
                         )}
                     </View>
@@ -217,30 +217,31 @@ const AllProductsScreen = ({ navigation, route }) => {
                             <Text style={styles.searchActionButtonText}>Tìm kiếm</Text>
                         </TouchableOpacity>
 
-                        {currentSearch && (
+                        {currentSearch ? (
                             <TouchableOpacity
                                 style={styles.clearAllButton}
                                 onPress={() => {
                                     clearSearch();
                                     setIsSearchVisible(false);
                                 }}
+                                activeOpacity={0.7}
                             >
-                                <MaterialIcons name="clear-all" size={20} color="#6b7280" />
+                                <Icon name="delete-sweep" size={20} color="#6b7280" />
                                 <Text style={styles.clearAllButtonText}>Xóa tất cả</Text>
                             </TouchableOpacity>
-                        )}
+                        ) : null}
                     </View>
 
-                    {currentSearch && (
+                    {currentSearch ? (
                         <View style={styles.searchResultsContainer}>
                             <Text style={styles.searchResultsText}>
-                                Tìm kiếm hiện tại: "{currentSearch}"
+                                Tìm kiếm: &quot;{currentSearch}&quot;
                             </Text>
                             <Text style={styles.searchResultsSubText}>
-                                Tìm thấy {allProducts.length} sản phẩm
+                                Trang {pagination.currentPage}/{pagination.totalPages || 1} • Tổng {(pagination.total ?? allProducts.length)} sản phẩm
                             </Text>
                         </View>
-                    )}
+                    ) : null}
                 </View>
             </View>
         </Modal>
@@ -270,8 +271,8 @@ const AllProductsScreen = ({ navigation, route }) => {
                             {currentSearch ? 'Kết quả tìm kiếm' : (categoryName || 'Tất cả sản phẩm')}
                         </Text>
                         <Text style={styles.headerSubtitle}>
-                            {allProducts.length} sản phẩm
-                            {currentSearch ? ` cho "${currentSearch}"` : ''}
+                            Trang {pagination.currentPage}/{pagination.totalPages || 1}
+                            {currentSearch ? ` • "${currentSearch}"` : ''}
                         </Text>
                     </View>
 
@@ -286,7 +287,34 @@ const AllProductsScreen = ({ navigation, route }) => {
                     </TouchableOpacity>
                 </View>
 
-                {/* Decorative elements */}
+                {/* Thanh search luôn hiển thị */}
+                <View style={styles.inlineSearchContainer}>
+                    <Icon name="search" size={20} color="#13C2C2" style={styles.inlineSearchIcon} />
+                    <TextInput
+                        style={styles.inlineSearchInput}
+                        placeholder="Tìm theo tên sản phẩm..."
+                        placeholderTextColor="rgba(255,255,255,0.6)"
+                        value={searchText}
+                        onChangeText={setSearchText}
+                        onSubmitEditing={handleSearch}
+                        returnKeyType="search"
+                        editable={!isLoading}
+                    />
+                    {searchText.length > 0 ? (
+                        <TouchableOpacity onPress={clearSearch} style={styles.inlineClearBtn} activeOpacity={0.7}>
+                            <Icon name="close" size={18} color="#FFFFFF" />
+                        </TouchableOpacity>
+                    ) : null}
+                    <TouchableOpacity
+                        style={[styles.inlineSearchBtn, (!searchText.trim() || isLoading) && styles.inlineSearchBtnDisabled]}
+                        onPress={handleSearch}
+                        disabled={!searchText.trim() || isLoading}
+                        activeOpacity={0.8}
+                    >
+                        <Text style={styles.inlineSearchBtnText}>Tìm</Text>
+                    </TouchableOpacity>
+                </View>
+
                 <View style={styles.decorativeCircle1} />
                 <View style={styles.decorativeCircle2} />
                 <View style={styles.decorativeCircle3} />
@@ -317,26 +345,57 @@ const AllProductsScreen = ({ navigation, route }) => {
         );
     };
 
-    // Loading footer component
-    const LoadingFooter = () => {
-        if (!isLoading || !pagination.hasMore) return null;
+    const totalPages = Math.max(1, pagination.totalPages || 1);
+    const currentPage = Math.min(Math.max(1, pagination.currentPage || 1), totalPages);
 
-        return <FooterLoading text="Đang tải thêm sản phẩm..." />;
+    const getPageNumbers = () => {
+        const pages = [];
+        let start = Math.max(1, currentPage - Math.floor(MAX_PAGE_BUTTONS / 2));
+        let end = Math.min(totalPages, start + MAX_PAGE_BUTTONS - 1);
+        if (end - start + 1 < MAX_PAGE_BUTTONS) start = Math.max(1, end - MAX_PAGE_BUTTONS + 1);
+        for (let i = start; i <= end; i++) pages.push(i);
+        return pages;
     };
 
-    // No more items footer
-    const NoMoreFooter = () => {
-        if (pagination.hasMore || allProducts.length === 0) return null;
-
+    const renderPagination = () => {
+        if (totalPages <= 1 && allProducts.length === 0) return null;
+        const pages = getPageNumbers();
         return (
-            <View style={styles.noMoreFooter}>
-                <Text style={styles.noMoreText}>Không còn sản phẩm nào để tải</Text>
-                <Text style={styles.totalProductsText}>Tổng cộng: {allProducts.length} sản phẩm</Text>
+            <View style={styles.paginationContainer}>
+                <TouchableOpacity
+                    style={[styles.pageButton, currentPage <= 1 && styles.pageButtonDisabled]}
+                    onPress={() => goToPage(currentPage - 1)}
+                    disabled={currentPage <= 1 || isLoading}
+                    activeOpacity={0.7}
+                >
+                    <Icon name="chevron-left" size={22} color={currentPage <= 1 ? '#ccc' : '#0D364C'} />
+                </TouchableOpacity>
+                <View style={styles.pageNumbersRow}>
+                    {pages.map((p) => (
+                        <TouchableOpacity
+                            key={p}
+                            style={[styles.pageNumberButton, p === currentPage && styles.pageNumberButtonActive]}
+                            onPress={() => goToPage(p)}
+                            disabled={isLoading}
+                            activeOpacity={0.7}
+                        >
+                            <Text style={[styles.pageNumberText, p === currentPage && styles.pageNumberTextActive]}>{p}</Text>
+                        </TouchableOpacity>
+                    ))}
+                </View>
+                <TouchableOpacity
+                    style={[styles.pageButton, currentPage >= totalPages && styles.pageButtonDisabled]}
+                    onPress={() => goToPage(currentPage + 1)}
+                    disabled={currentPage >= totalPages || isLoading}
+                    activeOpacity={0.7}
+                >
+                    <Icon name="chevron-right" size={22} color={currentPage >= totalPages ? '#ccc' : '#0D364C'} />
+                </TouchableOpacity>
             </View>
         );
     };
 
-    const isInitialLoading = isLoading && pagination.currentPage === 1 && allProducts.length === 0;
+    const isInitialLoading = isLoading && allProducts.length === 0;
 
     return (
         <SafeAreaView style={styles.container}>
@@ -352,20 +411,12 @@ const AllProductsScreen = ({ navigation, route }) => {
                         renderItem={renderItem}
                         keyExtractor={(item) => item._id}
                         numColumns={2}
-                        contentContainerStyle={[styles.listContent, { paddingBottom: 100 }]}
+                        contentContainerStyle={[styles.listContent, { paddingBottom: 120 }]}
                         onRefresh={handleRefresh}
                         refreshing={refreshing}
-                        onEndReached={handleLoadMore}
-                        onEndReachedThreshold={0.1}
                         ListHeaderComponent={renderCategorySection}
-                        ListFooterComponent={() => (
-                            <>
-                                <LoadingFooter />
-                                <NoMoreFooter />
-                            </>
-                        )}
+                        ListFooterComponent={renderPagination}
                         showsVerticalScrollIndicator={false}
-                        scrollEventThrottle={400}
                         ListEmptyComponent={
                             <View style={styles.emptyContainer}>
                                 <LinearGradient
@@ -373,7 +424,7 @@ const AllProductsScreen = ({ navigation, route }) => {
                                     style={styles.emptyGradient}
                                 >
                                     <View style={styles.emptyIconContainer}>
-                                        <MaterialIcons name={currentSearch ? "search-off" : "inventory-2"} size={80} color="#c7d2fe" />
+                                        <Icon name={currentSearch ? 'search' : 'category'} size={80} color="#c7d2fe" />
                                     </View>
                                     <Text style={styles.emptyTitle}>
                                         {currentSearch ? 'Không có kết quả tìm kiếm' : 'Không tìm thấy sản phẩm'}
@@ -390,20 +441,19 @@ const AllProductsScreen = ({ navigation, route }) => {
                                         style={styles.retryButton}
                                         onPress={() => {
                                             dispatch(resetAllProducts());
-                                            if (categoryName && !currentSearch) {
-                                                // Retry category products
+                                            if (categoryId) {
                                                 dispatch(fetchProductsByCategoryAsync({
-                                                    category_name: categoryName,
+                                                    categoryId,
                                                     page: 1,
-                                                    limit: ITEMS_PER_PAGE
+                                                    limit: ITEMS_PER_PAGE,
+                                                    search: currentSearch || '',
                                                 }));
                                             } else {
-                                                // Retry all products or search
                                                 dispatch(fetchProductsAsync({
                                                     page: 1,
                                                     limit: ITEMS_PER_PAGE,
                                                     isAllProducts: true,
-                                                    search: currentSearch
+                                                    search: currentSearch || null,
                                                 }));
                                             }
                                         }}
@@ -433,8 +483,8 @@ const styles = StyleSheet.create({
     },
     header: {
         paddingHorizontal: 20,
-        paddingVertical: 20,
-        paddingTop: StatusBar.currentHeight + 20,
+        paddingTop: (Platform.OS === 'android' ? StatusBar.currentHeight : 0) + 16,
+        paddingBottom: 16,
         overflow: 'hidden',
         position: 'relative',
     },
@@ -514,6 +564,94 @@ const styles = StyleSheet.create({
         height: 60,
         borderRadius: 30,
         backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    },
+    inlineSearchContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: 'rgba(255,255,255,0.2)',
+        borderRadius: 12,
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        marginTop: 12,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.3)',
+    },
+    inlineSearchIcon: {
+        marginRight: 8,
+    },
+    inlineSearchInput: {
+        flex: 1,
+        fontSize: 15,
+        color: '#FFFFFF',
+        paddingVertical: 8,
+        paddingHorizontal: 4,
+    },
+    inlineClearBtn: {
+        padding: 4,
+        marginRight: 4,
+    },
+    inlineSearchBtn: {
+        backgroundColor: 'rgba(255,255,255,0.9)',
+        paddingHorizontal: 14,
+        paddingVertical: 8,
+        borderRadius: 10,
+    },
+    inlineSearchBtnDisabled: {
+        backgroundColor: 'rgba(255,255,255,0.4)',
+    },
+    inlineSearchBtnText: {
+        color: '#0D364C',
+        fontSize: 14,
+        fontWeight: '600',
+    },
+    paginationContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 20,
+        paddingHorizontal: 16,
+        gap: 8,
+    },
+    pageButton: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: '#f0feff',
+        borderWidth: 1,
+        borderColor: '#13C2C2',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    pageButtonDisabled: {
+        backgroundColor: '#f0f0f0',
+        borderColor: '#ddd',
+    },
+    pageNumbersRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+    },
+    pageNumberButton: {
+        minWidth: 38,
+        height: 38,
+        borderRadius: 10,
+        backgroundColor: '#f0feff',
+        borderWidth: 1,
+        borderColor: '#d1f4f5',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    pageNumberButtonActive: {
+        backgroundColor: '#13C2C2',
+        borderColor: '#0D364C',
+    },
+    pageNumberText: {
+        fontSize: 15,
+        fontWeight: '600',
+        color: '#0D364C',
+    },
+    pageNumberTextActive: {
+        color: '#FFFFFF',
     },
     content: {
         flex: 1,

@@ -1,5 +1,12 @@
 import { createSlice, createAsyncThunk, createSelector } from '@reduxjs/toolkit';
-import { createReviewApi, updateReviewApi, getReviewsByOrderIdApi, getProductReviewsByProductId } from '../../services/reviewService';
+import {
+    createReviewApi,
+    updateReviewApi,
+    createReviewWithFormDataApi,
+    updateReviewWithFormDataApi,
+    getReviewsByOrderIdApi,
+    getProductReviewsByProductId,
+} from '../../services/reviewService';
 
 
 // Async thunk for fetching product reviews by product ID
@@ -17,10 +24,15 @@ export const fetchProductReviewsByProductId = createAsyncThunk(
 
 export const createReview = createAsyncThunk(
     'review/createReview',
-    async ({ product_id, order_detail_id, rating, review_content }, { rejectWithValue }) => {
+    async ({ product_id, order_id, rating, review_content }, { rejectWithValue }) => {
         try {
-            const response = await createReviewApi({ product_id, order_detail_id, rating, review_content });
-            return response.review;
+            const response = await createReviewApi({
+                product_id,
+                order_id,
+                rating,
+                comment: review_content ?? '',
+            });
+            return response.data ?? response.review;
         } catch (error) {
             return rejectWithValue(error.message);
         }
@@ -30,8 +42,12 @@ export const updateReview = createAsyncThunk(
     'review/updateReview',
     async ({ review_id, rating, review_content }, { rejectWithValue }) => {
         try {
-            const response = await updateReviewApi({ review_id, rating, review_content });
-            return response.review;
+            const response = await updateReviewApi({
+                review_id,
+                rating,
+                comment: review_content ?? '',
+            });
+            return response.data ?? response.review;
         } catch (error) {
             return rejectWithValue(error.message);
         }
@@ -50,7 +66,29 @@ export const getReviewsByOrderId = createAsyncThunk(
     }
 );
 
+export const createReviewWithFormData = createAsyncThunk(
+    'review/createReviewWithFormData',
+    async (formData, { rejectWithValue }) => {
+        try {
+            const response = await createReviewWithFormDataApi(formData);
+            return response.data ?? response;
+        } catch (error) {
+            return rejectWithValue(error.message);
+        }
+    }
+);
 
+export const updateReviewWithFormData = createAsyncThunk(
+    'review/updateReviewWithFormData',
+    async ({ reviewId, formData }, { rejectWithValue }) => {
+        try {
+            const response = await updateReviewWithFormDataApi(reviewId, formData);
+            return response.data ?? response;
+        } catch (error) {
+            return rejectWithValue(error.message);
+        }
+    }
+);
 
 const initialState = {
     reviewsByProduct: {}, // Store reviews by product ID: { productId: { reviews: [], isLoading: false, error: null } }
@@ -166,7 +204,36 @@ const reviewSlice = createSlice({
                 state.isLoading = false;
                 state.error = action.payload;
             })
-
+            .addCase(createReviewWithFormData.pending, (state) => {
+                state.isLoading = true;
+                state.error = null;
+                state.successMessage = false;
+            })
+            .addCase(createReviewWithFormData.fulfilled, (state, action) => {
+                state.isLoading = false;
+                state.review = action.payload;
+                state.successMessage = true;
+                state.lastAction = 'create';
+            })
+            .addCase(createReviewWithFormData.rejected, (state, action) => {
+                state.isLoading = false;
+                state.error = action.payload;
+            })
+            .addCase(updateReviewWithFormData.pending, (state) => {
+                state.isLoading = true;
+                state.error = null;
+                state.successMessage = false;
+            })
+            .addCase(updateReviewWithFormData.fulfilled, (state, action) => {
+                state.isLoading = false;
+                state.review = action.payload;
+                state.successMessage = true;
+                state.lastAction = 'update';
+            })
+            .addCase(updateReviewWithFormData.rejected, (state, action) => {
+                state.isLoading = false;
+                state.error = action.payload;
+            });
     },
 });
 

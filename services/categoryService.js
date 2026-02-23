@@ -1,40 +1,47 @@
 import axios from 'axios';
-import { API_BASE_URL } from '../config/apiConfig';
+import { API_BASE_URL } from '../config/api';
 
 /**
- * Danh mục public - chỉ gọi backend (folder src).
- * GET /categories?page=&limit=&search=&sortBy=&sortOrder=
+ * Backend: GET /categories
+ * Query: page, limit, search, sortBy, sortOrder
+ * Response: { status: "OK", message, data: Category[], pagination: { page, limit, total, totalPages } }
  */
+export async function getCategories({ page = 1, limit = 100, search = '', sortBy = 'createdAt', sortOrder = 'desc' } = {}) {
+    try {
+        const params = new URLSearchParams({
+            page: String(page),
+            limit: String(Math.min(limit, 100)),
+        });
+        if (search && search.trim() !== '') {
+            params.append('search', search.trim());
+        }
+        if (sortBy) params.append('sortBy', sortBy);
+        if (sortOrder) params.append('sortOrder', sortOrder);
 
-export async function getCategories({
-  page = 1,
-  limit = 100,
-  search = '',
-  sortBy = 'createdAt',
-  sortOrder = 'desc',
-} = {}) {
-  try {
-    const params = { page, limit, sortBy, sortOrder };
-    if (search && search.trim()) params.search = search.trim();
+        const response = await axios.get(`${API_BASE_URL}/categories?${params.toString()}`, {
+            headers: {
+                'Content-Type': 'application/json',
+                Accept: 'application/json',
+            },
+        });
 
-    const response = await axios.get(`${API_BASE_URL}/categories`, {
-      params,
-      headers: { 'Content-Type': 'application/json' },
-    });
-    const data = response.data;
-    if (data.status !== 'OK') {
-      throw new Error(data.message || 'Lấy danh mục thất bại');
+        const result = response.data;
+
+        if (result.status !== 'OK') {
+            throw new Error(result.message || 'Failed to fetch categories');
+        }
+
+        return result; // { status, message, data: Category[], pagination }
+    } catch (error) {
+        console.error('getCategories API error:', error);
+        throw new Error(error.response?.data?.message || error.message || 'Failed to fetch categories');
     }
-    return data;
-  } catch (error) {
-    throw new Error(
-      error.response?.data?.message ||
-        error.message ||
-        'Lấy danh mục thất bại'
-    );
-  }
 }
 
+/**
+ * Tìm kiếm danh mục theo tên (gọi chung API getCategories với search)
+ */
 export async function searchCategories({ search, page = 1, limit = 10 }) {
-  return getCategories({ page, limit, search });
+    return getCategories({ page, limit, search: search || '' });
 }
+
