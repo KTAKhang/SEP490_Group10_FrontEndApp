@@ -1,5 +1,6 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+const API_BASE_URL = 'http://10.0.2.2:3001';
 
 
 export async function getOrderByUserApi(page = 1, limit = 5, search = '') {
@@ -35,22 +36,21 @@ export async function getOrderByUserApi(page = 1, limit = 5, search = '') {
     }
 }
 
-export async function createOrderApi({ selected_product_ids, receiverInfo }) {
+export async function createOrderApi({ selected_product_ids, receiverInfo, payment_method,city }) {
     try {
         const token = await AsyncStorage.getItem('token');
 
+        const isMobile=true;
+
         const response = await axios.post(
-            'https://youtube-fullstack-nodejs-forbeginer.onrender.com/api/order/create',
+            `${API_BASE_URL}/order/create`,
+            { selected_product_ids, receiverInfo, payment_method,city,isMobile },
             {
-                selected_product_ids,
-                receiverInfo,
-            },
-            {
-                headers: {
+               headers: {
                     'Content-Type': 'application/json',
-                    Accept: 'application/json',
                     Authorization: `Bearer ${token}`,
                 },
+                withCredentials: true
             }
         );
 

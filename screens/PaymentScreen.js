@@ -10,27 +10,39 @@ import {
     Modal,
     TextInput,
 } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialIcons';
-import { Ionicons } from '@expo/vector-icons';
+import { MaterialIcons as Icon, Ionicons } from '@expo/vector-icons';
 import { useDispatch, useSelector } from 'react-redux';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
+import { fetchCartByUser } from '../store/slices/cartSlice';
+import { Picker } from '@react-native-picker/picker';
+import * as Linking from 'expo-linking';
 import { createOrder, clearOrderState } from '../store/slices/orderSlice'; // Adjust path as needed
 import { OverlayLoading, MinimalLoading } from '../components/Loading';
 import { formatCurrency } from '../utils/formatCurrency';
 import Toast from 'react-native-toast-message';
-
+import { checkoutCancel } from "../store/slices/checkoutSlice";
 const PaymentScreen = ({ navigation, route }) => {
     const dispatch = useDispatch();
-    const [selectedPayment, setSelectedPayment] = useState('cod');
+    const [selectedPayment, setSelectedPayment] = useState('COD');
     const [showEditModal, setShowEditModal] = useState(false);
     const [receiverInfo, setReceiverInfo] = useState({
         receiver_name: '',
         receiver_phone: '',
         receiver_address: '',
-        note: ''
+        note: '',
+        province_code: null,
+        ward: '',
     });
+
+   
 
     // Temporary state for editing
     const [tempReceiverInfo, setTempReceiverInfo] = useState(receiverInfo);
+    // Address helpers
+    const [provinces, setProvinces] = useState([]);
+    const [wards, setWards] = useState([]);
+    const [icity, setIcity] = useState('');
     const [fieldErrors, setFieldErrors] = useState({});
 
     // Clear field error when user starts typing
@@ -69,57 +81,71 @@ const PaymentScreen = ({ navigation, route }) => {
     };
 
     // Redux state
-    const { isLoading, createSuccess, newOrderId, error } = useSelector(state => state.order);
-
+    const { isLoading, createSuccess, newOrderId, error, order_id, payment_url } = useSelector(state => state.order);
+ const checkout = useSelector((state) => state.checkout || {});
+  const cart = useSelector((state) => state.cart || {});
     // Get data from navigation params or use default values
-    const { selectedItems = [], orderSummary = null, selected_product_ids = [] } = route?.params || {};
+ const cartItems =
+    checkout.items && checkout.items.length > 0
+      ? checkout.items
+      : cart.items || [];
+      const selectedItems =
+    checkout.items && checkout.items.length > 0
+      ? checkout.items
+      : cart.items || [];
+    // Prefer items from checkout (route) otherwise fallback to cart items
+    // const cartState = useSelector(state => state.cart);
+    // const cartItemsFromStore = cartState?.items || [];
+    // const cartItems = (selectedItems && selectedItems.length > 0) ? selectedItems : cartItemsFromStore;
 
     // Default order summary if not provided
-    const defaultOrderSummary = {
-        subtotal: 500000,
-        shipping: 0,
-        total: 500000,
-    };
+   
 
-    const summary = orderSummary || defaultOrderSummary;
+    const summary = checkout.items.price;
 
     const paymentMethods = [
         {
-            id: 'cod',
+            id: 'COD',
             title: 'Thanh toán khi nhận hàng',
             subtitle: 'Thanh toán khi bạn nhận được đơn hàng',
             icon: 'cash-outline',
-            available: true
-        }
-        // Other payment methods commented out as in original
+            available: true,
+        },
+        {
+            id: 'VNPAY',
+            title: 'VNPAY e-wallet',
+            subtitle: 'Thanh toán qua VNPAY (chuyển hướng sang cổng thanh toán)',
+            icon: 'card-outline',
+            available: true,
+        },
     ];
 
     // Handle order creation success
-    useEffect(() => {
-        if (createSuccess && newOrderId) {
-            Alert.alert(
-                'Đặt hàng thành công! 🎉',
-                `Mã đơn hàng của bạn: ${newOrderId}\nĐơn hàng của bạn đã được đặt và sẽ được xử lý sớm.`,
-                [
-                    {
-                        text: 'Tiếp tục mua sắm',
-                        style: 'cancel',
-                        onPress: () => {
-                            dispatch(clearOrderState());
-                            navigation.navigate('HomePage');
-                        },
-                    },
-                    {
-                        text: 'Xem đơn hàng',
-                        onPress: () => {
-                            dispatch(clearOrderState());
-                            navigation.navigate('OrderHistory');
-                        },
-                    },
-                ]
-            );
-        }
-    }, [createSuccess, newOrderId, dispatch, navigation]);
+    // useEffect(() => {
+    //     if (createSuccess && newOrderId) {
+    //         Alert.alert(
+    //             'Đặt hàng thành công! 🎉',
+    //             `Mã đơn hàng của bạn: ${newOrderId}\nĐơn hàng của bạn đã được đặt và sẽ được xử lý sớm.`,
+    //             [
+    //                 {
+    //                     text: 'Tiếp tục mua sắm',
+    //                     style: 'cancel',
+    //                     onPress: () => {
+    //                         dispatch(clearOrderState());
+    //                         navigation.navigate('HomePage');
+    //                     },
+    //                 },
+    //                 {
+    //                     text: 'Xem đơn hàng',
+    //                     onPress: () => {
+    //                         dispatch(clearOrderState());
+    //                         navigation.navigate('OrderHistory');
+    //                     },
+    //                 },
+    //             ]
+    //         );
+    //     }
+    // }, [createSuccess, newOrderId, dispatch, navigation]);
 
     // Handle order creation error
     useEffect(() => {
@@ -137,12 +163,107 @@ const PaymentScreen = ({ navigation, route }) => {
         }
     }, [error, dispatch]);
 
+    // Load provinces on mount
+    useEffect(() => {
+        axios
+            .get('https://provinces.open-api.vn/api/p/')
+            .then((res) => setProvinces(res.data))
+            .catch((err) => console.error('Error loading provinces:', err));
+    }, []);
+
+    // Load wards when province changes (tempReceiverInfo.province_code)
+    useEffect(() => {
+        if (!tempReceiverInfo.province_code) {
+            setWards([]);
+            setTempReceiverInfo((prev) => ({ ...prev, ward: '' }));
+            return;
+        }
+
+        axios
+            .get('https://provinces.open-api.vn/api/w/')
+            .then((res) => {
+                const filtered = res.data.filter(
+                    (ward) => ward.province_code === Number(tempReceiverInfo.province_code),
+                );
+                setWards(filtered);
+            })
+            .catch((err) => console.error(err));
+    }, [tempReceiverInfo.province_code]);
+
+    // Update icity (province name) whenever province_code changes
+    useEffect(() => {
+        if (tempReceiverInfo.province_code) {
+            const p = provinces.find((pr) => pr.code === Number(tempReceiverInfo.province_code));
+            setIcity(p ? p.name : '');
+        } else {
+            setIcity('');
+        }
+    }, [tempReceiverInfo.province_code, provinces]);
+
+    // Ensure there's an active checkout session (created by checkoutHold)
+    const [checkoutSessionId, setCheckoutSessionId] = useState(null);
+    // useEffect(() => {
+    //     const checkSession = async () => {
+    //         try {
+    //             const sessionId = await AsyncStorage.getItem('checkout_session_id');
+    //             setCheckoutSessionId(sessionId);
+    //             if (!sessionId) {
+    //                 // No active checkout session — send user back to cart
+    //                 navigation.navigate('Cart');
+    //             }
+    //         } catch (e) {
+    //             console.error('Error checking checkout session', e);
+    //         }
+    //     };
+    //     checkSession();
+    // }, [navigation]);
+
+    const handleCancel = async () => {
+        try {
+            const sessionId = checkoutSessionId || (await AsyncStorage.getItem('checkout_session_id'));
+            if (!sessionId) {
+                Alert.alert('Không có phiên thanh toán để hủy');
+                return;
+            }
+
+            Alert.alert('Xác nhận', 'Bạn có chắc chắn muốn hủy thanh toán này?', [
+                { text: 'Không', style: 'cancel' },
+                {
+                    text: 'Có',
+                    onPress: async () => {
+                        try {
+                            // Remove local session immediately to avoid race where Cart reads it and redirects
+                            await AsyncStorage.removeItem('checkout_session_id');
+                            setCheckoutSessionId(null);
+                            // dispatch expects an object payload { checkout_session_id }
+                            const result = await dispatch(checkoutCancel({ checkout_session_id: sessionId }));
+                            if (result && result.error) {
+                                Toast.show({ type: 'error', text1: 'Hủy thanh toán thất bại', text2: result.error.message || result.error });
+                            } else {
+                                Toast.show({ type: 'success', text1: 'Đã hủy thanh toán' });
+                                // Navigate back to cart after a short delay to allow UI updates
+                                setTimeout(() => navigation.navigate('Cart'), 300);
+                            }
+                        } catch (err) {
+                            console.error('Cancel checkout error', err);
+                            Toast.show({ type: 'error', text1: 'Hủy thanh toán thất bại' });
+                        }
+                    }
+                }
+            ]);
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
     const handleEditAddress = () => {
         // Initialize with current receiver info or empty values
         const currentInfo = {
             receiver_name: receiverInfo.receiver_name || '',
             receiver_phone: receiverInfo.receiver_phone || '',
             receiver_address: receiverInfo.receiver_address || '',
+            province_code: receiverInfo.province_code || null,
+            ward: receiverInfo.ward || '',
             note: receiverInfo.note || ''
         };
         setTempReceiverInfo(currentInfo);
@@ -205,7 +326,11 @@ const PaymentScreen = ({ navigation, route }) => {
         }
 
         // All validations passed
-        setReceiverInfo(tempReceiverInfo);
+        const fullAddress = `${tempReceiverInfo.receiver_address}, ${tempReceiverInfo.ward || ''}${icity ? ', ' + icity : ''}`.replace(/, ,/g, ',').replace(/\s+,/g, ',').trim();
+        setReceiverInfo({
+            ...tempReceiverInfo,
+            receiver_address: fullAddress,
+        });
         setFieldErrors({}); // Clear any errors
         setShowEditModal(false);
     };
@@ -227,7 +352,16 @@ const PaymentScreen = ({ navigation, route }) => {
         }
 
         // Validate required data
-        if (!selected_product_ids || selected_product_ids.length === 0) {
+        // selected_product_ids may come from route params; if not, build from cartItems
+        const selectedIds = (cartItems.map(
+      (item) =>
+        // support multiple item shapes
+        (item.product_id && item.product_id._id) ||
+        item.product_id ||
+        item.productId ||
+        item._id,))
+
+        if (!selectedIds || selectedIds.length === 0) {
             Alert.alert(
                 'Chưa chọn sản phẩm nào',
                 'Vui lòng chọn sản phẩm trước khi đặt hàng.',
@@ -257,7 +391,7 @@ const PaymentScreen = ({ navigation, route }) => {
 
         Alert.alert(
             'Xác nhận đơn hàng',
-            `Đặt hàng với ${paymentMethods.find(m => m.id === selectedPayment)?.title}?\n\nTổng cộng: ${formatCurrency(summary.total)}\nGiao đến: ${receiverInfo.receiver_address}`,
+            `Đặt hàng với ${paymentMethods.find(m => m.id === selectedPayment)?.title}?\n\nTổng cộng: ${formatCurrency(summary)}\nGiao đến: ${receiverInfo.receiver_address}`,
             [
                 {
                     text: 'Hủy',
@@ -270,14 +404,33 @@ const PaymentScreen = ({ navigation, route }) => {
 
                         // Dispatch create order action
                         dispatch(createOrder({
-                            selected_product_ids,
-                            receiverInfo
+                            selected_product_ids: selectedIds,
+                            receiverInfo,
+                            payment_method: selectedPayment,
+                            city: icity,
                         }));
                     }
                 },
             ]
         );
     };
+
+    // When order created or redirect url present -> clear checkout session and refresh cart
+    useEffect(() => {
+        if (order_id || payment_url) {
+            AsyncStorage.removeItem('checkout_session_id').catch(() => {});
+            dispatch(fetchCartByUser());
+        }
+    }, [order_id, payment_url, dispatch]);
+
+    // If payment gateway returned a redirect URL (VNPAY), open it
+    useEffect(() => {
+        if (payment_url) {
+            Linking.openURL(payment_url).catch((err) =>
+                console.error('Failed to open payment url', err),
+            );
+        }
+    }, [payment_url]);
 
     const renderEditAddressModal = () => (
         <Modal
@@ -388,6 +541,38 @@ const PaymentScreen = ({ navigation, route }) => {
                         )}
                     </View>
 
+                    {/* Province / Ward */}
+                    <View style={styles.inputSection}>
+                        <Text style={styles.inputLabel}>Tỉnh/Thành *</Text>
+                        <View style={styles.pickerWrapper}>
+                            <Picker
+                                selectedValue={tempReceiverInfo.province_code}
+                                onValueChange={(val) => setTempReceiverInfo(prev => ({ ...prev, province_code: val }))}
+                            >
+                                <Picker.Item label="Chọn tỉnh/thành" value={null} />
+                                {provinces.map((p) => (
+                                    <Picker.Item key={p.code} label={p.name} value={p.code} />
+                                ))}
+                            </Picker>
+                        </View>
+                    </View>
+
+                    <View style={styles.inputSection}>
+                        <Text style={styles.inputLabel}>Phường/Xã *</Text>
+                        <View style={styles.pickerWrapper}>
+                            <Picker
+                                selectedValue={tempReceiverInfo.ward}
+                                enabled={!!tempReceiverInfo.province_code}
+                                onValueChange={(val) => setTempReceiverInfo(prev => ({ ...prev, ward: val }))}
+                            >
+                                <Picker.Item label="Chọn phường/xã" value={""} />
+                                {wards.map((w) => (
+                                    <Picker.Item key={w.code} label={w.name} value={w.name} />
+                                ))}
+                            </Picker>
+                        </View>
+                    </View>
+
                     {/* Note */}
                     <View style={styles.inputSection}>
                         <Text style={styles.inputLabel}>Ghi chú đơn hàng (Tùy chọn)</Text>
@@ -443,7 +628,7 @@ const PaymentScreen = ({ navigation, route }) => {
                         <Text style={styles.sectionTitle}>Tóm tắt đơn hàng</Text>
                     </View>
                     <View style={styles.sectionContent}>
-                        <View style={styles.summaryRow}>
+                        {/* <View style={styles.summaryRow}>
                             <Text style={styles.summaryLabel}>Tạm tính</Text>
                             <Text style={styles.summaryValue}>{formatCurrency(summary.subtotal)}</Text>
                         </View>
@@ -452,11 +637,11 @@ const PaymentScreen = ({ navigation, route }) => {
                             <Text style={[styles.summaryValue, summary.shipping === 0 && styles.freeShipping]}>
                                 {summary.shipping === 0 ? 'Miễn phí' : formatCurrency(summary.shipping)}
                             </Text>
-                        </View>
+                        </View> */}
                         <View style={styles.totalDivider} />
                         <View style={[styles.summaryRow, styles.totalRow]}>
                             <Text style={styles.totalLabel}>Tổng số tiền</Text>
-                            <Text style={styles.totalValue}>{formatCurrency(summary.total)}</Text>
+                            <Text style={styles.totalValue}>{formatCurrency(summary)}</Text>
                         </View>
                     </View>
                 </View>
@@ -471,19 +656,22 @@ const PaymentScreen = ({ navigation, route }) => {
                             </Text>
                         </View>
                         <View style={styles.sectionContent}>
-                            {selectedItems.slice(0, 3).map((item, index) => (
-                                <View key={item.id} style={styles.itemRow}>
-                                    <Text style={styles.itemName} numberOfLines={1}>
-                                        {item.name}
-                                    </Text>
-                                    <Text style={styles.itemQuantity}>
-                                        x{item.quantity}
-                                    </Text>
-                                    <Text style={styles.itemPrice}>
-                                        {formatCurrency(item.price * item.quantity)}
-                                    </Text>
-                                </View>
-                            ))}
+                            {selectedItems.slice(0, 3).map((item, index) => {
+                                const key = item.id ?? item._id ?? (typeof item.product_id === 'string' ? item.product_id : item.product_id && item.product_id._id) ?? index;
+                                return (
+                                    <View key={key} style={styles.itemRow}>
+                                        <Text style={styles.itemName} numberOfLines={1}>
+                                            {item.name}
+                                        </Text>
+                                        <Text style={styles.itemQuantity}>
+                                            x{item.quantity}
+                                        </Text>
+                                        <Text style={styles.itemPrice}>
+                                            {formatCurrency(item.price * item.quantity)}
+                                        </Text>
+                                    </View>
+                                );
+                            })}
                             {selectedItems.length > 3 && (
                                 <Text style={styles.moreItemsText}>
                                     và {selectedItems.length - 3} sản phẩm khác...
@@ -636,10 +824,28 @@ const PaymentScreen = ({ navigation, route }) => {
                             <Icon name="shopping-bag" size={20} color="#ffffff" />
                         )}
                         <Text style={styles.placeOrderButtonText}>
-                            {isLoading ? 'Đang xử lý...' : `Đặt hàng • ${formatCurrency(summary.total)}`}
+                            {isLoading ? 'Đang xử lý...' : `Đặt hàng • ${formatCurrency(summary)}`}
                         </Text>
                     </View>
                 </TouchableOpacity>
+                 <TouchableOpacity
+                        style={[
+                            styles.cancelCheckoutButton,
+                        ]}
+                        onPress={handleCancel}
+                    >
+                        <Text style={styles.cancelCheckoutButtonText}>Hủy thanh toán</Text>
+                    </TouchableOpacity>
+                {checkoutSessionId && (
+                    <TouchableOpacity
+                        style={[
+                            styles.cancelCheckoutButton,
+                        ]}
+                        onPress={handleCancel}
+                    >
+                        <Text style={styles.cancelCheckoutButtonText}>Hủy thanh toán</Text>
+                    </TouchableOpacity>
+                )}
             </View>
 
             {/* Edit Address Modal */}
@@ -1011,6 +1217,19 @@ const styles = StyleSheet.create({
         shadowRadius: 8,
         elevation: 8,
     },
+    cancelCheckoutButton: {
+        marginTop: 10,
+        backgroundColor: '#fff7f7',
+        borderWidth: 1,
+        borderColor: '#fee2e2',
+        padding: 12,
+        borderRadius: 10,
+        alignItems: 'center',
+    },
+    cancelCheckoutButtonText: {
+        color: '#dc2626',
+        fontWeight: '600',
+    },
     disabledButton: {
         backgroundColor: '#d1d5db',
         shadowOpacity: 0,
@@ -1088,6 +1307,13 @@ const styles = StyleSheet.create({
     textAreaInput: {
         height: 80,
         paddingTop: 12,
+    },
+    pickerWrapper: {
+        borderWidth: 1,
+        borderColor: '#d1d5db',
+        borderRadius: 8,
+        overflow: 'hidden',
+        backgroundColor: '#ffffff',
     },
     errorText: {
         color: '#ef4444',
