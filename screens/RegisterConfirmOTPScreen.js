@@ -17,7 +17,7 @@ import Toast from 'react-native-toast-message';
 
 const { height } = Dimensions.get('window');
 
-const RegisterConfirmOTPScreen = ({ navigation }) => {
+const RegisterConfirmOTPScreen = ({ navigation, route }) => {
     const [otp, setOtp] = useState(['', '', '', '', '', '']); // 6 ký tự OTP
     const inputRefs = useRef([]);
     const dispatch = useDispatch();
@@ -157,7 +157,8 @@ const RegisterConfirmOTPScreen = ({ navigation }) => {
         // Log để debug
         // console.log('Submitting OTP:', otpString);
 
-        const resultAction = await dispatch(confirmOtp(otpString));
+        const email = route.params?.email || '';
+        const resultAction = await dispatch(confirmOtp({ email, otp: otpString }));
 
         if (confirmOtp.fulfilled.match(resultAction)) {
             Toast.show({

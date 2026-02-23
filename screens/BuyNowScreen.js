@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import {
     View,
     Text,
@@ -6,17 +7,17 @@ import {
     TouchableOpacity,
     Image,
     StyleSheet,
-    SafeAreaView,
     TextInput,
     Alert,
     StatusBar,
 } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import { MaterialIcons } from '@expo/vector-icons';
 import { COLORS } from '../constants/colors';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useDispatch } from 'react-redux';
 import { createOrderAsync } from '../store/slices/orderSlice';
 import { formatCurrency } from '../utils/formatCurrency';
+import { getProductImageUrl } from '../utils/productImage';
 
 const BuyNowScreen = ({ navigation, route }) => {
     const dispatch = useDispatch();
@@ -68,7 +69,7 @@ const BuyNowScreen = ({ navigation, route }) => {
                     style={styles.backButton}
                     onPress={() => navigation.goBack()}
                 >
-                    <Icon name="arrow-back" size={24} color={COLORS.white} />
+                    <MaterialIcons name="arrow-back" size={24} color={COLORS.white} />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>Buy Now</Text>
                 <View style={styles.placeholder} />
@@ -79,7 +80,7 @@ const BuyNowScreen = ({ navigation, route }) => {
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>Product Summary</Text>
                     <View style={styles.productCard}>
-                        <Image source={{ uri: product.image }} style={styles.productImage} />
+                        <Image source={{ uri: getProductImageUrl(product) }} style={styles.productImage} />
                         <View style={styles.productInfo}>
                             <Text style={styles.productName}>{product.name}</Text>
                             <Text style={styles.productPrice}>{formatCurrency(product.price)}</Text>
@@ -158,7 +159,7 @@ const BuyNowScreen = ({ navigation, route }) => {
                                     <Text style={styles.paymentSubtitle}>Pay when you receive your order</Text>
                                 </View>
                             </View>
-                            <Icon name="payments" size={24} color={COLORS.primary} />
+                            <MaterialIcons name="payments" size={24} color={COLORS.primary} />
                         </TouchableOpacity>
                     </View>
                 </View>

@@ -1,11 +1,11 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import {
     View,
     Text,
     FlatList,
     StyleSheet,
     TouchableOpacity,
-    SafeAreaView,
     StatusBar,
     Dimensions,
     TextInput,
@@ -17,7 +17,7 @@ import { fetchProductsAsync, fetchProductsByCategoryAsync, resetAllProducts } fr
 import ProductCard from '../components/ProductCard';
 import CategorySection from '../components/CategorySection';
 import { InlineLoading, FooterLoading } from '../components/Loading';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import { MaterialIcons } from '@expo/vector-icons';
 import { COLORS } from '../constants/colors';
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -180,13 +180,13 @@ const AllProductsScreen = ({ navigation, route }) => {
                             style={styles.searchCloseButton}
                             onPress={handleSearchClose}
                         >
-                            <Icon name="arrow-back" size={24} color="#0D364C" />
+                            <MaterialIcons name="arrow-back" size={24} color="#0D364C" />
                         </TouchableOpacity>
                         <Text style={styles.searchTitle}>Tìm kiếm sản phẩm</Text>
                     </View>
 
                     <View style={styles.searchInputContainer}>
-                        <Icon name="search" size={20} color="#13C2C2" style={styles.searchIcon} />
+                        <MaterialIcons name="search" size={20} color="#13C2C2" style={styles.searchIcon} />
                         <TextInput
                             style={styles.searchInput}
                             placeholder="Tìm kiếm theo tên sản phẩm..."
@@ -199,7 +199,7 @@ const AllProductsScreen = ({ navigation, route }) => {
                         />
                         {searchText.length > 0 && (
                             <TouchableOpacity onPress={clearSearch} style={styles.clearButton}>
-                                <Icon name="clear" size={20} color="#A0A0A0" />
+                                <MaterialIcons name="clear" size={20} color="#A0A0A0" />
                             </TouchableOpacity>
                         )}
                     </View>
@@ -213,7 +213,7 @@ const AllProductsScreen = ({ navigation, route }) => {
                             onPress={handleSearch}
                             disabled={searchText.trim() === ''}
                         >
-                            <Icon name="search" size={20} color="#fff" />
+                            <MaterialIcons name="search" size={20} color="#fff" />
                             <Text style={styles.searchActionButtonText}>Tìm kiếm</Text>
                         </TouchableOpacity>
 
@@ -225,7 +225,7 @@ const AllProductsScreen = ({ navigation, route }) => {
                                     setIsSearchVisible(false);
                                 }}
                             >
-                                <Icon name="clear-all" size={20} color="#6b7280" />
+                                <MaterialIcons name="clear-all" size={20} color="#6b7280" />
                                 <Text style={styles.clearAllButtonText}>Xóa tất cả</Text>
                             </TouchableOpacity>
                         )}
@@ -261,7 +261,7 @@ const AllProductsScreen = ({ navigation, route }) => {
                         activeOpacity={0.8}
                     >
                         <View style={styles.backButtonInner}>
-                            <Icon name="arrow-back" size={22} color="#FFFFFF" />
+                            <MaterialIcons name="arrow-back" size={22} color="#FFFFFF" />
                         </View>
                     </TouchableOpacity>
 
@@ -281,7 +281,7 @@ const AllProductsScreen = ({ navigation, route }) => {
                         onPress={handleSearchPress}
                     >
                         <View style={styles.searchButtonInner}>
-                            <Icon name="search" size={22} color="#FFFFFF" />
+                            <MaterialIcons name="search" size={22} color="#FFFFFF" />
                         </View>
                     </TouchableOpacity>
                 </View>
@@ -373,7 +373,7 @@ const AllProductsScreen = ({ navigation, route }) => {
                                     style={styles.emptyGradient}
                                 >
                                     <View style={styles.emptyIconContainer}>
-                                        <Icon name={currentSearch ? "search-off" : "inventory-2"} size={80} color="#c7d2fe" />
+                                        <MaterialIcons name={currentSearch ? "search-off" : "inventory-2"} size={80} color="#c7d2fe" />
                                     </View>
                                     <Text style={styles.emptyTitle}>
                                         {currentSearch ? 'Không có kết quả tìm kiếm' : 'Không tìm thấy sản phẩm'}

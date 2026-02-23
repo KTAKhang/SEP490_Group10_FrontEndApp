@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import {
     View,
     Text,
@@ -6,7 +7,6 @@ import {
     ScrollView,
     TouchableOpacity,
     StyleSheet,
-    SafeAreaView,
     StatusBar,
     Dimensions,
     Modal,
@@ -14,7 +14,7 @@ import {
     Alert,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import { MaterialIcons } from '@expo/vector-icons';
 import { fetchProductByIdAsync } from '../store/slices/productSlice';
 import {
     fetchProductReviewsByProductId,
@@ -25,6 +25,7 @@ import { addToCart } from '../store/slices/cartSlice';
 import { InlineLoading, OverlayLoading } from '../components/Loading';
 import { COLORS } from '../constants/colors';
 import { formatCurrency } from '../utils/formatCurrency';
+import { getProductImageUrl } from '../utils/productImage';
 import Toast from 'react-native-toast-message';
 
 const { width } = Dimensions.get('window');
@@ -99,20 +100,20 @@ const ProductDetailScreen = ({ navigation, route }) => {
 
         for (let i = 0; i < fullStars; i++) {
             stars.push(
-                <Icon key={i} name="star" size={16} color="#FFD700" />
+                <MaterialIcons key={i} name="star" size={16} color="#FFD700" />
             );
         }
 
         if (hasHalfStar) {
             stars.push(
-                <Icon key="half" name="star-half" size={16} color="#FFD700" />
+                <MaterialIcons key="half" name="star-half" size={16} color="#FFD700" />
             );
         }
 
         const emptyStars = 5 - Math.ceil(rating);
         for (let i = 0; i < emptyStars; i++) {
             stars.push(
-                <Icon key={`empty-${i}`} name="star-border" size={16} color="#FFD700" />
+                <MaterialIcons key={`empty-${i}`} name="star-border" size={16} color="#FFD700" />
             );
         }
 
@@ -222,7 +223,7 @@ const ProductDetailScreen = ({ navigation, route }) => {
                         <Text style={styles.showAllButtonText}>
                             Xem tất cả đánh giá ({reviews.length})
                         </Text>
-                        <Icon name="keyboard-arrow-right" size={20} color={COLORS.primary} />
+                        <MaterialIcons name="keyboard-arrow-right" size={20} color={COLORS.primary} />
                     </TouchableOpacity>
                 )}
             </>
@@ -245,7 +246,7 @@ const ProductDetailScreen = ({ navigation, route }) => {
                             onPress={() => setShowAllReviews(false)}
                             style={styles.modalCloseButton}
                         >
-                            <Icon name="close" size={24} color={COLORS.text} />
+                            <MaterialIcons name="close" size={24} color={COLORS.text} />
                         </TouchableOpacity>
 
                         <Text style={styles.modalTitle}>
@@ -256,7 +257,7 @@ const ProductDetailScreen = ({ navigation, route }) => {
                             style={styles.modalRefreshButton}
                             onPress={handleRefresh}
                         >
-                            <Icon name="refresh" size={20} color={COLORS.primary} />
+                            <MaterialIcons name="refresh" size={20} color={COLORS.primary} />
                         </TouchableOpacity>
                     </View>
 
@@ -270,7 +271,7 @@ const ProductDetailScreen = ({ navigation, route }) => {
                         ItemSeparatorComponent={() => <View style={styles.reviewSeparator} />}
                         ListEmptyComponent={() => (
                             <View style={styles.emptyReviewsContainer}>
-                                <Icon name="rate-review" size={48} color="#ccc" />
+                                <MaterialIcons name="rate-review" size={48} color="#ccc" />
                                 <Text style={styles.emptyReviewsText}>Chưa có đánh giá nào</Text>
                                 <Text style={styles.emptyReviewsSubText}>
                                     Hãy là người đầu tiên đánh giá sản phẩm này
@@ -416,7 +417,7 @@ const ProductDetailScreen = ({ navigation, route }) => {
                         style={styles.headerButton}
                         onPress={() => navigation.goBack()}
                     >
-                        <Icon name="arrow-back" size={24} color={COLORS.white} />
+                        <MaterialIcons name="arrow-back" size={24} color={COLORS.white} />
                     </TouchableOpacity>
 
                     <Text style={styles.headerTitle}>Product Details</Text>
@@ -425,7 +426,7 @@ const ProductDetailScreen = ({ navigation, route }) => {
                         style={styles.headerButton}
                         onPress={handleCartPress}
                     >
-                        <Icon name="shopping-cart" size={24} color="rgba(255, 255, 255, 0.85)" />
+                        <MaterialIcons name="shopping-cart" size={24} color="rgba(255, 255, 255, 0.85)" />
                         {itemCount > 0 && (
                             <View style={styles.badge}>
                                 <Text style={styles.badgeText}>{itemCount}</Text>
@@ -466,7 +467,7 @@ const ProductDetailScreen = ({ navigation, route }) => {
                         style={styles.headerButton}
                         onPress={() => navigation.goBack()}
                     >
-                        <Icon name="arrow-back" size={24} color={COLORS.white} />
+                        <MaterialIcons name="arrow-back" size={24} color={COLORS.white} />
                     </TouchableOpacity>
 
                     <Text style={styles.headerTitle}>Chi tiết sản phẩm</Text>
@@ -475,7 +476,7 @@ const ProductDetailScreen = ({ navigation, route }) => {
                         style={styles.headerButton}
                         onPress={handleCartPress}
                     >
-                        <Icon name="shopping-cart" size={24} color="rgba(255, 255, 255, 0.85)" />
+                        <MaterialIcons name="shopping-cart" size={24} color="rgba(255, 255, 255, 0.85)" />
                         {itemCount > 0 && (
                             <View style={styles.badge}>
                                 <Text style={styles.badgeText}>{itemCount}</Text>
@@ -486,7 +487,7 @@ const ProductDetailScreen = ({ navigation, route }) => {
 
                 <View style={styles.inactiveContainer}>
                     <View style={styles.inactiveWrapper}>
-                        <Icon name="block" size={80} color="#ff6b6b" />
+                        <MaterialIcons name="block" size={80} color="#ff6b6b" />
                         <Text style={styles.inactiveTitle}>Sản phẩm không khả dụng</Text>
                         <Text style={styles.inactiveText}>
                             Sản phẩm này hiện tại không có sẵn để mua.
@@ -513,7 +514,7 @@ const ProductDetailScreen = ({ navigation, route }) => {
                     style={styles.headerButton}
                     onPress={() => navigation.goBack()}
                 >
-                    <Icon name="arrow-back" size={24} color={COLORS.white} />
+                    <MaterialIcons name="arrow-back" size={24} color={COLORS.white} />
                 </TouchableOpacity>
 
                 <Text style={styles.headerTitle}>Product Details</Text>
@@ -522,7 +523,7 @@ const ProductDetailScreen = ({ navigation, route }) => {
                     style={styles.headerButton}
                     onPress={handleCartPress}
                 >
-                    <Icon name="shopping-cart" size={24} color="rgba(255, 255, 255, 0.85)" />
+                    <MaterialIcons name="shopping-cart" size={24} color="rgba(255, 255, 255, 0.85)" />
                     {itemCount > 0 && (
                         <View style={styles.badge}>
                             <Text style={styles.badgeText}>{itemCount}</Text>
@@ -532,13 +533,20 @@ const ProductDetailScreen = ({ navigation, route }) => {
             </View>
 
             <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-                {/* Product Image */}
+                {/* Product Image — dùng helper để lấy images[0] / featuredImage / image */}
                 <View style={styles.imageContainer}>
-                    <Image
-                        source={{ uri: product.image }}
-                        style={styles.productImage}
-                        resizeMode="contain"
-                    />
+                    {getProductImageUrl(product) ? (
+                        <Image
+                            source={{ uri: getProductImageUrl(product) }}
+                            style={styles.productImage}
+                            resizeMode="contain"
+                        />
+                    ) : (
+                        <View style={[styles.productImage, styles.productImagePlaceholder]}>
+                            <MaterialIcons name="image-not-supported" size={64} color="#ccc" />
+                            <Text style={styles.placeholderText}>Không có ảnh</Text>
+                        </View>
+                    )}
                 </View>
 
                 {/* Product Info */}
@@ -566,7 +574,7 @@ const ProductDetailScreen = ({ navigation, route }) => {
                                 onPress={() => handleQuantityChange('decrease')}
                                 disabled={quantity <= 1}
                             >
-                                <Icon name="remove" size={20} color={quantity <= 1 ? "#ccc" : "#666"} />
+                                <MaterialIcons name="remove" size={20} color={quantity <= 1 ? "#ccc" : "#666"} />
                             </TouchableOpacity>
 
                             <Text style={styles.quantityText}>{quantity}</Text>
@@ -579,7 +587,7 @@ const ProductDetailScreen = ({ navigation, route }) => {
                                 onPress={() => handleQuantityChange('increase')}
                                 disabled={quantity >= product.quantity || isOutOfStock}
                             >
-                                <Icon
+                                <MaterialIcons
                                     name="add"
                                     size={20}
                                     color={(quantity >= product.quantity || isOutOfStock) ? "#ccc" : "#666"}
@@ -598,19 +606,19 @@ const ProductDetailScreen = ({ navigation, route }) => {
                     <View style={styles.section}>
                         <Text style={styles.sectionTitle}>Thông tin sản phẩm</Text>
                         <View style={styles.featureItem}>
-                            <Icon name="label" size={16} color="#4caf50" />
+                            <MaterialIcons name="label" size={16} color="#4caf50" />
                             <Text style={styles.featureText}>Danh mục: {product.category_id?.name || 'Chung'}</Text>
                         </View>
                         <View style={styles.featureItem}>
-                            <Icon name="category" size={16} color="#4caf50" />
+                            <MaterialIcons name="category" size={16} color="#4caf50" />
                             <Text style={styles.featureText}>Loại: {product.target}</Text>
                         </View>
                         <View style={styles.featureItem}>
-                            <Icon name="star" size={16} color="#4caf50" />
+                            <MaterialIcons name="star" size={16} color="#4caf50" />
                             <Text style={styles.featureText}>Đánh giá: {averageRating.toFixed(1)}/5</Text>
                         </View>
                         <View style={styles.featureItem}>
-                            <Icon
+                            <MaterialIcons
                                 name={isOutOfStock ? "remove-shopping-cart" : "inventory"}
                                 size={16}
                                 color={isOutOfStock ? "#ff4757" : "#4caf50"}
@@ -634,7 +642,7 @@ const ProductDetailScreen = ({ navigation, route }) => {
                                 style={styles.refreshButton}
                                 onPress={handleRefresh}
                             >
-                                <Icon name="refresh" size={20} color={COLORS.primary} />
+                                <MaterialIcons name="refresh" size={20} color={COLORS.primary} />
                                 <Text style={styles.refreshText}>Làm mới</Text>
                             </TouchableOpacity>
                         </View>
@@ -661,7 +669,7 @@ const ProductDetailScreen = ({ navigation, route }) => {
             >
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalContent}>
-                        <Icon name="check-circle" size={50} color="#4CAF50" />
+                        <MaterialIcons name="check-circle" size={50} color="#4CAF50" />
                         <Text style={styles.modalText}>Thêm vào giỏ hàng thành công!</Text>
                     </View>
                 </View>
@@ -677,7 +685,7 @@ const ProductDetailScreen = ({ navigation, route }) => {
                     onPress={handleAddToCart}
                     disabled={showLoadingModal || isOutOfStock}
                 >
-                    <Icon
+                    <MaterialIcons
                         name={isOutOfStock ? "remove-shopping-cart" : "shopping-cart"}
                         size={20}
                         color={isOutOfStock ? "#999" : COLORS.white}
@@ -772,6 +780,16 @@ const styles = StyleSheet.create({
     productImage: {
         width: '100%',
         height: '100%',
+    },
+    productImagePlaceholder: {
+        backgroundColor: '#f0f0f0',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    placeholderText: {
+        marginTop: 8,
+        fontSize: 14,
+        color: '#999',
     },
     productInfo: {
         padding: 16,

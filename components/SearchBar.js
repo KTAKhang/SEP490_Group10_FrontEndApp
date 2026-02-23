@@ -10,11 +10,12 @@ import {
     Modal,
     ActivityIndicator
 } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import { MaterialIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { searchCategories } from '../services/categoryService';
 import { searchProducts } from '../services/productService';
 import { COLORS } from '../constants/colors';
+import { getProductImageUrl } from '../utils/productImage';
 
 const SearchBar = () => {
     const navigation = useNavigation();
@@ -107,11 +108,11 @@ const SearchBar = () => {
             style={styles.searchItem}
             onPress={() => handleItemPress(item)}
         >
-            <Image source={{ uri: item.image }} style={styles.itemImage} />
+            <Image source={{ uri: item.type === 'category' ? item.image : getProductImageUrl(item) }} style={styles.itemImage} />
             <View style={styles.itemInfo}>
                 <Text style={styles.itemName}>{item.name}</Text>
                 <View style={styles.itemTypeContainer}>
-                    <Icon
+                    <MaterialIcons
                         name={item.type === 'category' ? 'category' : 'shopping-cart'}
                         size={14}
                         color={item.type === 'category' ? '#10B981' : '#3B82F6'}
@@ -124,14 +125,14 @@ const SearchBar = () => {
                     </Text>
                 </View>
             </View>
-            <Icon name="arrow-forward-ios" size={16} color="#9CA3AF" />
+            <MaterialIcons name="arrow-forward-ios" size={16} color="#9CA3AF" />
         </TouchableOpacity>
     );
 
     return (
         <View style={styles.container}>
             <View style={styles.searchContainer}>
-                <Icon name="search" size={20} color="#9CA3AF" style={styles.searchIcon} />
+                <MaterialIcons name="search" size={20} color="#9CA3AF" style={styles.searchIcon} />
                 <TextInput
                     style={styles.input}
                     placeholder="Tìm kiếm sản phẩm hoặc danh mục..."
@@ -150,7 +151,7 @@ const SearchBar = () => {
                             setShowResults(false);
                         }}
                     >
-                        <Icon name="clear" size={20} color="#9CA3AF" />
+                        <MaterialIcons name="clear" size={20} color="#9CA3AF" />
                     </TouchableOpacity>
                 )}
             </View>
@@ -173,7 +174,7 @@ const SearchBar = () => {
                                 Kết quả tìm kiếm ({searchResults.length})
                             </Text>
                             <TouchableOpacity onPress={() => setShowResults(false)}>
-                                <Icon name="close" size={24} color="#6B7280" />
+                                <MaterialIcons name="close" size={24} color="#6B7280" />
                             </TouchableOpacity>
                         </View>
 
@@ -186,7 +187,7 @@ const SearchBar = () => {
                             ItemSeparatorComponent={() => <View style={styles.separator} />}
                             ListEmptyComponent={() => (
                                 <View style={styles.emptyContainer}>
-                                    <Icon name="search-off" size={48} color="#D1D5DB" />
+                                    <MaterialIcons name="search-off" size={48} color="#D1D5DB" />
                                     <Text style={styles.emptyText}>Không tìm thấy kết quả</Text>
                                     <Text style={styles.emptySubText}>
                                         Thử tìm kiếm với từ khóa khác

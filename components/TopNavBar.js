@@ -1,16 +1,39 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, StatusBar, Alert } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialIcons';
-import { useNavigation } from '@react-navigation/native';
+import { MaterialIcons } from '@expo/vector-icons';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { COLORS } from '../constants/colors';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSelector } from 'react-redux';
+import { getUnreadCount } from '../services/notificationService';
 
 const TopNavBar = () => {
     const navigation = useNavigation();
     const { cart } = useSelector((state) => state.cart);
     const { isAuthenticated } = useSelector((state) => state.auth);
+    const [notiCount, setNotiCount] = useState(0);
     const itemCount = cart?.item_count || 0;
+
+    useEffect(() => {
+        if (!isAuthenticated) { setNotiCount(0); return; }
+        getUnreadCount().then(setNotiCount).catch(() => setNotiCount(0));
+    }, [isAuthenticated]);
+
+    useFocusEffect(
+        React.useCallback(() => {
+            if (isAuthenticated) getUnreadCount().then(setNotiCount).catch(() => {});
+        }, [isAuthenticated])
+    );
+
+    const handleNotiPress = () => {
+        if (isAuthenticated) navigation.navigate('Notifications');
+        else {
+            Alert.alert('Yêu cầu đăng nhập', 'Bạn cần đăng nhập để xem thông báo.', [
+                { text: 'Hủy', style: 'cancel' },
+                { text: 'Đăng nhập', onPress: () => navigation.navigate('Login') },
+            ]);
+        }
+    };
 
     const handleCartPress = () => {
         if (isAuthenticated) {
@@ -49,16 +72,25 @@ const TopNavBar = () => {
                             style={styles.loginButton}
                             onPress={handleLoginPress}
                         >
-                            <Icon name="person" size={20} color={COLORS.white} />
+                            <MaterialIcons name="person" size={20} color={COLORS.white} />
                             <Text style={styles.loginText}>Đăng nhập</Text>
                         </TouchableOpacity>
                     )}
-                    
+                    {isAuthenticated && (
+                        <TouchableOpacity style={styles.cartButton} onPress={handleNotiPress}>
+                            <MaterialIcons name="notifications" size={24} color={COLORS.white} />
+                            {notiCount > 0 && (
+                                <View style={styles.badge}>
+                                    <Text style={styles.badgeText}>{notiCount > 99 ? '99+' : notiCount}</Text>
+                                </View>
+                            )}
+                        </TouchableOpacity>
+                    )}
                     <TouchableOpacity 
                         style={styles.cartButton}
                         onPress={handleCartPress}
                     >
-                        <Icon name="shopping-cart" size={24} color={COLORS.white} />
+                        <MaterialIcons name="shopping-cart" size={24} color={COLORS.white} />
                         {isAuthenticated && itemCount > 0 && (
                             <View style={styles.badge}>
                                 <Text style={styles.badgeText}>{itemCount}</Text>
