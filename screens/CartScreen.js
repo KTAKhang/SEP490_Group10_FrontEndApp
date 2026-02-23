@@ -23,7 +23,7 @@ import { checkoutHold } from "../store/slices/checkoutSlice";
 import { InlineLoading } from "../components/Loading";
 import { formatCurrency } from "../utils/formatCurrency";
 import { COLORS } from "../constants/colors";
-import BottomNavigation from "../components/BottomNavigation";
+// import BottomNavigation from "../components/BottomNavigation";
 import Toast from "react-native-toast-message";
 import "react-native-get-random-values";
 import { v4 as uuidv4 } from "uuid";
@@ -743,7 +743,7 @@ console.log("nek",existingSession)
           text="Đang tải giỏ hàng..."
           style={styles.loadingContainer}
         />
-        <BottomNavigation />
+        {/* <BottomNavigation /> */}
       </View>
     );
   }
@@ -785,7 +785,7 @@ console.log("nek",existingSession)
             <Text style={styles.retryButtonText}>Thử lại</Text>
           </TouchableOpacity>
         </View>
-        <BottomNavigation />
+        {/* <BottomNavigation /> */}
       </View>
     );
   }
@@ -926,7 +926,7 @@ console.log("nek",existingSession)
           </TouchableOpacity>
         </View>
       )}
-      <BottomNavigation />
+      {/* <BottomNavigation /> */}
     </View>
   );
 };

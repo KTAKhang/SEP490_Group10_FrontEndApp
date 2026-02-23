@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Linking, Alert } from 'react-native';
+import { Alert } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { useDispatch, useSelector } from 'react-redux';

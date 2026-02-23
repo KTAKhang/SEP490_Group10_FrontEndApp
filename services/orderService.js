@@ -147,10 +147,6 @@ export async function getMyOrderByIdApi(orderId) {
   }
 }
 
-/**
- * Backend: tạo đơn (checkout)
- * Nếu backend dùng POST /order/create thì đổi URL bên dưới.
- */
 export async function createOrderApi({ selected_product_ids, receiverInfo, payment_method,city }) {
     try {
         const token = await AsyncStorage.getItem('token');
@@ -182,22 +178,7 @@ export async function createOrderApi({ selected_product_ids, receiverInfo, payme
     } catch (error) {
         console.error('createOrderApi error:', error);
         throw new Error(error.response?.data?.message || error.message || 'Lỗi không xác định khi tạo đơn hàng');
-
     }
-
-    return {
-      success: true,
-      order_id: data.order_id ?? data.orderId,
-      message: data.message,
-    };
-  } catch (error) {
-    console.error('createOrderApi error:', error);
-    throw new Error(
-      error.response?.data?.message ||
-        error.message ||
-        'Lỗi không xác định khi tạo đơn hàng'
-    );
-  }
 }
 
 
