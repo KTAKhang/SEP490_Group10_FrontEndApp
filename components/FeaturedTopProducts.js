@@ -17,7 +17,7 @@ const FeaturedTopProducts = ({ title }) => {
     useEffect(() => {
         // Fetch top sold products only once when component mounts
         if (!topSoldProducts || topSoldProducts.length === 0) {
-            dispatch(fetchTopSoldProductsAsync({ page: 1, limit: 6 }));
+            dispatch(fetchTopSoldProductsAsync());
         }
     }, [dispatch]); // Remove topSoldProducts from dependencies to prevent infinite loop
 

@@ -21,6 +21,8 @@ import ProfileScreen from '../screens/ProfileScreen';
 import OrderHistoryScreen from '../screens/OrderHistoryScreen';
 import PaymentScreen from '../screens/PaymentScreen';
 import OrderDetailsScreen from '../screens/OrderDetailsScreen';
+import CreateReviewScreen from '../screens/CreateReviewScreen';
+import EditReviewScreen from '../screens/EditReviewScreen';
 import AllProductsScreen from '../screens/AllProductsScreen';
 import BuyNowScreen from '../screens/BuyNowScreen';
 
@@ -92,6 +94,8 @@ export default function AppNavigator() {
                 <Stack.Screen name="Payment" component={PaymentScreen} />
                 <Stack.Screen name="OrderHistory" component={OrderHistoryScreen} />
                 <Stack.Screen name="OrderDetails" component={OrderDetailsScreen} />
+                <Stack.Screen name="CreateReview" component={CreateReviewScreen} />
+                <Stack.Screen name="EditReview" component={EditReviewScreen} />
                 <Stack.Screen name="BuyNow" component={BuyNowScreen} />
               </>
             )}

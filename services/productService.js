@@ -1,213 +1,131 @@
 import axios from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { API_BASE_URL } from '../config/api';
 
-// Hàm lấy danh sách sản phẩm với phân trang và tìm kiếm
-export async function getProducts({ page = 1, limit = 10, search = null, category_name = null }) {
-    try {
-        // const token = await AsyncStorage.getItem('token');
-        // if (!token) throw new Error('Token not found');
-
-        let url = `https://youtube-fullstack-nodejs-forbeginer.onrender.com/api/product?page=${page}&limit=${limit}`;
-
-        if (search && search.trim() !== '') {
-            url += `&search=${encodeURIComponent(search.trim())}`;
-        }
-
-        if (category_name && category_name.trim() !== '') {
-            url += `&category_name=${encodeURIComponent(category_name.trim())}`;
-        }
-
-        const response = await axios.get(url, {
-            headers: {
-                'Content-Type': 'application/json',
-                // Authorization: `Bearer ${token}`,
-            },
-        });
-
-        const data = response.data;
-
-        if (data.status !== 'OK') {
-            throw new Error(data.message || 'Failed to fetch products');
-        }
-
-        // Simple approach: fetch all products and let Redux handle pagination
-        // Increase limit to get more products for better active products coverage
-        const fetchLimit = Math.max(limit * 3, 50); // Fetch 3x more to ensure enough active products
-        const enhancedUrl = url.replace(`limit=${limit}`, `limit=${fetchLimit}`);
-
-        const enhancedResponse = await axios.get(enhancedUrl, {
-            headers: {
-                'Content-Type': 'application/json',
-                // Authorization: `Bearer ${token}`,
-            },
-        });
-
-        const enhancedData = enhancedResponse.data;
-        if (enhancedData.status !== 'OK') {
-            throw new Error(enhancedData.message || 'Failed to fetch products');
-        }
-
-        // Filter active products and use API's totalActive for proper pagination
-        const allProducts = enhancedData.data.products;
-        const activeProducts = allProducts.filter(product => product.status === true);
-        const totalActive = enhancedData.data.total.totalActive || activeProducts.length;
-        const totalPages = Math.ceil(totalActive / limit);
-
-        return {
-            ...enhancedData,
-            data: {
-                ...enhancedData.data,
-                products: activeProducts, // Return all active products fetched
-                total: {
-                    ...enhancedData.data.total,
-                    totalProduct: totalActive,
-                    currentPage: page,
-                    totalPage: totalPages
-                }
-            }
-        };
-
-    } catch (error) {
-        console.error('getProducts error:', error);
-        throw new Error(error.response?.data?.message || error.message || 'Failed to fetch products');
-    }
+/**
+ * Chuẩn hóa product từ backend cho UI: quantity, image, category_name
+ */
+function normalizeProduct(p) {
+  if (!p) return p;
+  const qty = p.onHandQuantity ?? p.quantity ?? 0;
+  const img = p.featuredImage ?? (Array.isArray(p.images) && p.images[0]) ?? p.image ?? '';
+  const categoryName = (p.category && (p.category.name ?? p.category.category_name)) ?? p.category_name ?? '';
+  return {
+    ...p,
+    quantity: qty,
+    onHandQuantity: qty,
+    image: img,
+    featuredImage: img || p.featuredImage,
+    category_name: categoryName,
+  };
 }
 
-// Hàm lấy thông tin sản phẩm theo ID
+/**
+ * Backend: GET /products
+ * Query: page, limit, search, category (ObjectId), sortBy, sortOrder
+ * Response: { status: "OK", data: Product[], pagination: { page, limit, total, totalPages } }
+ */
+export async function getProducts({
+  page = 1,
+  limit = 12,
+  search = '',
+  category = null,
+  sortBy = 'createdAt',
+  sortOrder = 'desc',
+} = {}) {
+  try {
+    const params = new URLSearchParams({
+      page: String(page),
+      limit: String(Math.min(limit, 100)),
+      sortBy: String(sortBy),
+      sortOrder: String(sortOrder),
+    });
+    if (search && search.trim() !== '') {
+      params.append('search', search.trim());
+    }
+    if (category) {
+      params.append('category', String(category));
+    }
+
+    const response = await axios.get(`${API_BASE_URL}/products?${params.toString()}`, {
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    });
+
+    const result = response.data;
+    if (result.status !== 'OK') {
+      throw new Error(result.message || 'Failed to fetch products');
+    }
+
+    const products = (result.data || []).map(normalizeProduct);
+    const pagination = result.pagination || { page: 1, limit, total: 0, totalPages: 0 };
+
+    return {
+      status: result.status,
+      data: products,
+      pagination: {
+        page: pagination.page,
+        limit: pagination.limit,
+        total: pagination.total,
+        totalPages: pagination.totalPages ?? Math.ceil((pagination.total || 0) / (pagination.limit || limit)),
+      },
+    };
+  } catch (error) {
+    console.error('getProducts error:', error);
+    throw new Error(error.response?.data?.message || error.message || 'Failed to fetch products');
+  }
+}
+
+/**
+ * Backend: GET /products/featured (top 6 bán chạy)
+ * Response: { status: "OK", data: Product[] }
+ */
+export async function getFeaturedProducts() {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/products/featured`, {
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    });
+
+    const result = response.data;
+    if (result.status !== 'OK') {
+      throw new Error(result.message || 'Failed to fetch featured products');
+    }
+
+    const products = (result.data || []).map(normalizeProduct);
+    return { status: result.status, data: products };
+  } catch (error) {
+    console.error('getFeaturedProducts error:', error);
+    throw new Error(error.response?.data?.message || error.message || 'Failed to fetch featured products');
+  }
+}
+
+/**
+ * Backend: GET /products/:id
+ * Response: { status: "OK", data: Product }
+ */
 export async function getProductById(id) {
-    try {
-        // const token = await AsyncStorage.getItem('token');
-        // if (!token) throw new Error('Token not found');
+  try {
+    const response = await axios.get(`${API_BASE_URL}/products/${id}`, {
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    });
 
-
-
-        const response = await axios.get(
-            `https://youtube-fullstack-nodejs-forbeginer.onrender.com/api/product/${id}`,
-            {
-                headers: {
-                    'Content-Type': 'application/json',
-                    // Authorization: `Bearer ${token}`,
-                },
-            }
-        );
-
-
-
-        const data = response.data;
-
-        if (data.status !== 'OK') {
-            throw new Error(data.message || 'Failed to fetch product');
-        }
-
-        return data.data; // Trả về thông tin sản phẩm
-
-    } catch (error) {
-        console.error('getProductById API error:', error);
-        throw new Error(error.response?.data?.message || error.message || 'Failed to fetch product');
+    const result = response.data;
+    if (result.status !== 'OK') {
+      throw new Error(result.message || 'Failed to fetch product');
     }
+
+    return normalizeProduct(result.data);
+  } catch (error) {
+    console.error('getProductById API error:', error);
+    throw new Error(error.response?.data?.message || error.message || 'Failed to fetch product');
+  }
 }
 
-// Hàm tìm kiếm sản phẩm theo tên (wrapper cho getProducts)
-export async function searchProducts({ search, page = 1, limit = 10 }) {
-    return getProducts({ page, limit, search });
+/**
+ * Lấy sản phẩm theo category (backend dùng category = ObjectId)
+ */
+export async function getProductsByCategory({ categoryId, page = 1, limit = 12, search = '', sortBy = 'createdAt', sortOrder = 'desc' } = {}) {
+  return getProducts({ page, limit, search, category: categoryId || undefined, sortBy, sortOrder });
 }
 
-// Hàm lấy sản phẩm theo category (using search instead of category_name parameter)
-export async function getProductsByCategory({ category_name, page = 1, limit = 10 }) {
-    try {
-        // Get all products and filter client-side (most reliable approach)
-        const allProductsResponse = await getProducts({ page: 1, limit: 100 });
-        const allProducts = allProductsResponse.data.products;
-
-        // Improved client-side filtering
-        const normalizeString = (str) => {
-            if (!str) return '';
-            return str.toString()
-                .toLowerCase()
-                .trim()
-                .replace(/\s+/g, ' ') // Replace multiple spaces with single space
-                .normalize('NFD') // Normalize Vietnamese characters
-                .replace(/[\u0300-\u036f]/g, ''); // Remove diacritics
-        };
-
-        const targetCategory = normalizeString(category_name);
-
-        const filteredProducts = allProducts.filter(product => {
-            const productCategory = normalizeString(product.category_name);
-            return productCategory.includes(targetCategory) || targetCategory.includes(productCategory);
-        });
-
-        // Implement proper client-side pagination
-        const totalProducts = filteredProducts.length;
-        const totalPages = Math.ceil(totalProducts / limit);
-        const startIndex = (page - 1) * limit;
-        const endIndex = startIndex + limit;
-        const paginatedProducts = filteredProducts.slice(startIndex, endIndex);
-
-
-
-        // Use client-side filtered and paginated results
-        const result = {
-            ...allProductsResponse,
-            data: {
-                ...allProductsResponse.data,
-                products: paginatedProducts,
-                total: {
-                    ...allProductsResponse.data.total,
-                    totalProduct: totalProducts,
-                    currentPage: page,
-                    totalPage: totalPages
-                }
-            }
-        };
-
-        return result;
-
-    } catch (error) {
-        console.error('getProductsByCategory error:', error);
-        throw error;
-    }
-}
-
-// Hàm lấy danh sách sản phẩm bán chạy nhất
-export async function getTopSoldProducts({ page = 1, limit = 10, search = null }) {
-    try {
-        // const token = await AsyncStorage.getItem('token');
-        // if (!token) throw new Error('Token not found');
-
-        let url = `https://youtube-fullstack-nodejs-forbeginer.onrender.com/api/product/top-sold?page=${page}&limit=${limit}`;
-
-        if (search && search.trim() !== '') {
-            url += `&search=${encodeURIComponent(search.trim())}`;
-        }
-
-        const response = await axios.get(url, {
-            headers: {
-                'Content-Type': 'application/json',
-                // Authorization: `Bearer ${token}`,
-            },
-        });
-
-        const data = response.data;
-
-        if (data.status !== 'OK') {
-            throw new Error(data.message || 'Failed to fetch top sold products');
-        }
-
-        // Filter chỉ lấy sản phẩm có status = true (active products)
-        const allProducts = data.data.products;
-        const activeProducts = allProducts.filter(product => product.status === true);
-
-        return {
-            ...data,
-            data: {
-                ...data.data,
-                products: activeProducts
-            }
-        };
-
-    } catch (error) {
-        console.error('getTopSoldProducts error:', error);
-        throw new Error(error.response?.data?.message || error.message || 'Failed to fetch top sold products');
-    }
+export async function searchProducts({ search, page = 1, limit = 12 }) {
+  return getProducts({ page, limit, search });
 }

@@ -6,7 +6,8 @@ export const fetchCategoriesAsync = createAsyncThunk(
     async ({ page, limit }, { rejectWithValue }) => {
         try {
             const response = await getCategories({ page, limit });
-            return response.data.categories;
+            // Backend trả về mảng danh mục trong response.data (không phải data.categories)
+            return response.data ?? [];
         } catch (error) {
             console.error('API error:', error);
             return rejectWithValue(error.message);
@@ -30,9 +31,9 @@ const categorySlice = createSlice({
             })
             .addCase(fetchCategoriesAsync.fulfilled, (state, action) => {
                 state.isLoading = false;
-                // Store level filtering: Chỉ lưu active categories (status = true)
-                const activeCategories = action.payload.filter(category => category.status === true);
-                state.categories = activeCategories;
+                // Backend đã filter status: true; giữ filter an toàn phòng response thay đổi
+                const list = Array.isArray(action.payload) ? action.payload : [];
+                state.categories = list.filter(category => category.status !== false);
             })
             .addCase(fetchCategoriesAsync.rejected, (state, action) => {
                 state.isLoading = false;

@@ -1,67 +1,47 @@
 import axios from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { API_BASE_URL } from '../config/api';
 
-// Hàm lấy danh mục
-export async function getCategories({ page = 1, limit = 100 }) {
+/**
+ * Backend: GET /categories
+ * Query: page, limit, search, sortBy, sortOrder
+ * Response: { status: "OK", message, data: Category[], pagination: { page, limit, total, totalPages } }
+ */
+export async function getCategories({ page = 1, limit = 100, search = '', sortBy = 'createdAt', sortOrder = 'desc' } = {}) {
     try {
-        // const token = await AsyncStorage.getItem('token');  // Lấy token từ AsyncStorage
+        const params = new URLSearchParams({
+            page: String(page),
+            limit: String(Math.min(limit, 100)),
+        });
+        if (search && search.trim() !== '') {
+            params.append('search', search.trim());
+        }
+        if (sortBy) params.append('sortBy', sortBy);
+        if (sortOrder) params.append('sortOrder', sortOrder);
 
-        // if (!token) {
-        //     throw new Error('No token provided');  // Nếu không có token, ném lỗi
-        // }
+        const response = await axios.get(`${API_BASE_URL}/categories?${params.toString()}`, {
+            headers: {
+                'Content-Type': 'application/json',
+                Accept: 'application/json',
+            },
+        });
 
-        // Gửi yêu cầu GET với token trong header
-        const response = await axios.get(
-            `https://youtube-fullstack-nodejs-forbeginer.onrender.com/api/category?page=${page}&limit=${limit}`,
-            {
-                headers: {
-                    'Content-Type': 'application/json',
-                    // Authorization: `Bearer ${token}`,  // Thêm token vào header
-                },
-            }
-        );
+        const result = response.data;
 
-        const data = response.data;
-
-        if (data.status !== 'OK') {
-            throw new Error(data.message || 'Failed to fetch categories');
+        if (result.status !== 'OK') {
+            throw new Error(result.message || 'Failed to fetch categories');
         }
 
-        return data;  // Trả về dữ liệu danh mục
+        return result; // { status, message, data: Category[], pagination }
     } catch (error) {
-        console.error('API error:', error);  // Log lỗi chi tiết
+        console.error('getCategories API error:', error);
         throw new Error(error.response?.data?.message || error.message || 'Failed to fetch categories');
     }
 }
 
-// Hàm tìm kiếm danh mục theo tên
+/**
+ * Tìm kiếm danh mục theo tên (gọi chung API getCategories với search)
+ */
 export async function searchCategories({ search, page = 1, limit = 10 }) {
-    try {
-        // const token = await AsyncStorage.getItem('token');
-        // if (!token) throw new Error('Token not found');
-
-        let url = `https://youtube-fullstack-nodejs-forbeginer.onrender.com/api/category?page=${page}&limit=${limit}`;
-        if (search && search.trim() !== '') {
-            url += `&search=${encodeURIComponent(search.trim())}`;
-        }
-
-        const response = await axios.get(url, {
-            headers: {
-                'Content-Type': 'application/json',
-                // Authorization: `Bearer ${token}`,
-            },
-        });
-
-        const data = response.data;
-
-        if (data.status !== 'OK') {
-            throw new Error(data.message || 'Failed to search categories');
-        }
-
-        return data;
-    } catch (error) {
-        console.error('searchCategories error:', error);
-        throw new Error(error.response?.data?.message || error.message || 'Failed to search categories');
-    }
+    return getCategories({ page, limit, search: search || '' });
 }
 

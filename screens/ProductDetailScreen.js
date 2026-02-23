@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
     View,
     Text,
+    TextInput,
     Image,
     ScrollView,
     TouchableOpacity,
@@ -24,7 +25,6 @@ import {
 import { addToCart } from '../store/slices/cartSlice';
 import { InlineLoading, OverlayLoading } from '../components/Loading';
 import { COLORS } from '../constants/colors';
-import { formatCurrency } from '../utils/formatCurrency';
 import Toast from 'react-native-toast-message';
 
 const { width } = Dimensions.get('window');
@@ -36,8 +36,11 @@ const ProductDetailScreen = ({ navigation, route }) => {
     const [showAllReviews, setShowAllReviews] = useState(false);
     const [showLoadingModal, setShowLoadingModal] = useState(false);
     const [showSuccessModal, setShowSuccessModal] = useState(false);
+    const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+    const [activeTab, setActiveTab] = useState('description');
+    const [reviewSearch, setReviewSearch] = useState('');
 
-    // Get product ID from route params
+
     const productId = route?.params?.productId;
 
     // Get product and loading state from Redux
@@ -71,7 +74,6 @@ const ProductDetailScreen = ({ navigation, route }) => {
         }
     }, [dispatch, productId]); // Bỏ reviews khỏi dependency để tránh infinite loop
 
-    // Auto-adjust quantity if it exceeds available stock when product data updates
     useEffect(() => {
         if (product && product.quantity > 0 && quantity > product.quantity) {
             setQuantity(product.quantity);
@@ -85,7 +87,19 @@ const ProductDetailScreen = ({ navigation, route }) => {
         }
     }, [product?.quantity, quantity]);
 
+    useEffect(() => {
+        if (product) setSelectedImageIndex(0);
+    }, [product?._id]);
+
     const isLoading = productLoading || reviewsLoading;
+
+    const images = product && Array.isArray(product.images) && product.images.length > 0
+        ? product.images
+        : product?.featuredImage
+            ? [product.featuredImage]
+            : product?.image
+                ? [product.image]
+                : [];
 
     // Calculate average rating from reviews của sản phẩm hiện tại
     const averageRating = reviews && reviews.length > 0
@@ -170,7 +184,7 @@ const ProductDetailScreen = ({ navigation, route }) => {
                         {renderStars(review.rating)}
                     </View>
                 </View>
-                <Text style={styles.reviewText}>{review.content}</Text>
+                <Text style={styles.reviewText}>{review.comment || review.content || ''}</Text>
             </View>
         );
     };
@@ -245,7 +259,7 @@ const ProductDetailScreen = ({ navigation, route }) => {
                             onPress={() => setShowAllReviews(false)}
                             style={styles.modalCloseButton}
                         >
-                            <Icon name="close" size={24} color={COLORS.text} />
+                            <Icon name="close" size={24} color={COLORS.text.primary} />
                         </TouchableOpacity>
 
                         <Text style={styles.modalTitle}>
@@ -262,11 +276,12 @@ const ProductDetailScreen = ({ navigation, route }) => {
 
                     {/* Reviews List */}
                     <FlatList
-                        data={reviews}
+                        data={reviews || []}
                         renderItem={renderReviewItem}
                         keyExtractor={(item, index) => item._id || index.toString()}
                         showsVerticalScrollIndicator={true}
-                        contentContainerStyle={styles.modalContent}
+                        style={styles.modalFlatList}
+                        contentContainerStyle={[styles.modalContent, (!reviews || reviews.length === 0) && styles.modalContentEmpty]}
                         ItemSeparatorComponent={() => <View style={styles.reviewSeparator} />}
                         ListEmptyComponent={() => (
                             <View style={styles.emptyReviewsContainer}>
@@ -532,118 +547,310 @@ const ProductDetailScreen = ({ navigation, route }) => {
             </View>
 
             <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-                {/* Product Image */}
-                <View style={styles.imageContainer}>
-                    <Image
-                        source={{ uri: product.image }}
-                        style={styles.productImage}
-                        resizeMode="contain"
-                    />
+                {/* Breadcrumb */}
+                <View style={styles.breadcrumb}>
+                    <TouchableOpacity onPress={() => navigation.goBack()} style={styles.breadcrumbButton}>
+                        <Icon name="arrow-back" size={20} color="#666" />
+                        <Text style={styles.breadcrumbText}>Quay lại sản phẩm</Text>
+                    </TouchableOpacity>
                 </View>
 
-                {/* Product Info */}
-                <View style={styles.productInfo}>
-                    <Text style={styles.productName}>{product.name}</Text>
-
-                    {/* Rating */}
-                    <View style={styles.ratingContainer}>
-                        <View style={styles.starsContainer}>
-                            {renderStars(averageRating)}
-                        </View>
-                        <Text style={styles.ratingText}>({averageRating.toFixed(1)})</Text>
-                        <Text style={styles.reviewCount}>• {reviews ? reviews.length : 0} Đánh giá</Text>
+                {/* Image Gallery */}
+                <View style={styles.imageContainer}>
+                    <View style={styles.mainImageWrapper}>
+                        {images.length > 0 ? (
+                            <Image
+                                source={{ uri: images[selectedImageIndex] }}
+                                style={styles.productImage}
+                                resizeMode="contain"
+                            />
+                        ) : (
+                            <View style={styles.noImagePlaceholder}>
+                                <Icon name="image" size={48} color="#ccc" />
+                                <Text style={styles.noImageText}>Không có ảnh</Text>
+                            </View>
+                        )}
+                        {product.isNearExpiry && product.originalPrice != null && product.originalPrice > 0 && (
+                            <View style={styles.badgeNearExpiry}>
+                                <Text style={styles.badgeNearExpiryText}>
+                                    {Math.round((1 - (product.price || 0) / product.originalPrice) * 100)}% giảm
+                                </Text>
+                            </View>
+                        )}
                     </View>
+                    {images.length > 1 && (
+                        <ScrollView
+                            horizontal
+                            showsHorizontalScrollIndicator={false}
+                            contentContainerStyle={styles.thumbnailsRow}
+                        >
+                            {images.map((img, index) => (
+                                <TouchableOpacity
+                                    key={index}
+                                    onPress={() => setSelectedImageIndex(index)}
+                                    style={[
+                                        styles.thumbnail,
+                                        selectedImageIndex === index && styles.thumbnailSelected
+                                    ]}
+                                >
+                                    <Image source={{ uri: img }} style={styles.thumbnailImage} resizeMode="cover" />
+                                </TouchableOpacity>
+                            ))}
+                        </ScrollView>
+                    )}
+                </View>
 
-                    {/* Price and Quantity */}
-                    <View style={styles.priceQuantityContainer}>
-                        <Text style={styles.price}>{formatCurrency(product.price)}</Text>
-                        <View style={styles.quantityContainer}>
+                {/* Product Info Card (giống web) */}
+                <View style={styles.infoCard}>
+                    <View style={styles.infoRow}>
+                        <Text style={styles.infoLabel}>Tên:</Text>
+                        <Text style={styles.infoValueName}>{product.name}</Text>
+                    </View>
+                    {product.category?.name && (
+                        <View style={styles.infoRow}>
+                            <Text style={styles.infoLabel}>Danh mục:</Text>
+                            <Text style={styles.infoValue}>{product.category.name}</Text>
+                        </View>
+                    )}
+                    {product.brand && (
+                        <View style={styles.infoRow}>
+                            <Text style={styles.infoLabel}>Thương hiệu:</Text>
+                            <Text style={styles.infoValue}>{product.brand}</Text>
+                        </View>
+                    )}
+                    {product.short_desc ? (
+                        <View style={styles.infoRow}>
+                            <Text style={styles.infoLabel}>Mô tả ngắn:</Text>
+                            <Text style={styles.infoValueDesc}>{product.short_desc}</Text>
+                        </View>
+                    ) : null}
+                    <View style={styles.infoRow}>
+                        <Text style={styles.infoLabel}>Giá:</Text>
+                        <View style={styles.priceRow}>
+                            {product.isNearExpiry && product.originalPrice != null && product.originalPrice > 0 && (
+                                <Text style={styles.originalPrice}>{(product.originalPrice)}</Text>
+                            )}
+                            <Text style={styles.currentPrice}>{(product.price)}</Text>
+                        </View>
+                    </View>
+                    <View style={styles.infoRow}>
+                        <Text style={styles.infoLabel}>Tình trạng:</Text>
+                        <View style={[styles.statusDot, isOutOfStock ? styles.statusOutOfStock : styles.statusInStock]} />
+                        <Text style={[styles.statusText, isOutOfStock && styles.statusTextOut]}>
+                            {isOutOfStock ? 'Hết hàng' : 'Còn hàng'}
+                        </Text>
+                    </View>
+                    {(reviews?.length > 0 || (product.avgRating != null && product.avgRating > 0)) && (
+                        <View style={[styles.infoRow, { borderBottomWidth: 0 }]}>
+                            <Text style={styles.infoLabel}>Đánh giá:</Text>
+                            <View style={styles.ratingRow}>
+                                {renderStars(averageRating)}
+                                <Text style={styles.ratingValue}>{Number(averageRating).toFixed(1)}</Text>
+                                <Text style={styles.ratingCount}>({reviews?.length ?? 0} đánh giá)</Text>
+                            </View>
+                        </View>
+                    )}
+                </View>
+
+                {/* Actions: Add to cart + Favorite */}
+                <View style={styles.actionsRow}>
+                    <TouchableOpacity
+                        style={[styles.addToCartMain, isOutOfStock && styles.addToCartMainDisabled]}
+                        onPress={handleAddToCart}
+                        disabled={isOutOfStock || showLoadingModal}
+                    >
+                        <Icon name="shopping-cart" size={22} color={isOutOfStock ? '#999' : '#fff'} />
+                        <Text style={[styles.addToCartMainText, isOutOfStock && styles.addToCartMainTextDisabled]}>
+                            {isOutOfStock ? 'Hết hàng' : 'Thêm vào giỏ hàng'}
+                        </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={[styles.favoriteButton, isFavorite && styles.favoriteButtonActive]}
+                        onPress={() => setIsFavorite(!isFavorite)}
+                    >
+                        <Icon name="favorite" size={24} color={isFavorite ? '#ef4444' : '#666'} />
+                    </TouchableOpacity>
+                </View>
+
+                {/* Quantity selector (compact) */}
+                {!isOutOfStock && (
+                    <View style={styles.quantityRow}>
+                        <Text style={styles.quantityLabel}>Số lượng:</Text>
+                        <View style={styles.quantityControls}>
                             <TouchableOpacity
-                                style={[
-                                    styles.quantityButton,
-                                    quantity <= 1 && styles.quantityButtonDisabled
-                                ]}
+                                style={[styles.quantityButton, quantity <= 1 && styles.quantityButtonDisabled]}
                                 onPress={() => handleQuantityChange('decrease')}
                                 disabled={quantity <= 1}
                             >
-                                <Icon name="remove" size={20} color={quantity <= 1 ? "#ccc" : "#666"} />
+                                <Icon name="remove" size={20} color={quantity <= 1 ? '#ccc' : '#666'} />
                             </TouchableOpacity>
-
                             <Text style={styles.quantityText}>{quantity}</Text>
-
                             <TouchableOpacity
-                                style={[
-                                    styles.quantityButton,
-                                    (quantity >= product.quantity || isOutOfStock) && styles.quantityButtonDisabled
-                                ]}
+                                style={[styles.quantityButton, (quantity >= product.quantity || isOutOfStock) && styles.quantityButtonDisabled]}
                                 onPress={() => handleQuantityChange('increase')}
                                 disabled={quantity >= product.quantity || isOutOfStock}
                             >
-                                <Icon
-                                    name="add"
-                                    size={20}
-                                    color={(quantity >= product.quantity || isOutOfStock) ? "#ccc" : "#666"}
-                                />
+                                <Icon name="add" size={20} color={(quantity >= product.quantity || isOutOfStock) ? '#ccc' : '#666'} />
                             </TouchableOpacity>
                         </View>
                     </View>
+                )}
 
-                    {/* Description */}
-                    <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>Mô tả</Text>
-                        <Text style={styles.description}>{product.detail_desc}</Text>
+                {/* Tabs: Mô tả | Chi tiết */}
+                <View style={styles.tabsCard}>
+                    <View style={styles.tabsRow}>
+                        <TouchableOpacity
+                            style={[styles.tab, activeTab === 'description' && styles.tabActive]}
+                            onPress={() => setActiveTab('description')}
+                        >
+                            <Icon name="description" size={18} color={activeTab === 'description' ? COLORS.primary : '#666'} />
+                            <Text style={[styles.tabText, activeTab === 'description' && styles.tabTextActive]}>Mô tả</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={[styles.tab, activeTab === 'specs' && styles.tabActive]}
+                            onPress={() => setActiveTab('specs')}
+                        >
+                            <Icon name="list-alt" size={18} color={activeTab === 'specs' ? COLORS.primary : '#666'} />
+                            <Text style={[styles.tabText, activeTab === 'specs' && styles.tabTextActive]}>Chi tiết</Text>
+                        </TouchableOpacity>
+                    </View>
+                    <View style={styles.tabContent}>
+                        {activeTab === 'description' && (
+                            <Text style={styles.description}>
+                                {(product.detail_desc || product.description) || 'Chưa có mô tả chi tiết.'}
+                            </Text>
+                        )}
+                        {activeTab === 'specs' && (
+                            <View style={styles.specsGrid}>
+                                {product.category?.name && (
+                                    <View style={styles.specItem}>
+                                        <Icon name="category" size={20} color={COLORS.primary} />
+                                        <View>
+                                            <Text style={styles.specLabel}>Danh mục</Text>
+                                            <Text style={styles.specValue}>{product.category.name}</Text>
+                                        </View>
+                                    </View>
+                                )}
+                                {product.quantity != null && (
+                                    <View style={styles.specItem}>
+                                        <Icon name="inventory" size={20} color={COLORS.primary} />
+                                        <View>
+                                            <Text style={styles.specLabel}>Tồn kho</Text>
+                                            <Text style={[styles.specValue, isOutOfStock && { color: '#ef4444' }]}>
+                                                {product.quantity} kg
+                                            </Text>
+                                        </View>
+                                    </View>
+                                )}
+                                {product.expiryDateStr && (
+                                    <View style={styles.specItem}>
+                                        <Icon name="event" size={20} color={COLORS.primary} />
+                                        <View>
+                                            <Text style={styles.specLabel}>Hạn dùng</Text>
+                                            <Text style={styles.specValue}>
+                                                {product.expiryDateStr.split('-').reverse().join('/')}
+                                            </Text>
+                                        </View>
+                                    </View>
+                                )}
+                                {product.warehouseEntryDateStr && (
+                                    <View style={styles.specItem}>
+                                        <Icon name="store" size={20} color={COLORS.primary} />
+                                        <View>
+                                            <Text style={styles.specLabel}>Ngày nhập kho</Text>
+                                            <Text style={styles.specValue}>
+                                                {product.warehouseEntryDateStr.split('-').reverse().join('/')}
+                                            </Text>
+                                        </View>
+                                    </View>
+                                )}
+                            </View>
+                        )}
+                    </View>
+                </View>
+
+                {/* Reviews Section (giống web: header + search/sort + list) */}
+                <View style={styles.reviewsSection}>
+                    <View style={styles.reviewsSectionHeader}>
+                        <View style={styles.reviewsTitleBlock}>
+                            <View style={styles.reviewsIconWrap}>
+                                <Icon name="star" size={24} color="#f59e0b" />
+                            </View>
+                            <View>
+                                <Text style={styles.reviewsSectionTitle}>Đánh giá sản phẩm</Text>
+                                <Text style={styles.reviewsSectionSub}>
+                                    {reviews?.length ?? 0} đánh giá · {Number(averageRating).toFixed(1)} sao
+                                </Text>
+                            </View>
+                        </View>
+                        <TouchableOpacity onPress={handleRefresh} style={styles.refreshButton}>
+                            <Icon name="refresh" size={20} color={COLORS.primary} />
+                            <Text style={styles.refreshText}>Làm mới</Text>
+                        </TouchableOpacity>
                     </View>
 
-                    {/* Type and Rating */}
-                    <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>Thông tin sản phẩm</Text>
-                        <View style={styles.featureItem}>
-                            <Icon name="label" size={16} color="#4caf50" />
-                            <Text style={styles.featureText}>Danh mục: {product.category_id?.name || 'Chung'}</Text>
-                        </View>
-                        <View style={styles.featureItem}>
-                            <Icon name="category" size={16} color="#4caf50" />
-                            <Text style={styles.featureText}>Loại: {product.target}</Text>
-                        </View>
-                        <View style={styles.featureItem}>
-                            <Icon name="star" size={16} color="#4caf50" />
-                            <Text style={styles.featureText}>Đánh giá: {averageRating.toFixed(1)}/5</Text>
-                        </View>
-                        <View style={styles.featureItem}>
-                            <Icon
-                                name={isOutOfStock ? "remove-shopping-cart" : "inventory"}
-                                size={16}
-                                color={isOutOfStock ? "#ff4757" : "#4caf50"}
+                    <View style={styles.reviewFiltersRow}>
+                        <View style={styles.searchInputWrap}>
+                            <Icon name="search" size={18} color="#999" style={styles.searchInputIcon} />
+                            <TextInput
+                                style={styles.reviewSearchInput}
+                                placeholder="Tìm trong đánh giá..."
+                                placeholderTextColor="#999"
+                                value={reviewSearch}
+                                onChangeText={setReviewSearch}
                             />
-                            <Text style={[
-                                styles.featureText,
-                                isOutOfStock && styles.outOfStockText
-                            ]}>
-                                {isOutOfStock ? 'Hết hàng' : `Số lượng: ${product.quantity} sản phẩm`}
-                            </Text>
                         </View>
                     </View>
 
-                    {/* Reviews Section - CHỈ hiển thị preview */}
-                    <View style={styles.section}>
-                        <View style={styles.reviewsHeader}>
-                            <Text style={styles.sectionTitle}>
-                                Đánh giá ({reviews ? reviews.length : 0})
-                            </Text>
-                            <TouchableOpacity
-                                style={styles.refreshButton}
-                                onPress={handleRefresh}
-                            >
-                                <Icon name="refresh" size={20} color={COLORS.primary} />
-                                <Text style={styles.refreshText}>Làm mới</Text>
+                    {reviewsLoading ? (
+                        <Text style={styles.reviewsLoadingText}>Đang tải đánh giá...</Text>
+                    ) : !reviews || reviews.length === 0 ? (
+                        <Text style={styles.noReviewsText}>Chưa có đánh giá nào cho sản phẩm này.</Text>
+                    ) : (
+                        <>
+                            {(reviewSearch
+                                ? reviews.filter(r =>
+                                    (r.comment || r.content || '').toLowerCase().includes(reviewSearch.toLowerCase())
+                                )
+                                : reviews
+                            ).map((review, index) => (
+                                <View key={review._id || index} style={styles.reviewCard}>
+                                    <View style={styles.reviewCardHeader}>
+                                        <View style={styles.reviewerInfo}>
+                                            <View style={styles.avatarFallback}>
+                                                <Text style={styles.avatarFallbackText}>
+                                                    {(review.user?.user_name || review.user_id?.user_name || 'U').charAt(0).toUpperCase()}
+                                                </Text>
+                                            </View>
+                                            <View>
+                                                <Text style={styles.reviewerName}>
+                                                    {review.user?.user_name || review.user_id?.user_name || 'Khách'}
+                                                </Text>
+                                                <Text style={styles.reviewDate}>
+                                                    {review.createdAt ? new Date(review.createdAt).toLocaleString('vi-VN') : 'N/A'}
+                                                </Text>
+                                            </View>
+                                        </View>
+                                        <View style={styles.starsContainer}>{renderStars(review.rating)}</View>
+                                    </View>
+                                    {(review.comment || review.content) ? (
+                                        <Text style={styles.reviewText}>{review.comment || review.content}</Text>
+                                    ) : null}
+                                    {Array.isArray(review.images) && review.images.length > 0 && (
+                                        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.reviewImagesRow}>
+                                            {review.images.map((img, idx) => (
+                                                <Image key={idx} source={{ uri: img }} style={styles.reviewImage} resizeMode="cover" />
+                                            ))}
+                                        </ScrollView>
+                                    )}
+                                </View>
+                            ))}
+                            <TouchableOpacity style={styles.showAllButton} onPress={() => setShowAllReviews(true)}>
+                                <Text style={styles.showAllButtonText}>Xem tất cả đánh giá ({reviews.length})</Text>
+                                <Icon name="keyboard-arrow-right" size={20} color={COLORS.primary} />
                             </TouchableOpacity>
-                        </View>
-
-                        {/* Preview Reviews */}
-                        <View style={styles.reviewsPreviewContainer}>
-                            {renderPreviewReviews()}
-                        </View>
-                    </View>
+                        </>
+                    )}
                 </View>
             </ScrollView>
 
@@ -660,7 +867,7 @@ const ProductDetailScreen = ({ navigation, route }) => {
                 visible={showSuccessModal}
             >
                 <View style={styles.modalOverlay}>
-                    <View style={styles.modalContent}>
+                    <View style={styles.successModalContent}>
                         <Icon name="check-circle" size={50} color="#4CAF50" />
                         <Text style={styles.modalText}>Thêm vào giỏ hàng thành công!</Text>
                     </View>
@@ -764,17 +971,401 @@ const styles = StyleSheet.create({
     content: {
         flex: 1,
     },
+    breadcrumb: {
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        backgroundColor: '#fff',
+        borderBottomWidth: 1,
+        borderBottomColor: '#eee',
+    },
+    breadcrumbButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    breadcrumbText: {
+        fontSize: 14,
+        color: '#666',
+        marginLeft: 4,
+        fontWeight: '500',
+    },
     imageContainer: {
-        position: 'relative',
-        height: 300,
+        paddingHorizontal: 16,
+        paddingTop: 12,
+        paddingBottom: 8,
         backgroundColor: '#f8f9fa',
+    },
+    mainImageWrapper: {
+        position: 'relative',
+        width: '100%',
+        aspectRatio: 1,
+        backgroundColor: '#fff',
+        borderRadius: 16,
+        overflow: 'hidden',
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 4,
     },
     productImage: {
         width: '100%',
         height: '100%',
     },
+    noImagePlaceholder: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#f0f0f0',
+    },
+    noImageText: {
+        fontSize: 14,
+        color: '#999',
+        marginTop: 8,
+    },
+    badgeNearExpiry: {
+        position: 'absolute',
+        top: 12,
+        left: 12,
+        backgroundColor: '#f59e0b',
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        borderRadius: 20,
+    },
+    badgeNearExpiryText: {
+        color: '#fff',
+        fontSize: 12,
+        fontWeight: '700',
+    },
+    thumbnailsRow: {
+        flexDirection: 'row',
+        gap: 8,
+        marginTop: 12,
+        paddingVertical: 4,
+    },
+    thumbnail: {
+        width: 56,
+        height: 56,
+        borderRadius: 12,
+        borderWidth: 2,
+        borderColor: '#e0e0e0',
+        overflow: 'hidden',
+    },
+    thumbnailSelected: {
+        borderColor: COLORS.primary,
+    },
+    thumbnailImage: {
+        width: '100%',
+        height: '100%',
+    },
     productInfo: {
         padding: 16,
+    },
+    infoCard: {
+        marginHorizontal: 16,
+        marginTop: 16,
+        backgroundColor: '#fff',
+        borderRadius: 16,
+        padding: 16,
+        borderWidth: 1,
+        borderColor: '#eee',
+    },
+    infoRow: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        paddingVertical: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: '#f5f5f5',
+    },
+    infoLabel: {
+        fontSize: 13,
+        color: '#666',
+        fontWeight: '500',
+        minWidth: 90,
+    },
+    infoValue: {
+        flex: 1,
+        fontSize: 14,
+        color: '#333',
+        fontWeight: '500',
+    },
+    infoValueName: {
+        flex: 1,
+        fontSize: 18,
+        fontWeight: '700',
+        color: '#333',
+    },
+    infoValueDesc: {
+        flex: 1,
+        fontSize: 14,
+        color: '#555',
+        lineHeight: 20,
+    },
+    priceRow: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: 8,
+    },
+    originalPrice: {
+        fontSize: 14,
+        color: '#999',
+        textDecorationLine: 'line-through',
+    },
+    currentPrice: {
+        fontSize: 20,
+        fontWeight: '700',
+        color: COLORS.primary || '#0d9488',
+    },
+    statusDot: {
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+        marginRight: 6,
+    },
+    statusInStock: {
+        backgroundColor: '#22c55e',
+    },
+    statusOutOfStock: {
+        backgroundColor: '#ef4444',
+    },
+    statusText: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#22c55e',
+    },
+    statusTextOut: {
+        color: '#ef4444',
+    },
+    ratingRow: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+    },
+    ratingValue: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#333',
+    },
+    ratingCount: {
+        fontSize: 13,
+        color: '#666',
+    },
+    actionsRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+        marginHorizontal: 16,
+        marginTop: 16,
+    },
+    addToCartMain: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+        paddingVertical: 14,
+        backgroundColor: COLORS.primary || '#0d9488',
+        borderRadius: 12,
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.15,
+        shadowRadius: 4,
+    },
+    addToCartMainDisabled: {
+        backgroundColor: '#d1d5db',
+    },
+    addToCartMainText: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#fff',
+    },
+    addToCartMainTextDisabled: {
+        color: '#9ca3af',
+    },
+    favoriteButton: {
+        width: 52,
+        height: 52,
+        borderRadius: 12,
+        borderWidth: 2,
+        borderColor: '#e5e7eb',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    favoriteButtonActive: {
+        borderColor: '#fecaca',
+        backgroundColor: '#fef2f2',
+    },
+    quantityRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginHorizontal: 16,
+        marginTop: 12,
+        paddingVertical: 8,
+    },
+    quantityLabel: {
+        fontSize: 14,
+        color: '#666',
+        fontWeight: '500',
+    },
+    quantityControls: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    tabsCard: {
+        marginHorizontal: 16,
+        marginTop: 20,
+        backgroundColor: '#fff',
+        borderRadius: 16,
+        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: '#eee',
+    },
+    tabsRow: {
+        flexDirection: 'row',
+        borderBottomWidth: 1,
+        borderBottomColor: '#eee',
+    },
+    tab: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 6,
+        paddingVertical: 14,
+    },
+    tabActive: {
+        borderBottomWidth: 2,
+        borderBottomColor: COLORS.primary || '#0d9488',
+        backgroundColor: 'rgba(13, 148, 136, 0.06)',
+    },
+    tabText: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#666',
+    },
+    tabTextActive: {
+        color: COLORS.primary || '#0d9488',
+    },
+    tabContent: {
+        padding: 16,
+    },
+    specsGrid: {
+        gap: 12,
+    },
+    specItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+        padding: 12,
+        backgroundColor: '#f8fafc',
+        borderRadius: 12,
+    },
+    specLabel: {
+        fontSize: 11,
+        color: '#64748b',
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
+    },
+    specValue: {
+        fontSize: 15,
+        fontWeight: '600',
+        color: '#333',
+    },
+    reviewsSection: {
+        marginHorizontal: 16,
+        marginTop: 20,
+        marginBottom: 100,
+        backgroundColor: '#fff',
+        borderRadius: 16,
+        padding: 16,
+        borderWidth: 1,
+        borderColor: '#eee',
+    },
+    reviewsSectionHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: 12,
+        paddingBottom: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: '#f0f0f0',
+    },
+    reviewsTitleBlock: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+    },
+    reviewsIconWrap: {
+        width: 48,
+        height: 48,
+        borderRadius: 12,
+        backgroundColor: '#fef3c7',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    reviewsSectionTitle: {
+        fontSize: 18,
+        fontWeight: '700',
+        color: '#333',
+    },
+    reviewsSectionSub: {
+        fontSize: 13,
+        color: '#666',
+        marginTop: 2,
+    },
+    reviewFiltersRow: {
+        marginBottom: 12,
+    },
+    searchInputWrap: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#f8f9fa',
+        borderRadius: 12,
+        paddingHorizontal: 12,
+        borderWidth: 1,
+        borderColor: '#eee',
+    },
+    searchInputIcon: {
+        marginRight: 8,
+    },
+    reviewSearchInput: {
+        flex: 1,
+        paddingVertical: 10,
+        fontSize: 14,
+        color: '#333',
+    },
+    reviewsLoadingText: {
+        textAlign: 'center',
+        paddingVertical: 24,
+        fontSize: 14,
+        color: '#666',
+    },
+    reviewCard: {
+        padding: 14,
+        borderRadius: 12,
+        backgroundColor: '#f8fafc',
+        borderWidth: 1,
+        borderColor: '#eee',
+        marginBottom: 12,
+    },
+    reviewCardHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+        marginBottom: 8,
+    },
+    reviewImagesRow: {
+        marginTop: 8,
+    },
+    reviewImage: {
+        width: 72,
+        height: 72,
+        borderRadius: 8,
+        marginRight: 8,
     },
     productName: {
         fontSize: 20,
@@ -994,8 +1585,14 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         borderRadius: 20,
     },
+    modalFlatList: {
+        flex: 1,
+    },
     modalContent: {
         padding: 16,
+    },
+    modalContentEmpty: {
+        flexGrow: 1,
     },
     reviewSeparator: {
         height: 1,
@@ -1057,7 +1654,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
-    modalContent: {
+    successModalContent: {
         backgroundColor: COLORS.white,
         padding: 30,
         borderRadius: 20,

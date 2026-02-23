@@ -2,19 +2,40 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import {
     createOrderApi,
     getOrderByUserApi,
+    getMyOrderByIdApi,
     cancelOrderApi,
     returnOrderApi,
+    retryPaymentApi,
 } from '../../services/orderService';
 
 export const fetchOrderByUser = createAsyncThunk(
     'order/fetchOrderByUser',
-    async ({ page = 1, limit = 5, isLoadMore = false, search = '' } = {}, { rejectWithValue }) => {
+    async (
+        { page = 1, limit = 10, isLoadMore = false, status_names = '', search = '', sortBy = 'createdAt', sortOrder = 'desc' } = {},
+        { rejectWithValue }
+    ) => {
         try {
-            const response = await getOrderByUserApi(page, limit, search);
-            return { ...response, isLoadMore, page };
+            const options = { status_names, search, sortBy, sortOrder };
+            const response = await getOrderByUserApi(page, limit, options);
+            return { ...response, isLoadMore, page: response.page };
         } catch (error) {
             console.error('fetchOrderByUser error:', error);
             return rejectWithValue(error.message || 'Failed to fetch orders');
+        }
+    }
+);
+
+export const fetchOrderDetailByUser = createAsyncThunk(
+    'order/fetchOrderDetailByUser',
+    async (orderId, { rejectWithValue }) => {
+        try {
+            console.log('[orderSlice] fetchOrderDetailByUser called, orderId:', orderId, typeof orderId);
+            const order = await getMyOrderByIdApi(orderId);
+            console.log('[orderSlice] fetchOrderDetailByUser fulfilled, order?', !!order, 'details.length:', order?.details?.length ?? 0);
+            return order;
+        } catch (error) {
+            console.error('[orderSlice] fetchOrderDetailByUser error:', error?.message);
+            return rejectWithValue(error.message || 'Failed to fetch order detail');
         }
     }
 );
@@ -53,7 +74,18 @@ export const returnOrder = createAsyncThunk(
             const response = await returnOrderApi(order_id);
             return { order_id, message: response.message };
         } catch (error) {
+            return rejectWithValue(error.message);
+        }
+    }
+);
 
+export const retryPayment = createAsyncThunk(
+    'order/retryPayment',
+    async (order_id, { rejectWithValue }) => {
+        try {
+            const response = await retryPaymentApi(order_id);
+            return { order_id, message: response.message, paymentUrl: response.paymentUrl };
+        } catch (error) {
             return rejectWithValue(error.message);
         }
     }
@@ -70,7 +102,10 @@ const initialState = {
     cancelMessage: null,
     returnSuccess: false,
     returnMessage: null,
-    // Pagination states
+    orderDetail: null,
+    detailLoading: false,
+    detailError: null,
+    retryPaymentUrl: null,
     currentPage: 1,
     totalPages: 1,
     hasMore: true,
@@ -92,6 +127,10 @@ const orderSlice = createSlice({
             state.cancelMessage = null;
             state.returnSuccess = false;
             state.returnMessage = null;
+            state.orderDetail = null;
+            state.detailLoading = false;
+            state.detailError = null;
+            state.retryPaymentUrl = null;
             state.currentPage = 1;
             state.totalPages = 1;
             state.hasMore = true;
@@ -102,10 +141,13 @@ const orderSlice = createSlice({
             state.totalPages = 1;
             state.hasMore = true;
             state.total = 0;
-
             state.cancelSuccess = false;
             state.cancelMessage = null;
-
+        },
+        clearOrderDetail: (state) => {
+            state.orderDetail = null;
+            state.detailLoading = false;
+            state.detailError = null;
         },
     },
     extraReducers: (builder) => {
@@ -138,9 +180,9 @@ const orderSlice = createSlice({
                 if (action.payload && action.payload.orders) {
                     orders = action.payload.orders;
                     paginationInfo = {
-                        total: parseInt(action.payload.total) || 0,
-                        currentPage: parseInt(action.payload.page) || 1,
-                        totalPages: parseInt(action.payload.totalPages) || 1,
+                        total: parseInt(action.payload.total) ?? 0,
+                        currentPage: parseInt(action.payload.page) ?? 1,
+                        totalPages: parseInt(action.payload.totalPages) ?? 1,
                     };
                 } else if (Array.isArray(action.payload)) {
                     orders = action.payload;
@@ -254,9 +296,31 @@ const orderSlice = createSlice({
                 state.returnSuccess = false;
                 state.returnMessage = null;
                 state.error = action.payload;
+            })
+            .addCase(fetchOrderDetailByUser.pending, (state) => {
+                state.detailLoading = true;
+                state.detailError = null;
+            })
+            .addCase(fetchOrderDetailByUser.fulfilled, (state, action) => {
+                state.detailLoading = false;
+                state.orderDetail = action.payload;
+                state.detailError = null;
+                console.log('[orderSlice] fulfilled: orderDetail.details.length=', action.payload?.details?.length ?? 0);
+            })
+            .addCase(fetchOrderDetailByUser.rejected, (state, action) => {
+                state.detailLoading = false;
+                state.orderDetail = null;
+                state.detailError = action.payload;
+                console.log('[orderSlice] rejected:', action.payload);
+            })
+            .addCase(retryPayment.fulfilled, (state, action) => {
+                state.retryPaymentUrl = action.payload?.paymentUrl ?? null;
+            })
+            .addCase(retryPayment.rejected, (state) => {
+                state.retryPaymentUrl = null;
             });
     },
 });
 
-export const { clearOrderState, resetPagination } = orderSlice.actions;
+export const { clearOrderState, resetPagination, clearOrderDetail } = orderSlice.actions;
 export default orderSlice.reducer;

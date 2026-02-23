@@ -3,7 +3,7 @@ import {
     getProducts,
     getProductById,
     getProductsByCategory,
-    getTopSoldProducts
+    getFeaturedProducts,
 } from '../../services/productService';
 
 // Initial state cho product
@@ -25,14 +25,20 @@ const initialState = {
 
 export const fetchProductsAsync = createAsyncThunk(
     'product/fetchProducts',
-    async ({ page, limit, isAllProducts = false, search = null }, { rejectWithValue }) => {
+    async ({ page, limit, isAllProducts = false, search = null, categoryId = null }, { rejectWithValue }) => {
         try {
-            const response = await getProducts({ page, limit, search });
+            const response = await getProducts({ page, limit, search, category: categoryId || undefined });
+            const pag = response.pagination || {};
             return {
-                products: response.data.products,
-                pagination: response.data.total,
+                products: response.data || [],
+                pagination: {
+                    currentPage: pag.page ?? page,
+                    totalPage: pag.totalPages ?? 1,
+                    total: pag.total ?? 0,
+                    hasMore: (pag.page ?? page) < (pag.totalPages ?? 1),
+                },
                 isAllProducts,
-                page
+                page,
             };
         } catch (error) {
             console.error('API error:', error);
@@ -43,14 +49,20 @@ export const fetchProductsAsync = createAsyncThunk(
 
 export const fetchProductsByCategoryAsync = createAsyncThunk(
     'product/fetchProductsByCategory',
-    async ({ category_name, page, limit }, { rejectWithValue }) => {
+    async ({ categoryId, page, limit, search = '' }, { rejectWithValue }) => {
         try {
-            const response = await getProductsByCategory({ category_name, page, limit });
+            const response = await getProductsByCategory({ categoryId, page, limit, search });
+            const pag = response.pagination || {};
             return {
-                products: response.data.products,
-                pagination: response.data.total,
+                products: response.data || [],
+                pagination: {
+                    currentPage: pag.page ?? page,
+                    totalPage: pag.totalPages ?? 1,
+                    total: pag.total ?? 0,
+                    hasMore: (pag.page ?? page) < (pag.totalPages ?? 1),
+                },
                 isAllProducts: true,
-                page
+                page,
             };
         } catch (error) {
             console.error('fetchProductsByCategoryAsync error:', error);
@@ -75,13 +87,10 @@ export const fetchProductByIdAsync = createAsyncThunk(
 
 export const fetchTopSoldProductsAsync = createAsyncThunk(
     'product/fetchTopSoldProducts',
-    async ({ page = 1, limit = 10, search = null }, { rejectWithValue }) => {
+    async (_, { rejectWithValue }) => {
         try {
-            const response = await getTopSoldProducts({ page, limit, search });
-            return {
-                products: response.data.products,
-                pagination: response.data.total
-            };
+            const response = await getFeaturedProducts();
+            return { products: response.data || [] };
         } catch (error) {
             console.error('fetchTopSoldProductsAsync error:', error);
             return rejectWithValue(error.message);
@@ -116,38 +125,16 @@ const productSlice = createSlice({
             .addCase(fetchProductsAsync.fulfilled, (state, action) => {
                 state.isLoading = false;
                 state.error = null;
-
-                // Products are already filtered for status = true in productService
-                const activeProducts = action.payload.products;
-
-
+                const activeProducts = action.payload.products || [];
+                const pag = action.payload.pagination || {};
 
                 if (action.payload.isAllProducts) {
-                    const { currentPage, totalPage } = action.payload.pagination;
-                    const limit = 6; // ITEMS_PER_PAGE from AllProductsScreen
-
-                    if (action.payload.page === 1) {
-                        // Reset and cache all active products for client-side pagination
-                        state.allActiveProducts = activeProducts;
-                        // Show first page (6 products)
-                        state.allProducts = activeProducts.slice(0, limit);
-                    } else {
-                        // Client-side pagination: get next page from cached active products
-                        const startIndex = (action.payload.page - 1) * limit;
-                        const endIndex = startIndex + limit;
-                        const nextPageProducts = state.allActiveProducts.slice(startIndex, endIndex);
-
-                        // Append to displayed products
-                        const previousCount = state.allProducts.length;
-                        state.allProducts = [...state.allProducts, ...nextPageProducts];
-                    }
-
-                    // Update pagination based on active products count
-                    state.pagination.currentPage = currentPage;
-                    state.pagination.totalPages = totalPage;
-                    state.pagination.hasMore = currentPage < totalPage;
+                    state.allProducts = activeProducts;
+                    state.allActiveProducts = [];
+                    state.pagination.currentPage = pag.currentPage ?? action.payload.page;
+                    state.pagination.totalPages = pag.totalPage ?? 1;
+                    state.pagination.hasMore = pag.hasMore ?? false;
                 } else {
-                    // Handle featured products - chỉ lấy sản phẩm active
                     state.products = activeProducts;
                 }
             })
@@ -163,34 +150,13 @@ const productSlice = createSlice({
             .addCase(fetchProductsByCategoryAsync.fulfilled, (state, action) => {
                 state.isLoading = false;
                 state.error = null;
+                const activeProducts = action.payload.products || [];
+                const pag = action.payload.pagination || {};
 
-                // Products are already filtered for status = true in productService
-                const activeProducts = action.payload.products;
-
-                // Handle pagination for category products (client-side pagination)
-                const { currentPage, totalPage } = action.payload.pagination;
-                const limit = 6; // ITEMS_PER_PAGE from AllProductsScreen
-
-                if (action.payload.page === 1) {
-                    // Reset and cache all active category products for client-side pagination
-                    state.allActiveProducts = activeProducts;
-                    // Show first page (6 products)
-                    state.allProducts = activeProducts.slice(0, limit);
-                } else {
-                    // Client-side pagination: get next page from cached active products
-                    const startIndex = (action.payload.page - 1) * limit;
-                    const endIndex = startIndex + limit;
-                    const nextPageProducts = state.allActiveProducts.slice(startIndex, endIndex);
-
-                    // Append to displayed products
-                    const previousCount = state.allProducts.length;
-                    state.allProducts = [...state.allProducts, ...nextPageProducts];
-                }
-
-                // Update pagination based on active products count
-                state.pagination.currentPage = currentPage;
-                state.pagination.totalPages = totalPage;
-                state.pagination.hasMore = currentPage < totalPage;
+                state.allProducts = activeProducts;
+                state.pagination.currentPage = pag.currentPage ?? action.payload.page;
+                state.pagination.totalPages = pag.totalPage ?? 1;
+                state.pagination.hasMore = pag.hasMore ?? false;
             })
             .addCase(fetchProductsByCategoryAsync.rejected, (state, action) => {
                 state.isLoading = false;
