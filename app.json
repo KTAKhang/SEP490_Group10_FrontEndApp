@@ -2,19 +2,25 @@
   "expo": {
     "name": "my-shop-apps",
     "slug": "my-shop-apps",
+    "owner": "thachkien",
     "version": "1.0.0",
     "scheme": "shopapp",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
+    "scheme": "myshopapps",
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier":"com.ktakhang.myshopapps",
+      "infoPlist":{
+        "ITSAppUsesNonExemptEncryption":false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -22,16 +28,21 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.ktakhang.myshopapps"
+      "package": "com.ktakhang.myshopapps",
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
-
     "extra": {
       "eas": {
         "projectId": "4f571ba0-e355-436c-b27a-77f49d4c39c7"
       }
-    }
+    },
+    "plugins": [
+      [
+        "@react-native-google-signin/google-signin"
+      ]
+    ]
   }
 }

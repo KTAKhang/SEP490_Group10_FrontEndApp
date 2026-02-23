@@ -13,11 +13,19 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Mail, Lock, Eye, EyeOff, Home } from 'lucide-react-native';
 import { useDispatch, useSelector } from 'react-redux';
-import { loginUser } from '../store/slices/authSlice';
+import { loginUser, loginByGoogle,clearError } from '../store/slices/authSlice';
 import { useNavigation } from '@react-navigation/native';
 import { handleLoginSuccess } from '../utils/authUtils';
 import Toast from 'react-native-toast-message';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
+import {
+  GoogleSignin,
+  GoogleSigninButton,
+  statusCodes,
+  isSuccessResponse,
+  isErrorWithCode
+} from '@react-native-google-signin/google-signin';
 const { height } = Dimensions.get('window');
 
 const LoginScreen = () => {
@@ -46,11 +54,13 @@ const LoginScreen = () => {
         ]).start();
     }, []);
 
+   
     useEffect(() => {
-        if (error) {
-            Alert.alert('Đăng Nhập Thất Bại', 'Vui lòng kiểm tra lại email và mật khẩu');
-        }
-    }, [error]);
+    if (!error) return;
+
+    Alert.alert('Đăng Nhập Thất Bại', error);
+    dispatch(clearError());
+}, [error, dispatch]);
 
     // Tự động chuyển về HomePage khi đăng nhập thành công
     useEffect(() => {
@@ -68,11 +78,42 @@ const LoginScreen = () => {
     }, [isAuthenticated, user, navigation]);
 
     const handleLogin = () => {
+        
         if (!email.trim() || !password.trim()) {
             Alert.alert('Lỗi', 'Vui lòng nhập đầy đủ email và mật khẩu');
             return;
         }
         dispatch(loginUser({ email: email.trim(), password }));
+    };
+
+    const handleGoogleSignIn = async () => {
+        try {
+            await GoogleSignin.signOut();
+            await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+          
+            const userInfo = await GoogleSignin.signIn();
+            //   console.log("userInfo",userInfo)
+            const idToken = userInfo?.data.idToken;
+           
+
+            if (!idToken) {
+                throw new Error('Google sign-in failed: no idToken');
+            }
+
+            dispatch(loginByGoogle({ idToken }));
+        } catch (error) {
+            console.log("Full Error Object: ", JSON.stringify(error));
+            if (error.code === statusCodes.SIGN_IN_CANCELLED) {
+                // user cancelled the login flow
+                return;
+            } else if (error.code === statusCodes.IN_PROGRESS) {
+                Toast.show({ type: 'info', text1: 'Đang xử lý', text2: 'Đang đăng nhập bằng Google...' });
+            } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+                Alert.alert('Lỗi', 'Google Play Services không khả dụng hoặc cần cập nhật.');
+            } else {
+                Alert.alert('Lỗi Google Sign-In', error.message || 'Đã xảy ra lỗi');
+            }
+        }
     };
 
     const handleGoHome = () => {
@@ -127,7 +168,7 @@ const LoginScreen = () => {
                             value={email}
                             onChangeText={setEmail}
                             keyboardType="email-address"
-                            autoCapitalize="none"
+                            // autoCapitalize="none"
                         />
                     </View>
 
@@ -169,6 +210,16 @@ const LoginScreen = () => {
                         )}
                     </TouchableOpacity>
 
+                    {/* Google Sign-In Button */}
+                    <View style={{ marginTop: 12, alignItems: 'center', borderRadius: 50, overflow: "hidden" }}>
+                        <GoogleSigninButton
+                            style={{ width: 295, height: 54 }}
+                            size={GoogleSigninButton.Size.Wide}
+                            color={GoogleSigninButton.Color.Light}
+                            onPress={handleGoogleSignIn}
+                        />
+                    </View>
+                   
                     <View style={styles.footer}>
                         <Text style={styles.footerText}>Bạn chưa có tài khoản?</Text>
                         <TouchableOpacity onPress={() => navigation.navigate('Register')}>

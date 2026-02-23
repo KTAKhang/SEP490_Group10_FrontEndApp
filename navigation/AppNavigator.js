@@ -8,15 +8,15 @@ import ChatBotModal from '../components/ChatBotModal';
 import { navigateAfterLogin } from '../utils/authUtils';
 import { registerFCMTokenWithBackend } from '../utils/registerFCM';
 // Import screens
-import LoginScreen from '../screens/LoginScreen';
-import HomeScreen from '../screens/HomeScreen';
-import SplashScreen from '../screens/SplashScreen';
-import AdminScreen from '../screens/AdminScreen';
-import RegisterScreen from '../screens/RegisterScreen';
-import RegisterConfirmOTPScreen from '../screens/RegisterConfirmOTPScreen';
-import ProductDetailScreen from '../screens/ProductDetailScreen';
-import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
-import ForgotPasswordOTPScreen from '../screens/ForgotPasswordOTPScreen';
+import LoginScreen from "../screens/LoginScreen";
+import HomeScreen from "../screens/HomeScreen";
+import SplashScreen from "../screens/SplashScreen";
+import AdminScreen from "../screens/AdminScreen";
+import RegisterScreen from "../screens/RegisterScreen";
+import RegisterConfirmOTPScreen from "../screens/RegisterConfirmOTPScreen";
+import ProductDetailScreen from "../screens/ProductDetailScreen";
+import ForgotPasswordScreen from "../screens/ForgotPasswordScreen";
+import ForgotPasswordOTPScreen from "../screens/ForgotPasswordOTPScreen";
 // Thêm dòng này
 import CartScreen from '../screens/CartScreen';
 import ProfileScreen from '../screens/ProfileScreen';
@@ -30,8 +30,21 @@ import VouchersScreen from '../screens/VouchersScreen';
 import PreOrderScreen from '../screens/PreOrderScreen';
 import PreOrderDetailScreen from '../screens/PreOrderDetailScreen';
 import PreOrderCheckoutScreen from '../screens/PreOrderCheckoutScreen';
+import PaymentSuccess from "../screens/PaymentSuccess";
+import PaymentFail from "../screens/PaymentFail";
+import * as Linking from "expo-linking";
 
 const Stack = createStackNavigator();
+
+const linking = {
+  prefixes: ["myshopapps://"],
+  config: {
+    screens: {
+      PaymentSuccess: "payment-success",
+      PaymentFail: "payment-fail",
+    },
+  },
+};
 
 export default function AppNavigator() {
   const dispatch = useDispatch();
@@ -50,9 +63,19 @@ export default function AppNavigator() {
 
   // Effect để tự động chuyển về HomePage sau khi đăng nhập thành công
   useEffect(() => {
-    if (isAuthenticated && navigationRef.current && user) {
-      navigateAfterLogin(navigationRef.current, user);
-    }
+    const handleNavigation = async () => {
+      const initialUrl = await Linking.getInitialURL();
+
+      // Nếu app được mở bằng deep link → KHÔNG auto navigate
+      // if (initialUrl) {
+      //   console.log("Opened from deep link:", initialUrl);
+      //   return;
+      // }
+      if (isAuthenticated && navigationRef.current && user) {
+        navigateAfterLogin(navigationRef.current, user);
+      }
+    };
+    handleNavigation();
   }, [isAuthenticated, user]);
 
   // Đăng ký FCM token với backend khi user (customer) đã đăng nhập
@@ -125,9 +148,8 @@ export default function AppNavigator() {
   }
 
   return (
-    <NavigationContainer ref={navigationRef} theme={navTheme}>
+    <NavigationContainer ref={navigationRef} theme={navTheme} linking={linking}>
       {isAuthenticated && user?.role_name !== 'admin' && <ChatBotModal />}
-
       <Stack.Navigator
         screenOptions={{ headerShown: false, cardStyle: { backgroundColor: '#F8F9FA' } }}
         initialRouteName="HomePage"
@@ -136,26 +158,37 @@ export default function AppNavigator() {
         <Stack.Screen name="HomePage" component={HomeScreen} />
         <Stack.Screen name="ProductDetail" component={ProductDetailScreen} />
         <Stack.Screen name="AllProducts" component={AllProductsScreen} />
-        
+
         {/* Auth routes */}
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="Register" component={RegisterScreen} />
         <Stack.Screen name="VerifyOtp" component={RegisterConfirmOTPScreen} />
         <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
-        <Stack.Screen name="ForgotPasswordOTP" component={ForgotPasswordOTPScreen} />
-        
+        <Stack.Screen
+          name="ForgotPasswordOTP"
+          component={ForgotPasswordOTPScreen}
+        />
+        <Stack.Screen name="PaymentSuccess" component={PaymentSuccess} />
+        <Stack.Screen name="PaymentFail" component={PaymentFail} />
+
         {/* Protected routes - Chỉ user đã đăng nhập mới xem được */}
         {isAuthenticated && (
           <>
-            {user?.role_name === 'admin' ? (
+            {user?.role_name === "admin" ? (
               <Stack.Screen name="Admin" component={AdminScreen} />
             ) : (
               <>
                 <Stack.Screen name="Cart" component={CartScreen} />
                 <Stack.Screen name="Profile" component={ProfileScreen} />
                 <Stack.Screen name="Payment" component={PaymentScreen} />
-                <Stack.Screen name="OrderHistory" component={OrderHistoryScreen} />
-                <Stack.Screen name="OrderDetails" component={OrderDetailsScreen} />
+                <Stack.Screen
+                  name="OrderHistory"
+                  component={OrderHistoryScreen}
+                />
+                <Stack.Screen
+                  name="OrderDetails"
+                  component={OrderDetailsScreen}
+                />
                 <Stack.Screen name="BuyNow" component={BuyNowScreen} />
                 <Stack.Screen name="Notifications" component={NotificationsScreen} />
                 <Stack.Screen name="Vouchers" component={VouchersScreen} />
