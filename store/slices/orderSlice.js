@@ -4,8 +4,10 @@ import {
   getOrderByUserApi,
   cancelOrderApi,
   returnOrderApi,
+  checkShippingApi,
 } from "../../services/orderService";
-
+import * as Linking from "expo-linking";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 export const fetchOrderByUser = createAsyncThunk(
   "order/fetchOrderByUser",
   async (
@@ -29,6 +31,7 @@ export const createOrder = createAsyncThunk(
     { rejectWithValue },
   ) => {
     try {
+      console.log("createOrder slice");
       const response = await createOrderApi({
         selected_product_ids,
         receiverInfo,
@@ -42,7 +45,27 @@ export const createOrder = createAsyncThunk(
           await Linking.openURL(response.redirect_url);
           return;
         }
+        if (response.payment_url) {
+          await Linking.openURL(response.payment_url);
+          return response;
+        }
       }
+
+      return response;
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  },
+);
+
+export const checkShipping = createAsyncThunk(
+  "order/checkShipping",
+  async ({ selected_product_ids, city }, { rejectWithValue }) => {
+    try {
+      const response = await checkShippingApi({
+        selected_product_ids,
+        city,
+      });
 
       return response;
     } catch (error) {
@@ -88,6 +111,9 @@ const initialState = {
   cancelMessage: null,
   returnSuccess: false,
   returnMessage: null,
+  shippingType: null,
+  shippingFee: 0,
+  totalWeight: 0,
   // Pagination states
   currentPage: 1,
   totalPages: 1,
@@ -204,17 +230,41 @@ const orderSlice = createSlice({
         state.error = action.payload;
       })
       .addCase(createOrder.pending, (state) => {
-        state.loading= false;
-        state.order_id= action.payload.order_id || null;
-        state.payment_url= action.payload.payment_url || null;
-        state.message= "Tạo đơn hàng thành công";
+        state.isLoading = true;
+        state.error = null;
+        state.createSuccess = false;
+        state.newOrderId = null;
+        state.order_id = null;
+        state.payment_url = null;
       })
       .addCase(createOrder.fulfilled, (state, action) => {
-        state.loading= false; 
-        state.error= action.payload;
+        state.isLoading = false;
+        const payload = action.payload || {};
+        state.createSuccess = !!payload.success;
+        state.newOrderId = payload.data?.order_id || null;
+        state.order_id = payload.data?.order_id || null;
+        state.payment_url = payload.data?.payment_url || null;
+        state.error = null;
       })
       .addCase(createOrder.rejected, (state, action) => {
         state.isLoading = false;
+        state.createSuccess = false;
+        state.newOrderId = null;
+        state.error =
+          action.payload || action.error?.message || "Tạo đơn hàng thất bại";
+      })
+      .addCase(checkShipping.pending, (state) => {
+        state.loading = false;
+        state.error = null;
+      })
+      .addCase(checkShipping.fulfilled, (state, action) => {
+        state.loading = false;
+        state.shippingType = action.payload.data?.shippingType || null;
+        state.totalWeight = action.payload.data?.totalWeight || null;
+        state.shippingFee = action.payload.data?.shippingFee || 0;
+      })
+      .addCase(checkShipping.rejected, (state, action) => {
+        state.loading = false;
         state.createSuccess = false;
         state.newOrderId = null;
         state.error = action.payload;

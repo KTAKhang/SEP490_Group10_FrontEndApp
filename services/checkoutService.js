@@ -23,7 +23,7 @@ export async function checkoutHoldApi({ selected_product_ids, checkout_session_i
             }
         );
 
-        console.log("checkoutHold response",response.data)
+     
 
         return response.data;
     } catch (error) {
