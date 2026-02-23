@@ -3,6 +3,7 @@
     "name": "my-shop-apps",
     "slug": "my-shop-apps",
     "version": "1.0.0",
+    "scheme": "shopapp",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",

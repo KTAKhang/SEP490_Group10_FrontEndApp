@@ -8,9 +8,12 @@ import {
 
 export const fetchOrderByUser = createAsyncThunk(
     'order/fetchOrderByUser',
-    async ({ page = 1, limit = 5, isLoadMore = false, search = '' } = {}, { rejectWithValue }) => {
+    async (
+        { page = 1, limit = 5, isLoadMore = false, search = '', status_name = '' } = {},
+        { rejectWithValue }
+    ) => {
         try {
-            const response = await getOrderByUserApi(page, limit, search);
+            const response = await getOrderByUserApi(page, limit, search, status_name);
             return { ...response, isLoadMore, page };
         } catch (error) {
             console.error('fetchOrderByUser error:', error);
@@ -22,13 +25,20 @@ export const fetchOrderByUser = createAsyncThunk(
 
 export const createOrder = createAsyncThunk(
     'order/createOrder',
-    async ({ selected_product_ids, receiverInfo }, { rejectWithValue }) => {
+    async (
+        { selected_product_ids, receiverInfo, payment_method = 'COD', city = '', discount_id } = {},
+        { rejectWithValue }
+    ) => {
         try {
-
-            const response = await createOrderApi({ selected_product_ids, receiverInfo });
+            const response = await createOrderApi({
+                selected_product_ids,
+                receiverInfo,
+                payment_method,
+                city,
+                discount_id,
+            });
             return response;
         } catch (error) {
-
             return rejectWithValue(error.message);
         }
     }
@@ -218,8 +228,10 @@ const orderSlice = createSlice({
                 state.cancelMessage = action.payload.message;
 
                 // Cập nhật trạng thái đơn hàng trong danh sách
-                state.orders = state.orders.map(order =>
-                    order._id === action.payload.order_id
+                const id = action.payload.order_id;
+                state.orders = state.orders.map((order) =>
+                    (order.order_id && order.order_id === id) ||
+                    (order._id && String(order._id) === id)
                         ? { ...order, status: 'cancelled' }
                         : order
                 );
@@ -243,8 +255,10 @@ const orderSlice = createSlice({
                 state.returnMessage = action.payload.message;
 
                 // Cập nhật trạng thái đơn hàng trong danh sách
-                state.orders = state.orders.map(order =>
-                    order._id === action.payload.order_id
+                const id = action.payload.order_id;
+                state.orders = state.orders.map((order) =>
+                    (order.order_id && order.order_id === id) ||
+                    (order._id && String(order._id) === id)
                         ? { ...order, status: 'returned' }
                         : order
                 );

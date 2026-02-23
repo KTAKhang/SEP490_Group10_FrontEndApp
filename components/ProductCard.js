@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet, ActivityIndicator, Modal, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import { MaterialIcons } from '@expo/vector-icons';
 import { COLORS } from '../constants/colors';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useDispatch, useSelector } from 'react-redux';
 import { addToCart } from '../store/slices/cartSlice';
 import { selectProductReviews } from '../store/slices/reviewSlice';
 import { formatCurrency } from '../utils/formatCurrency';
+import { getProductImageUrl } from '../utils/productImage';
 import Toast from 'react-native-toast-message';
 
 const truncateText = (text, maxLength) => {
@@ -22,20 +23,20 @@ const renderStars = (rating) => {
 
     for (let i = 0; i < fullStars; i++) {
         stars.push(
-            <Icon key={i} name="star" size={16} color="#FFD700" />
+            <MaterialIcons key={i} name="star" size={16} color="#FFD700" />
         );
     }
 
     if (hasHalfStar) {
         stars.push(
-            <Icon key="half" name="star-half" size={16} color="#FFD700" />
+            <MaterialIcons key="half" name="star-half" size={16} color="#FFD700" />
         );
     }
 
     const emptyStars = 5 - Math.ceil(rating);
     for (let i = 0; i < emptyStars; i++) {
         stars.push(
-            <Icon key={`empty-${i}`} name="star-border" size={16} color="#FFD700" />
+            <MaterialIcons key={`empty-${i}`} name="star-border" size={16} color="#FFD700" />
         );
     }
 
@@ -117,7 +118,7 @@ const ProductCard = ({ product }) => {
             >
                 <View style={styles.imageContainer}>
                     <Image
-                        source={{ uri: product.image }}
+                        source={{ uri: getProductImageUrl(product) }}
                         style={styles.image}
                         resizeMode="contain"
                     />
@@ -144,7 +145,7 @@ const ProductCard = ({ product }) => {
                             onPress={handleAddToCart}
                             disabled={showLoadingModal || isOutOfStock}
                         >
-                            <Icon
+                            <MaterialIcons
                                 name={isOutOfStock ? "remove-shopping-cart" : "add-shopping-cart"}
                                 size={16}
                                 color={isOutOfStock ? "#999" : COLORS.white}
@@ -185,7 +186,7 @@ const ProductCard = ({ product }) => {
             >
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalContent}>
-                        <Icon name="check-circle" size={50} color="#4CAF50" />
+                        <MaterialIcons name="check-circle" size={50} color="#4CAF50" />
                         <Text style={styles.modalText}>Thêm vào giỏ hàng thành công!</Text>
                     </View>
                 </View>

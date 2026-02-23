@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import {
     View,
     Text,
@@ -7,14 +8,13 @@ import {
     Image,
     TextInput,
     StyleSheet,
-    SafeAreaView,
     StatusBar,
     Alert,
     ActivityIndicator,
 } from 'react-native';
 import { COLORS } from '../constants/colors';
 import { LinearGradient } from 'expo-linear-gradient';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import { MaterialIcons } from '@expo/vector-icons';
 import { useRoute } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
 import {
@@ -29,6 +29,7 @@ import {
     clearOrderState
 } from '../store/slices/orderSlice';
 import { formatCurrency } from '../utils/formatCurrency';
+import { getProductImageUrl } from '../utils/productImage';
 
 const OrderDetailsScreen = ({ navigation }) => {
     const route = useRoute();
@@ -371,7 +372,7 @@ const OrderDetailsScreen = ({ navigation }) => {
                         onPress={() => handleStarPress(productId, index)}
                         disabled={orderStatus !== 'Đã giao' || (hasReviewed && !isEditing) || isRefetchingReviews}
                     >
-                        <Icon
+                        <MaterialIcons
                             name={index < currentRating ? 'star' : 'star-border'}
                             size={24}
                             color={index < currentRating ? (orderDataColor || '#FFB800') : '#D1D5DB'}
@@ -423,7 +424,7 @@ const OrderDetailsScreen = ({ navigation }) => {
                         </View>
                         <View style={styles.reviewActions}>
                             <View style={styles.submittedIndicator}>
-                                <Icon name="check-circle" size={16} color="#22C55E" />
+                                <MaterialIcons name="check-circle" size={16} color="#22C55E" />
                                 <Text style={styles.submittedText}>Đã đánh giá</Text>
                             </View>
                             <TouchableOpacity
@@ -431,7 +432,7 @@ const OrderDetailsScreen = ({ navigation }) => {
                                 onPress={() => handleEditReview(productId)}
                                 disabled={isRefetchingReviews}
                             >
-                                <Icon name="edit" size={16} color={orderDataColor || '#1CD4D4'} />
+                                <MaterialIcons name="edit" size={16} color={orderDataColor || '#1CD4D4'} />
                                 <Text style={[styles.editButtonText, { color: orderDataColor || '#1CD4D4' }]}>
                                     Chỉnh sửa
                                 </Text>
@@ -536,7 +537,7 @@ const OrderDetailsScreen = ({ navigation }) => {
                             style={styles.backButton}
                             onPress={() => navigation.goBack()}
                         >
-                            <Icon name="arrow-back" size={24} color="#ffffff" />
+                            <MaterialIcons name="arrow-back" size={24} color="#ffffff" />
                         </TouchableOpacity>
                         <Text style={styles.headerTitle}>Chi tiết đơn hàng</Text>
                         <View style={styles.headerSpacer} />
@@ -592,7 +593,7 @@ const OrderDetailsScreen = ({ navigation }) => {
                             <View key={item.product_id} style={styles.productCard}>
                                 <View style={styles.productInfo}>
                                     <Image
-                                        source={{ uri: item.image }}
+                                        source={{ uri: getProductImageUrl(item) }}
                                         style={styles.productImage}
                                     />
                                     <View style={styles.productDetails}>

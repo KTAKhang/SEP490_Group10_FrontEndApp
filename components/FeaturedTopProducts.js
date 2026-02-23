@@ -4,7 +4,7 @@ import { useNavigation } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
 import ProductCard from './ProductCard';
 import { COLORS } from '../constants/colors';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import { MaterialIcons } from '@expo/vector-icons';
 import { fetchProductReviewsByProductId } from '../store/slices/reviewSlice';
 import { fetchTopSoldProductsAsync } from '../store/slices/productSlice';
 import { MinimalLoading } from './Loading';

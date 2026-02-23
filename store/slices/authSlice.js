@@ -16,9 +16,10 @@ export const loginUser = createAsyncThunk(
     try {
       const response = await loginApi({ email, password });
 
-      // Save token to AsyncStorage
       await AsyncStorage.setItem("token", response.token.access_token);
-      await AsyncStorage.setItem("refreshToken", response.token.refresh_token);
+      if (response.token.refresh_token) {
+        await AsyncStorage.setItem("refreshToken", response.token.refresh_token);
+      }
       await AsyncStorage.setItem("user", JSON.stringify(response.user));
 
       return response;
@@ -41,12 +42,12 @@ export const sendOtp = createAsyncThunk(
   },
 );
 
-// Async thunk for confirming OTP
+// Async thunk for confirming OTP — backend cần { email, otp }
 export const confirmOtp = createAsyncThunk(
   "auth/confirmOtp",
-  async (otp, { rejectWithValue }) => {
+  async ({ email, otp }, { rejectWithValue }) => {
     try {
-      const response = await confirmOtpApi(otp);
+      const response = await confirmOtpApi({ email, otp });
       return response.message;
     } catch (error) {
       return rejectWithValue(error.message);
@@ -54,14 +55,18 @@ export const confirmOtp = createAsyncThunk(
   },
 );
 
-// Async thunk for logout
+// Async thunk for logout — luôn xóa token/user trong AsyncStorage để lần mở app sau không còn đăng nhập
 export const logoutUser = createAsyncThunk(
   "auth/logoutUser",
   async (_, { dispatch }) => {
-    const response = await logoutApi({  });
-    // await AsyncStorage.removeItem("token");
-    // await AsyncStorage.removeItem("user");
-    return response.message;
+    try {
+      await logoutApi({});
+    } catch (e) {
+      // Vẫn logout local nếu API lỗi (vd: 401, mạng)
+    }
+    await AsyncStorage.removeItem("token");
+    await AsyncStorage.removeItem("user");
+    return "ok";
   },
 );
 

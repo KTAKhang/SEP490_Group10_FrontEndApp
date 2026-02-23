@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import {
     View,
     Text,
@@ -6,14 +7,13 @@ import {
     TouchableOpacity,
     Image,
     StyleSheet,
-    SafeAreaView,
     ActivityIndicator,
     StatusBar,
     Alert,
     RefreshControl,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import { MaterialIcons } from '@expo/vector-icons';
 import { useDispatch, useSelector } from 'react-redux';
 import { COLORS } from '../constants/colors';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -21,6 +21,7 @@ import BottomNavigation from '../components/BottomNavigation';
 import { InlineLoading, FooterLoading } from '../components/Loading';
 import { fetchOrderByUser, cancelOrder, clearOrderState, resetPagination } from '../store/slices/orderSlice';
 import { formatCurrency } from '../utils/formatCurrency';
+import { getProductImageUrl } from '../utils/productImage';
 
 const OrderHistoryScreen = ({ navigation }) => {
     const [selectedFilter, setSelectedFilter] = useState('Tất cả đơn hàng');
@@ -64,7 +65,8 @@ const OrderHistoryScreen = ({ navigation }) => {
         dispatch(fetchOrderByUser({
             page: 1,
             limit: 5,
-            search: getCurrentStatusFilter()
+            search: '',
+            status_name: getCurrentStatusFilter()
         }));
     }, [dispatch]);
 
@@ -76,12 +78,12 @@ const OrderHistoryScreen = ({ navigation }) => {
         const statusFilter = filterToStatusMapping[filter] || '';
 
         try {
-            // Reset pagination và fetch với filter mới
             dispatch(resetPagination());
             await dispatch(fetchOrderByUser({
                 page: 1,
                 limit: 5,
-                search: statusFilter
+                search: '',
+                status_name: statusFilter
             })).unwrap();
         } catch (error) {
             console.error('Error filtering orders:', error);
@@ -100,7 +102,8 @@ const OrderHistoryScreen = ({ navigation }) => {
             dispatch(fetchOrderByUser({
                 page: 1,
                 limit: 5,
-                search: statusFilter
+                search: '',
+                status_name: statusFilter
             }));
         }
     }, [cancelSuccess, cancelMessage, selectedFilter, dispatch]);
@@ -113,7 +116,8 @@ const OrderHistoryScreen = ({ navigation }) => {
         await dispatch(fetchOrderByUser({
             page: 1,
             limit: 5,
-            search: statusFilter
+            search: '',
+            status_name: statusFilter
         }));
         setRefreshing(false);
     }, [dispatch, selectedFilter]);
@@ -125,7 +129,8 @@ const OrderHistoryScreen = ({ navigation }) => {
             dispatch(fetchOrderByUser({
                 page: currentPage + 1,
                 limit: 5,
-                search: statusFilter,
+                search: '',
+                status_name: statusFilter,
                 isLoadMore: true
             }));
         }
@@ -195,7 +200,7 @@ const OrderHistoryScreen = ({ navigation }) => {
                     name: firstItem?.product_name || firstItem?.name || 'Sản phẩm',
                     details: `Người nhận: ${order.receiver_name}`,
                     price: firstItem?.price || order.total_price,
-                    image: firstItem?.image || 'https://res.cloudinary.com/dkbsae4kc/image/upload/v1747706328/avatars/mfwbvrkvqcsv6kgze587.png',
+                    image: firstItem?.product_image || (firstItem?.images && firstItem.images[0]) || firstItem?.featuredImage || firstItem?.image,
                 },
                 originalOrder: order
             };
@@ -283,7 +288,7 @@ const OrderHistoryScreen = ({ navigation }) => {
                 </View>
 
                 <View style={styles.productContainer}>
-                    <Image source={{ uri: order.product.image }} style={styles.productImage} />
+                    <Image source={{ uri: getProductImageUrl(order.product) }} style={styles.productImage} />
                     <View style={styles.productInfo}>
                         <Text style={styles.productName}>{order.product.name}</Text>
                         <Text style={styles.productDetails}>{order.product.details}</Text>
@@ -390,7 +395,7 @@ const OrderHistoryScreen = ({ navigation }) => {
                     </View>
                 </LinearGradient>
                 <View style={styles.errorContainer}>
-                    <Icon name="error-outline" size={64} color={COLORS.error} />
+                    <MaterialIcons name="error-outline" size={64} color={COLORS.error} />
                     <Text style={styles.errorTitle}>Không thể tải đơn hàng</Text>
                     <Text style={styles.errorSubtitle}>{orderError}</Text>
                     <TouchableOpacity
@@ -398,7 +403,8 @@ const OrderHistoryScreen = ({ navigation }) => {
                         onPress={() => dispatch(fetchOrderByUser({
                             page: 1,
                             limit: 5,
-                            search: getCurrentStatusFilter()
+                            search: '',
+                            status_name: getCurrentStatusFilter()
                         }))}
                     >
                         <Text style={styles.retryButtonText}>Thử lại</Text>
@@ -475,7 +481,7 @@ const OrderHistoryScreen = ({ navigation }) => {
                         </>
                     ) : (
                         <View style={styles.emptyState}>
-                            <Icon name="shopping-bag" size={64} color="#d1d5db" />
+                            <MaterialIcons name="shopping-bag" size={64} color="#d1d5db" />
                             <Text style={styles.emptyStateTitle}>Không tìm thấy đơn hàng</Text>
                             <Text style={styles.emptyStateSubtitle}>
                                 {selectedFilter === 'Tất cả đơn hàng'

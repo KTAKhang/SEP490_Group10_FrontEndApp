@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import {
     View,
     Text,
@@ -6,18 +7,18 @@ import {
     TouchableOpacity,
     Image,
     StyleSheet,
-    SafeAreaView,
     TextInput,
     Alert,
     StatusBar,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchCartByUser, updateCartItem, removeCartItem } from '../store/slices/cartSlice';
 import { InlineLoading } from '../components/Loading';
 import { formatCurrency } from '../utils/formatCurrency';
+import { getProductImageUrl } from '../utils/productImage';
 import { COLORS } from '../constants/colors';
 import BottomNavigation from '../components/BottomNavigation';
 import Toast from 'react-native-toast-message';
@@ -477,14 +478,14 @@ const CartScreen = ({ navigation }) => {
                         (itemIsUpdating || isUnavailable) && styles.checkboxDisabled
                     ]}>
                         {isSelected && !isUnavailable && (
-                            <Icon name="check" size={16} color="#ffffff" />
+                            <MaterialIcons name="check" size={16} color="#ffffff" />
                         )}
                     </View>
                 </TouchableOpacity>
 
                 <View style={styles.imageContainer}>
                     <Image
-                        source={{ uri: item.image }}
+                        source={{ uri: getProductImageUrl(item) }}
                         style={[
                             styles.itemImage,
                             isUnavailable && styles.unavailableImage
@@ -528,7 +529,7 @@ const CartScreen = ({ navigation }) => {
                             disabled={itemIsUpdating}
                             style={styles.deleteButton}
                         >
-                            <Icon name="delete-outline" size={20} color={itemIsUpdating ? "#d1d5db" : "#ef4444"} />
+                            <MaterialIcons name="delete-outline" size={20} color={itemIsUpdating ? "#d1d5db" : "#ef4444"} />
                         </TouchableOpacity>
                     </View>
 
@@ -560,7 +561,7 @@ const CartScreen = ({ navigation }) => {
                                 onPress={() => updateQuantity(item.id, item.quantity - 1)}
                                 disabled={itemIsUpdating || isUnavailable}
                             >
-                                <Icon name="remove" size={16} color={(itemIsUpdating || isUnavailable) ? "#d1d5db" : "#6b7280"} />
+                                <MaterialIcons name="remove" size={16} color={(itemIsUpdating || isUnavailable) ? "#d1d5db" : "#6b7280"} />
                             </TouchableOpacity>
 
                             <TextInput
@@ -594,7 +595,7 @@ const CartScreen = ({ navigation }) => {
                                 onPress={() => updateQuantity(item.id, item.quantity + 1)}
                                 disabled={itemIsUpdating || isUnavailable}
                             >
-                                <Icon name="add" size={16} color={(itemIsUpdating || isUnavailable) ? "#d1d5db" : "#6b7280"} />
+                                <MaterialIcons name="add" size={16} color={(itemIsUpdating || isUnavailable) ? "#d1d5db" : "#6b7280"} />
                             </TouchableOpacity>
                         </View>
                     </View>
@@ -639,7 +640,7 @@ const CartScreen = ({ navigation }) => {
                                 style={styles.headerButton}
                                 onPress={() => navigation.goBack()}
                             >
-                                <Icon name="arrow-back" size={24} color="#ffffff" />
+                                <MaterialIcons name="arrow-back" size={24} color="#ffffff" />
                             </TouchableOpacity>
                             <Text style={styles.headerTitle}>Shopping Cart</Text>
                             <View style={styles.headerSpacer} />
@@ -673,7 +674,7 @@ const CartScreen = ({ navigation }) => {
                                 style={styles.headerButton}
                                 onPress={() => navigation.goBack()}
                             >
-                                <Icon name="arrow-back" size={24} color="#ffffff" />
+                                <MaterialIcons name="arrow-back" size={24} color="#ffffff" />
                             </TouchableOpacity>
                             <Text style={styles.headerTitle}>Shopping Cart</Text>
                             <View style={styles.headerSpacer} />
@@ -713,7 +714,7 @@ const CartScreen = ({ navigation }) => {
                             style={styles.headerButton}
                             onPress={() => navigation.goBack()}
                         >
-                            <Icon name="arrow-back" size={24} color="#ffffff" />
+                            <MaterialIcons name="arrow-back" size={24} color="#ffffff" />
                         </TouchableOpacity>
                         <Text style={styles.headerTitle}>
                             Giỏ hàng ({cart?.item_count || cartItems.length})
@@ -737,7 +738,7 @@ const CartScreen = ({ navigation }) => {
                                 selectAll && styles.checkboxSelected
                             ]}>
                                 {selectAll && (
-                                    <Icon name="check" size={16} color="#ffffff" />
+                                    <MaterialIcons name="check" size={16} color="#ffffff" />
                                 )}
                             </View>
                             <Text style={styles.selectAllText}>
@@ -759,7 +760,7 @@ const CartScreen = ({ navigation }) => {
                     </View>
                 ) : (
                     <View style={styles.emptyCartContainer}>
-                        <Icon name="shopping-cart" size={64} color="#d1d5db" />
+                        <MaterialIcons name="shopping-cart" size={64} color="#d1d5db" />
                         <Text style={styles.emptyCartText}>Giỏ hàng của bạn đang trống</Text>
                         <Text style={styles.emptyCartSubtext}>Thêm một số sản phẩm để bắt đầu</Text>
                         <TouchableOpacity

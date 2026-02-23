@@ -33,7 +33,8 @@ yarn-error.*
 .DS_Store
 *.pem
 
-# local env files
+# local env files (tạo .env từ .env.example, không commit .env)
+.env
 .env*.local
 
 # typescript

@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from 'react';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import {
     View,
     Text,
     ScrollView,
     TouchableOpacity,
     StyleSheet,
-    SafeAreaView,
     Alert,
     Modal,
     TextInput,
 } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import { MaterialIcons } from '@expo/vector-icons';
 import { Ionicons } from '@expo/vector-icons';
 import { useDispatch, useSelector } from 'react-redux';
 import { createOrder, clearOrderState } from '../store/slices/orderSlice'; // Adjust path as needed
@@ -271,7 +271,9 @@ const PaymentScreen = ({ navigation, route }) => {
                         // Dispatch create order action
                         dispatch(createOrder({
                             selected_product_ids,
-                            receiverInfo
+                            receiverInfo,
+                            payment_method: selectedPayment === 'cod' ? 'COD' : 'VNPAY',
+                            city: receiverInfo?.city || 'Hồ Chí Minh'
                         }));
                     }
                 },
@@ -293,7 +295,7 @@ const PaymentScreen = ({ navigation, route }) => {
                         onPress={handleCancelEdit}
                         style={styles.modalHeaderButton}
                     >
-                        <Icon name="close" size={24} color="#0d364c" />
+                        <MaterialIcons name="close" size={24} color="#0d364c" />
                     </TouchableOpacity>
                     <Text style={styles.modalTitle}>Chỉnh sửa thông tin giao hàng</Text>
                     <TouchableOpacity
@@ -408,7 +410,7 @@ const PaymentScreen = ({ navigation, route }) => {
 
                     {/* Info Note */}
                     <View style={styles.infoNote}>
-                        <Icon name="info-outline" size={16} color="#6b7280" />
+                        <MaterialIcons name="info-outline" size={16} color="#6b7280" />
                         <Text style={styles.infoNoteText}>
                             Vui lòng đảm bảo thông tin giao hàng chính xác để tránh các vấn đề giao hàng.
                         </Text>
@@ -429,7 +431,7 @@ const PaymentScreen = ({ navigation, route }) => {
                     style={styles.headerButton}
                     onPress={() => navigation.goBack()}
                 >
-                    <Icon name="arrow-back" size={24} color="#0d364c" />
+                    <MaterialIcons name="arrow-back" size={24} color="#0d364c" />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>Thanh toán</Text>
                 <View style={styles.headerButton} />
@@ -439,7 +441,7 @@ const PaymentScreen = ({ navigation, route }) => {
                 {/* Order Summary */}
                 <View style={styles.section}>
                     <View style={styles.sectionHeader}>
-                        <Icon name="receipt" size={20} color="#0d364c" />
+                        <MaterialIcons name="receipt" size={20} color="#0d364c" />
                         <Text style={styles.sectionTitle}>Tóm tắt đơn hàng</Text>
                     </View>
                     <View style={styles.sectionContent}>
@@ -465,7 +467,7 @@ const PaymentScreen = ({ navigation, route }) => {
                 {selectedItems && selectedItems.length > 0 && (
                     <View style={styles.section}>
                         <View style={styles.sectionHeader}>
-                            <Icon name="shopping-cart" size={20} color="#0d364c" />
+                            <MaterialIcons name="shopping-cart" size={20} color="#0d364c" />
                             <Text style={styles.sectionTitle}>
                                 Sản phẩm ({selectedItems.length})
                             </Text>
@@ -496,7 +498,7 @@ const PaymentScreen = ({ navigation, route }) => {
                 {/* Delivery Address */}
                 <View style={styles.section}>
                     <View style={styles.sectionHeader}>
-                        <Icon name="location-on" size={20} color="#0d364c" />
+                        <MaterialIcons name="location-on" size={20} color="#0d364c" />
                         <Text style={styles.sectionTitle}>Địa chỉ giao hàng</Text>
                         <TouchableOpacity
                             style={styles.changeButton}
@@ -509,7 +511,7 @@ const PaymentScreen = ({ navigation, route }) => {
                         <View style={styles.addressCard}>
                             <View style={styles.addressHeader}>
                                 <View style={styles.addressTypeContainer}>
-                                    {/* <Icon name="home" size={16} color="#0d364c" /> */}
+                                    {/* <MaterialIcons name="home" size={16} color="#0d364c" /> */}
                                     <Text style={styles.addressType}></Text>
                                 </View>
 
@@ -529,7 +531,7 @@ const PaymentScreen = ({ navigation, route }) => {
                             )}
                             {receiverInfo.note && (
                                 <View style={styles.noteContainer}>
-                                    <Icon name="note" size={14} color="#6b7280" />
+                                    <MaterialIcons name="note" size={14} color="#6b7280" />
                                     <Text style={styles.notePreview}>
                                         Ghi chú: {receiverInfo.note}
                                     </Text>
@@ -542,7 +544,7 @@ const PaymentScreen = ({ navigation, route }) => {
                 {/* Payment Methods */}
                 <View style={styles.section}>
                     <View style={styles.sectionHeader}>
-                        <Icon name="payment" size={20} color="#0d364c" />
+                        <MaterialIcons name="payment" size={20} color="#0d364c" />
                         <Text style={styles.sectionTitle}>Phương thức thanh toán</Text>
                     </View>
                     <View style={styles.sectionContent}>
@@ -603,12 +605,12 @@ const PaymentScreen = ({ navigation, route }) => {
                 {/* Order Notes */}
                 <View style={styles.section}>
                     <View style={styles.sectionHeader}>
-                        <Icon name="note" size={20} color="#0d364c" />
+                        <MaterialIcons name="note" size={20} color="#0d364c" />
                         <Text style={styles.sectionTitle}>Ghi chú đơn hàng</Text>
                     </View>
                     <View style={styles.sectionContent}>
                         <View style={styles.noteCard}>
-                            <Icon name="info-outline" size={16} color="#6b7280" />
+                            <MaterialIcons name="info-outline" size={16} color="#6b7280" />
                             <Text style={styles.noteText}>
                                 Đơn hàng của bạn sẽ được đóng gói cẩn thận và giao trong vòng 2-3 ngày làm việc. Thanh toán sẽ được thu khi giao hàng.
                             </Text>
@@ -633,7 +635,7 @@ const PaymentScreen = ({ navigation, route }) => {
                         {isLoading ? (
                             <MinimalLoading size="small" color="#ffffff" />
                         ) : (
-                            <Icon name="shopping-bag" size={20} color="#ffffff" />
+                            <MaterialIcons name="shopping-bag" size={20} color="#ffffff" />
                         )}
                         <Text style={styles.placeOrderButtonText}>
                             {isLoading ? 'Đang xử lý...' : `Đặt hàng • ${formatCurrency(summary.total)}`}
