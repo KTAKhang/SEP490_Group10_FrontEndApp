@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import {
     View,
     Text,
     TouchableOpacity,
     StyleSheet,
+    SafeAreaView,
     Alert,
 } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useSelector } from 'react-redux';
 import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
 
@@ -15,16 +15,12 @@ const BottomNavigation = () => {
     const [activeTab, setActiveTab] = useState('HomePage');
     const navigation = useNavigation();
     const route = useRoute();
-    const { isAuthenticated, user } = useSelector((state) => state.auth);
-
-    // Admin không có Cart/Profile/OrderHistory trong stack — ẩn bottom nav để tránh lỗi navigate
-    if (user?.role_name === 'admin') return null;
+    const { isAuthenticated } = useSelector((state) => state.auth);
 
     const tabs = [
         { name: 'HomePage', icon: 'home', label: 'Trang chủ', requiresAuth: false },
         { name: 'Cart', icon: 'shopping-cart', label: 'Giỏ hàng', requiresAuth: true },
         { name: 'OrderHistory', icon: 'local-shipping', label: 'Đơn hàng', requiresAuth: true },
-        { name: 'Vouchers', icon: 'confirmation-number', label: 'Voucher', requiresAuth: true },
         { name: 'Profile', icon: 'person', label: 'Hồ sơ', requiresAuth: true },
     ];
 
@@ -69,7 +65,7 @@ const BottomNavigation = () => {
                         activeOpacity={0.7}
                     >
                         <View style={styles.iconContainer}>
-                            <MaterialIcons
+                            <Icon
                                 name={tab.icon}
                                 size={24}
                                 color={

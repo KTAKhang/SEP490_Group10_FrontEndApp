@@ -3,7 +3,6 @@ import {
     getProducts,
     getProductById,
     getProductsByCategory,
-    getFeaturedProducts,
 } from '../../services/productService';
 
 // Initial state cho product
@@ -11,10 +10,8 @@ const initialState = {
     products: [],
     allProducts: [], // Separate state for all products page
     allActiveProducts: [], // Cache all active products for client-side pagination
-    topSoldProducts: [], // State for top sold products
     product: null,
     isLoading: false,
-    isLoadingTopSold: false, // Separate loading state for top sold products
     error: null,
     pagination: {
         currentPage: 1,
@@ -85,18 +82,6 @@ export const fetchProductByIdAsync = createAsyncThunk(
     }
 );
 
-export const fetchTopSoldProductsAsync = createAsyncThunk(
-    'product/fetchTopSoldProducts',
-    async (_, { rejectWithValue }) => {
-        try {
-            const response = await getFeaturedProducts();
-            return { products: response.data || [] };
-        } catch (error) {
-            console.error('fetchTopSoldProductsAsync error:', error);
-            return rejectWithValue(error.message);
-        }
-    }
-);
 const productSlice = createSlice({
     name: 'product',
     initialState,
@@ -175,21 +160,6 @@ const productSlice = createSlice({
             .addCase(fetchProductByIdAsync.rejected, (state, action) => {
                 state.isLoading = false;
                 state.product = null;
-                state.error = action.payload;
-            })
-            // Fetch Top Sold Products
-            .addCase(fetchTopSoldProductsAsync.pending, (state) => {
-                state.isLoadingTopSold = true;
-                state.error = null;
-            })
-            .addCase(fetchTopSoldProductsAsync.fulfilled, (state, action) => {
-                state.isLoadingTopSold = false;
-                state.error = null;
-                // Products are already filtered for status = true in productService
-                state.topSoldProducts = action.payload.products;
-            })
-            .addCase(fetchTopSoldProductsAsync.rejected, (state, action) => {
-                state.isLoadingTopSold = false;
                 state.error = action.payload;
             });
     },

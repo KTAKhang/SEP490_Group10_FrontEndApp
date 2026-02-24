@@ -11,7 +11,6 @@ import {
     StatusBar,
     Dimensions,
     Modal,
-    FlatList,
     Alert,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
@@ -20,25 +19,32 @@ import { fetchProductByIdAsync } from '../store/slices/productSlice';
 import {
     fetchProductReviewsByProductId,
     selectProductReviews,
-    selectProductReviewsLoading
+    selectProductReviewsLoading,
+    selectProductReviewsPagination,
+    selectProductReviewsLoadingMore,
 } from '../store/slices/reviewSlice';
 import { addToCart } from '../store/slices/cartSlice';
 import { InlineLoading, OverlayLoading } from '../components/Loading';
 import { COLORS } from '../constants/colors';
 import Toast from 'react-native-toast-message';
 
+function formatPrice(amount) {
+    if (amount == null || isNaN(Number(amount))) return '0 đ';
+    const num = Math.round(Number(amount));
+    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ' đ';
+}
+
 const { width } = Dimensions.get('window');
 
 const ProductDetailScreen = ({ navigation, route }) => {
     const dispatch = useDispatch();
     const [quantity, setQuantity] = useState(1);
-    const [isFavorite, setIsFavorite] = useState(false);
-    const [showAllReviews, setShowAllReviews] = useState(false);
     const [showLoadingModal, setShowLoadingModal] = useState(false);
     const [showSuccessModal, setShowSuccessModal] = useState(false);
     const [selectedImageIndex, setSelectedImageIndex] = useState(0);
     const [activeTab, setActiveTab] = useState('description');
     const [reviewSearch, setReviewSearch] = useState('');
+    const [reviewRatingFilter, setReviewRatingFilter] = useState(''); // '' = all, 1-5 = star filter
 
 
     const productId = route?.params?.productId;
@@ -53,26 +59,29 @@ const ProductDetailScreen = ({ navigation, route }) => {
     // Get authentication state
     const { isAuthenticated } = useSelector((state) => state.auth);
 
-    // Get reviews for this specific product ONLY
+    // Get reviews for this specific product ONLY (paginated)
     const reviews = useSelector(state => selectProductReviews(state, productId));
     const reviewsLoading = useSelector(state => selectProductReviewsLoading(state, productId));
+    const reviewsPagination = useSelector(state => selectProductReviewsPagination(state, productId));
+    const reviewsLoadingMore = useSelector(state => selectProductReviewsLoadingMore(state, productId));
 
     // Check if product is out of stock
     const isOutOfStock = product && product.quantity <= 0;
 
-    // Fetch data chỉ khi cần thiết (không clear data cũ)
     useEffect(() => {
         if (productId && productId !== 'undefined') {
-            // Fetch product details
             dispatch(fetchProductByIdAsync(productId));
-
-            // Chỉ fetch reviews nếu chưa có data cho sản phẩm này
-            // Hoặc nếu bạn muốn luôn refresh data, hãy bỏ điều kiện này
-            if (!reviews || reviews.length === 0) {
-                dispatch(fetchProductReviewsByProductId(productId));
-            }
         }
-    }, [dispatch, productId]); // Bỏ reviews khỏi dependency để tránh infinite loop
+    }, [dispatch, productId]);
+
+    useEffect(() => {
+        if (!productId || productId === 'undefined') return;
+        dispatch(fetchProductReviewsByProductId({
+            product_id: productId,
+            page: 1,
+            limit: 10,
+        }));
+    }, [dispatch, productId]);
 
     useEffect(() => {
         if (product && product.quantity > 0 && quantity > product.quantity) {
@@ -184,117 +193,8 @@ const ProductDetailScreen = ({ navigation, route }) => {
                         {renderStars(review.rating)}
                     </View>
                 </View>
-                <Text style={styles.reviewText}>{review.comment || review.content || ''}</Text>
+                <Text style={styles.reviewText}>{review.content}</Text>
             </View>
-        );
-    };
-
-    // Render preview reviews (first 2 reviews)
-    const renderPreviewReviews = () => {
-        if (!reviews || reviews.length === 0) {
-            return (
-                <Text style={styles.noReviewsText}>Chưa có đánh giá nào cho sản phẩm này.</Text>
-            );
-        }
-
-        const previewReviews = reviews.slice(0, 2);
-
-        return (
-            <>
-                {previewReviews.map((review, index) => (
-                    <View key={review._id || index} style={styles.reviewItem}>
-                        <View style={styles.reviewHeader}>
-                            <View style={styles.reviewerInfo}>
-                                {renderUserAvatar(review.user)}
-                                <View style={styles.reviewerDetails}>
-                                    <Text style={styles.reviewerName}>
-                                        {review.user?.name ||
-                                            review.user?.user_name ||
-                                            review.user?.username ||
-                                            review.userName ||
-                                            review.user_name ||
-                                            'Anonymous'}
-                                    </Text>
-                                    <Text style={styles.reviewDate}>
-                                        {new Date(review.createdAt).toLocaleDateString()}
-                                    </Text>
-                                </View>
-                            </View>
-                            <View style={styles.starsContainer}>
-                                {renderStars(review.rating)}
-                            </View>
-                        </View>
-                        <Text style={styles.reviewText}>{review.content}</Text>
-                    </View>
-                ))}
-
-                {reviews && reviews.length > 2 && (
-                    <TouchableOpacity
-                        style={styles.showAllButton}
-                        onPress={() => setShowAllReviews(true)}
-                    >
-                        <Text style={styles.showAllButtonText}>
-                            Xem tất cả đánh giá ({reviews.length})
-                        </Text>
-                        <Icon name="keyboard-arrow-right" size={20} color={COLORS.primary} />
-                    </TouchableOpacity>
-                )}
-            </>
-        );
-    };
-
-    // Reviews Modal Component
-    const ReviewsModal = () => {
-        return (
-            <Modal
-                visible={showAllReviews}
-                animationType="slide"
-                presentationStyle="pageSheet"
-                onRequestClose={() => setShowAllReviews(false)}
-            >
-                <SafeAreaView style={styles.modalContainer}>
-                    {/* Modal Header */}
-                    <View style={styles.modalHeader}>
-                        <TouchableOpacity
-                            onPress={() => setShowAllReviews(false)}
-                            style={styles.modalCloseButton}
-                        >
-                            <Icon name="close" size={24} color={COLORS.text.primary} />
-                        </TouchableOpacity>
-
-                        <Text style={styles.modalTitle}>
-                            Tất cả đánh giá ({reviews ? reviews.length : 0})
-                        </Text>
-
-                        <TouchableOpacity
-                            style={styles.modalRefreshButton}
-                            onPress={handleRefresh}
-                        >
-                            <Icon name="refresh" size={20} color={COLORS.primary} />
-                        </TouchableOpacity>
-                    </View>
-
-                    {/* Reviews List */}
-                    <FlatList
-                        data={reviews || []}
-                        renderItem={renderReviewItem}
-                        keyExtractor={(item, index) => item._id || index.toString()}
-                        showsVerticalScrollIndicator={true}
-                        style={styles.modalFlatList}
-                        contentContainerStyle={[styles.modalContent, (!reviews || reviews.length === 0) && styles.modalContentEmpty]}
-                        ItemSeparatorComponent={() => <View style={styles.reviewSeparator} />}
-                        ListEmptyComponent={() => (
-                            <View style={styles.emptyReviewsContainer}>
-                                <Icon name="rate-review" size={48} color="#ccc" />
-                                <Text style={styles.emptyReviewsText}>Chưa có đánh giá nào</Text>
-                                <Text style={styles.emptyReviewsSubText}>
-                                    Hãy là người đầu tiên đánh giá sản phẩm này
-                                </Text>
-                            </View>
-                        )}
-                    />
-                </SafeAreaView>
-            </Modal>
         );
     };
 
@@ -390,12 +290,15 @@ const ProductDetailScreen = ({ navigation, route }) => {
         }
     };
 
-    // Refresh function để fetch lại data khi cần
     const handleRefresh = useCallback(() => {
         if (productId) {
             dispatch(fetchProductByIdAsync(productId));
-            dispatch(fetchProductReviewsByProductId(productId));
-
+            dispatch(fetchProductReviewsByProductId({
+                product_id: productId,
+                page: 1,
+                limit: 10,
+                rating: reviewRatingFilter || undefined,
+            }));
             Toast.show({
                 type: 'success',
                 text1: 'Đã làm mới dữ liệu',
@@ -404,7 +307,20 @@ const ProductDetailScreen = ({ navigation, route }) => {
                 visibilityTime: 1500,
             });
         }
-    }, [dispatch, productId]);
+    }, [dispatch, productId, reviewRatingFilter]);
+
+    const loadMoreReviews = useCallback(() => {
+        if (!productId || reviewsLoadingMore || reviewsLoading) return;
+        const { page, totalPages } = reviewsPagination;
+        if (page >= totalPages) return;
+        dispatch(fetchProductReviewsByProductId({
+            product_id: productId,
+            page: page + 1,
+            limit: 10,
+            rating: reviewRatingFilter || undefined,
+            isLoadMore: true,
+        }));
+    }, [dispatch, productId, reviewsPagination, reviewsLoadingMore, reviewsLoading, reviewRatingFilter]);
 
     if (error) {
         return (
@@ -518,6 +434,13 @@ const ProductDetailScreen = ({ navigation, route }) => {
         );
     }
 
+    const reviewsFilteredByStar = !reviews ? [] : reviewRatingFilter
+        ? reviews.filter(r => Number(r.rating) === Number(reviewRatingFilter))
+        : reviews;
+    const displayedReviews = !reviewSearch ? reviewsFilteredByStar : reviewsFilteredByStar.filter(r =>
+        (r.comment || r.content || '').toLowerCase().includes(reviewSearch.toLowerCase())
+    );
+
     return (
         <SafeAreaView style={styles.container}>
             <StatusBar barStyle="light-content" backgroundColor={COLORS.secondary} />
@@ -628,9 +551,9 @@ const ProductDetailScreen = ({ navigation, route }) => {
                         <Text style={styles.infoLabel}>Giá:</Text>
                         <View style={styles.priceRow}>
                             {product.isNearExpiry && product.originalPrice != null && product.originalPrice > 0 && (
-                                <Text style={styles.originalPrice}>{(product.originalPrice)}</Text>
+                                <Text style={styles.originalPrice}>{formatPrice(product.originalPrice)}</Text>
                             )}
-                            <Text style={styles.currentPrice}>{(product.price)}</Text>
+                            <Text style={styles.currentPrice}>{formatPrice(product.price)}</Text>
                         </View>
                     </View>
                     <View style={styles.infoRow}>
@@ -650,26 +573,6 @@ const ProductDetailScreen = ({ navigation, route }) => {
                             </View>
                         </View>
                     )}
-                </View>
-
-                {/* Actions: Add to cart + Favorite */}
-                <View style={styles.actionsRow}>
-                    <TouchableOpacity
-                        style={[styles.addToCartMain, isOutOfStock && styles.addToCartMainDisabled]}
-                        onPress={handleAddToCart}
-                        disabled={isOutOfStock || showLoadingModal}
-                    >
-                        <Icon name="shopping-cart" size={22} color={isOutOfStock ? '#999' : '#fff'} />
-                        <Text style={[styles.addToCartMainText, isOutOfStock && styles.addToCartMainTextDisabled]}>
-                            {isOutOfStock ? 'Hết hàng' : 'Thêm vào giỏ hàng'}
-                        </Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={[styles.favoriteButton, isFavorite && styles.favoriteButtonActive]}
-                        onPress={() => setIsFavorite(!isFavorite)}
-                    >
-                        <Icon name="favorite" size={24} color={isFavorite ? '#ef4444' : '#666'} />
-                    </TouchableOpacity>
                 </View>
 
                 {/* Quantity selector (compact) */}
@@ -779,7 +682,7 @@ const ProductDetailScreen = ({ navigation, route }) => {
                             <View>
                                 <Text style={styles.reviewsSectionTitle}>Đánh giá sản phẩm</Text>
                                 <Text style={styles.reviewsSectionSub}>
-                                    {reviews?.length ?? 0} đánh giá · {Number(averageRating).toFixed(1)} sao
+                                    {reviewsPagination?.total ?? 0} đánh giá · {Number(averageRating).toFixed(1)} sao
                                 </Text>
                             </View>
                         </View>
@@ -788,6 +691,27 @@ const ProductDetailScreen = ({ navigation, route }) => {
                             <Text style={styles.refreshText}>Làm mới</Text>
                         </TouchableOpacity>
                     </View>
+
+                    {/* Lọc theo số sao */}
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.reviewStarFilterRow}>
+                        {['', 5, 4, 3, 2, 1].map((star) => (
+                            <TouchableOpacity
+                                key={star === '' ? 'all' : star}
+                                style={[
+                                    styles.reviewStarFilterChip,
+                                    (reviewRatingFilter === '' && star === '') || (reviewRatingFilter === star) ? styles.reviewStarFilterChipActive : null,
+                                ]}
+                                onPress={() => setReviewRatingFilter(star === '' ? '' : star)}
+                            >
+                                <Text style={[
+                                    styles.reviewStarFilterChipText,
+                                    (reviewRatingFilter === '' && star === '') || (reviewRatingFilter === star) ? styles.reviewStarFilterChipTextActive : null,
+                                ]}>
+                                    {star === '' ? 'Tất cả' : `${star} sao`}
+                                </Text>
+                            </TouchableOpacity>
+                        ))}
+                    </ScrollView>
 
                     <View style={styles.reviewFiltersRow}>
                         <View style={styles.searchInputWrap}>
@@ -807,55 +731,64 @@ const ProductDetailScreen = ({ navigation, route }) => {
                     ) : !reviews || reviews.length === 0 ? (
                         <Text style={styles.noReviewsText}>Chưa có đánh giá nào cho sản phẩm này.</Text>
                     ) : (
-                        <>
-                            {(reviewSearch
-                                ? reviews.filter(r =>
-                                    (r.comment || r.content || '').toLowerCase().includes(reviewSearch.toLowerCase())
-                                )
-                                : reviews
-                            ).map((review, index) => (
-                                <View key={review._id || index} style={styles.reviewCard}>
-                                    <View style={styles.reviewCardHeader}>
-                                        <View style={styles.reviewerInfo}>
-                                            <View style={styles.avatarFallback}>
-                                                <Text style={styles.avatarFallbackText}>
-                                                    {(review.user?.user_name || review.user_id?.user_name || 'U').charAt(0).toUpperCase()}
-                                                </Text>
+                        <View style={styles.reviewListBox}>
+                            <ScrollView
+                                style={styles.reviewListScroll}
+                                showsVerticalScrollIndicator={true}
+                                nestedScrollEnabled={true}
+                            >
+                                {displayedReviews.length === 0 ? (
+                                    <Text style={styles.noReviewsText}>
+                                        {reviewRatingFilter
+                                            ? `Không có đánh giá ${reviewRatingFilter} sao trong danh sách đã tải.`
+                                            : 'Không có đánh giá phù hợp.'}
+                                    </Text>
+                                ) : displayedReviews.map((review, index) => (
+                                    <View key={review._id || index} style={styles.reviewCard}>
+                                        <View style={styles.reviewCardHeader}>
+                                            <View style={styles.reviewerInfo}>
+                                                <View style={styles.avatarFallback}>
+                                                    <Text style={styles.avatarFallbackText}>
+                                                        {(review.user?.user_name || review.user_id?.user_name || 'U').charAt(0).toUpperCase()}
+                                                    </Text>
+                                                </View>
+                                                <View>
+                                                    <Text style={styles.reviewerName}>
+                                                        {review.user?.user_name || review.user_id?.user_name || 'Khách'}
+                                                    </Text>
+                                                    <Text style={styles.reviewDate}>
+                                                        {review.createdAt ? new Date(review.createdAt).toLocaleString('vi-VN') : 'N/A'}
+                                                    </Text>
+                                                </View>
                                             </View>
-                                            <View>
-                                                <Text style={styles.reviewerName}>
-                                                    {review.user?.user_name || review.user_id?.user_name || 'Khách'}
-                                                </Text>
-                                                <Text style={styles.reviewDate}>
-                                                    {review.createdAt ? new Date(review.createdAt).toLocaleString('vi-VN') : 'N/A'}
-                                                </Text>
-                                            </View>
+                                            <View style={styles.starsContainer}>{renderStars(review.rating)}</View>
                                         </View>
-                                        <View style={styles.starsContainer}>{renderStars(review.rating)}</View>
+                                        {(review.comment || review.content) ? (
+                                            <Text style={styles.reviewText}>{review.comment || review.content}</Text>
+                                        ) : null}
+                                        {Array.isArray(review.images) && review.images.length > 0 && (
+                                            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.reviewImagesRow}>
+                                                {review.images.map((img, idx) => (
+                                                    <Image key={idx} source={{ uri: img }} style={styles.reviewImage} resizeMode="cover" />
+                                                ))}
+                                            </ScrollView>
+                                        )}
                                     </View>
-                                    {(review.comment || review.content) ? (
-                                        <Text style={styles.reviewText}>{review.comment || review.content}</Text>
-                                    ) : null}
-                                    {Array.isArray(review.images) && review.images.length > 0 && (
-                                        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.reviewImagesRow}>
-                                            {review.images.map((img, idx) => (
-                                                <Image key={idx} source={{ uri: img }} style={styles.reviewImage} resizeMode="cover" />
-                                            ))}
-                                        </ScrollView>
-                                    )}
-                                </View>
-                            ))}
-                            <TouchableOpacity style={styles.showAllButton} onPress={() => setShowAllReviews(true)}>
-                                <Text style={styles.showAllButtonText}>Xem tất cả đánh giá ({reviews.length})</Text>
-                                <Icon name="keyboard-arrow-right" size={20} color={COLORS.primary} />
-                            </TouchableOpacity>
-                        </>
+                                ))}
+                                {reviewsLoadingMore ? (
+                                    <View style={styles.reviewLoadMoreFooter}>
+                                        <Text style={styles.reviewLoadMoreText}>Đang tải thêm...</Text>
+                                    </View>
+                                ) : reviewsPagination.page < reviewsPagination.totalPages && reviews.length > 0 ? (
+                                    <TouchableOpacity style={styles.reviewLoadMoreButton} onPress={loadMoreReviews} disabled={reviewsLoadingMore}>
+                                        <Text style={styles.reviewLoadMoreButtonText}>Tải thêm đánh giá</Text>
+                                    </TouchableOpacity>
+                                ) : null}
+                            </ScrollView>
+                        </View>
                     )}
                 </View>
             </ScrollView>
-
-            {/* Reviews Modal */}
-            <ReviewsModal />
 
             {/* Loading Modal */}
             <OverlayLoading text="Đang thêm vào giỏ hàng..." visible={showLoadingModal} />
@@ -893,7 +826,7 @@ const ProductDetailScreen = ({ navigation, route }) => {
                         styles.addToCartTextFull,
                         isOutOfStock && styles.addToCartTextDisabled
                     ]}>
-                        {isOutOfStock ? 'Hết hàng' : 'Add to Cart'}
+                        {isOutOfStock ? 'Hết hàng' : 'Thêm vào giỏ hàng'}
                     </Text>
                 </TouchableOpacity>
             </View>
@@ -1152,52 +1085,6 @@ const styles = StyleSheet.create({
         fontSize: 13,
         color: '#666',
     },
-    actionsRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 12,
-        marginHorizontal: 16,
-        marginTop: 16,
-    },
-    addToCartMain: {
-        flex: 1,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 8,
-        paddingVertical: 14,
-        backgroundColor: COLORS.primary || '#0d9488',
-        borderRadius: 12,
-        elevation: 2,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.15,
-        shadowRadius: 4,
-    },
-    addToCartMainDisabled: {
-        backgroundColor: '#d1d5db',
-    },
-    addToCartMainText: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#fff',
-    },
-    addToCartMainTextDisabled: {
-        color: '#9ca3af',
-    },
-    favoriteButton: {
-        width: 52,
-        height: 52,
-        borderRadius: 12,
-        borderWidth: 2,
-        borderColor: '#e5e7eb',
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    favoriteButtonActive: {
-        borderColor: '#fecaca',
-        backgroundColor: '#fef2f2',
-    },
     quantityRow: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -1319,6 +1206,61 @@ const styles = StyleSheet.create({
     },
     reviewFiltersRow: {
         marginBottom: 12,
+    },
+    reviewStarFilterRow: {
+        flexDirection: 'row',
+        marginBottom: 12,
+        gap: 8,
+    },
+    reviewStarFilterChip: {
+        paddingHorizontal: 14,
+        paddingVertical: 8,
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: '#e5e7eb',
+        backgroundColor: '#fff',
+    },
+    reviewStarFilterChipActive: {
+        backgroundColor: COLORS.primary,
+        borderColor: COLORS.primary,
+    },
+    reviewStarFilterChipText: {
+        fontSize: 13,
+        fontWeight: '500',
+        color: '#6b7280',
+    },
+    reviewStarFilterChipTextActive: {
+        color: '#fff',
+    },
+    reviewListBox: {
+        maxHeight: 400,
+        marginBottom: 16,
+    },
+    reviewListScroll: {
+        flexGrow: 0,
+    },
+    reviewLoadMoreButton: {
+        paddingVertical: 12,
+        alignItems: 'center',
+        marginTop: 8,
+        marginBottom: 12,
+    },
+    reviewLoadMoreButtonText: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: COLORS.primary,
+    },
+    reviewLoadMoreFooter: {
+        paddingVertical: 12,
+        alignItems: 'center',
+    },
+    reviewLoadMoreText: {
+        fontSize: 13,
+        color: '#6b7280',
+    },
+    reviewLoadMoreHint: {
+        fontSize: 12,
+        color: '#9ca3af',
     },
     searchInputWrap: {
         flexDirection: 'row',
@@ -1585,14 +1527,8 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         borderRadius: 20,
     },
-    modalFlatList: {
-        flex: 1,
-    },
     modalContent: {
         padding: 16,
-    },
-    modalContentEmpty: {
-        flexGrow: 1,
     },
     reviewSeparator: {
         height: 1,
