@@ -7,7 +7,7 @@ import reviewReducer from './slices/reviewSlice';
 import categoryReducer from './slices/categorySlice';
 import productReducer from './slices/productSlice';
 import chatBotReducer from './slices/chatbotSlice';
-import checkoutReducer from './slices/checkoutSlice';
+
 export const store = configureStore({
     reducer: {
         auth: authReducer,
@@ -18,7 +18,6 @@ export const store = configureStore({
         category: categoryReducer,
         product: productReducer,
         chatBot: chatBotReducer,
-        checkout: checkoutReducer,
 
     },
     middleware: (getDefaultMiddleware) =>
@@ -29,6 +28,3 @@ export const store = configureStore({
             },
         }),
 });
-
-export type RootState = ReturnType<typeof store.getState>;
-export type AppDispatch = typeof store.dispatch;

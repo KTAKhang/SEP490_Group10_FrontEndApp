@@ -25,9 +25,14 @@ import {
     fetchOrderDetailByUser,
     clearOrderDetail,
 } from '../store/slices/orderSlice';
-import { formatCurrency } from '../utils/formatCurrency';
-
 const DEFAULT_PRODUCT_IMAGE = 'https://via.placeholder.com/100?text=SP';
+
+function formatDetailAmount(amount) {
+    if (amount == null || isNaN(Number(amount))) return '0 đ';
+    const num = Math.round(Number(amount));
+    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ' đ';
+}
+
 function getItemImage(item) {
     if (!item) return DEFAULT_PRODUCT_IMAGE;
     const uri = item.product_image ?? item.image
@@ -393,22 +398,19 @@ const OrderDetailsScreen = ({ navigation }) => {
                     </View>
                 </SafeAreaView>
             </LinearGradient>
-            {/* Global Loading Overlay */}
-            {isRefetchingReviews && (
+            {/* Một overlay loading chung: chi tiết đơn hàng hoặc đánh giá */}
+            {(detailLoading || isRefetchingReviews) && (
                 <View style={styles.globalLoadingOverlay}>
                     <View style={styles.globalLoadingContainer}>
                         <ActivityIndicator size="large" color={orderDataColor || '#1CD4D4'} />
-                        <Text style={styles.globalLoadingText}>Đang cập nhật đánh giá...</Text>
+                        <Text style={styles.globalLoadingText}>
+                            {detailLoading ? 'Đang tải chi tiết đơn hàng...' : 'Đang cập nhật đánh giá...'}
+                        </Text>
                     </View>
                 </View>
             )}
 
-            {orderId && detailLoading ? (
-                <View style={styles.detailLoadingContainer}>
-                    <ActivityIndicator size="large" color={orderDataColor || '#1CD4D4'} />
-                    <Text style={styles.detailLoadingText}>Đang tải chi tiết đơn hàng...</Text>
-                </View>
-            ) : paramOrderId && detailError ? (
+            {orderId && detailError && !detailLoading ? (
                 <View style={styles.detailErrorContainer}>
                     <Text style={styles.detailErrorText}>{detailError}</Text>
                     <TouchableOpacity
@@ -419,7 +421,7 @@ const OrderDetailsScreen = ({ navigation }) => {
                         <Text style={styles.retryDetailButtonText}>Thử lại</Text>
                     </TouchableOpacity>
                 </View>
-            ) : (
+            ) : !detailLoading ? (
             <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
                 {/* Order Info */}
                 <View style={styles.orderInfo}>
@@ -480,29 +482,31 @@ const OrderDetailsScreen = ({ navigation }) => {
                                         style={styles.productImage}
                                     />
                                     <View style={styles.productDetails}>
-                                        <Text style={styles.productName}>{item.product_name ?? item.name ?? 'Sản phẩm'}</Text>
+                                        <Text style={styles.productName} numberOfLines={2}>{item.product_name ?? item.name ?? 'Sản phẩm'}</Text>
                                         {(item.product_category_name ?? item.product_category) && (
                                             <Text style={styles.productVariant}>{item.product_category_name ?? item.product_category}</Text>
                                         )}
                                         <Text style={styles.productVariant}>SL: {item.quantity ?? 0}</Text>
                                         <View style={styles.priceRow}>
-                                            {item.original_price != null && Number(item.original_price) > Number(item.price ?? 0) && (
-                                                <>
-                                                    <Text style={styles.originalPrice}>{formatCurrency(item.original_price)} đ</Text>
-                                                    <View style={styles.discountBadge}>
-                                                        <Text style={styles.discountBadgeText}>Giảm giá</Text>
-                                                    </View>
-                                                </>
-                                            )}
-                                            <Text style={[styles.price, item.original_price != null && Number(item.original_price) > Number(item.price ?? 0) && styles.priceDiscounted]}>
-                                                {formatCurrency(item.price)} đ
-                                            </Text>
+                                            <View style={styles.priceRowLeft}>
+                                                {item.original_price != null && Number(item.original_price) > Number(item.price ?? 0) && (
+                                                    <>
+                                                        <Text style={styles.originalPrice} numberOfLines={1}>{formatDetailAmount(item.original_price)}</Text>
+                                                        <View style={styles.discountBadge}>
+                                                            <Text style={styles.discountBadgeText}>Giảm giá</Text>
+                                                        </View>
+                                                    </>
+                                                )}
+                                                <Text style={[styles.price, item.original_price != null && Number(item.original_price) > Number(item.price ?? 0) && styles.priceDiscounted]} numberOfLines={1}>
+                                                    {formatDetailAmount(item.price)}
+                                                </Text>
+                                            </View>
                                             <Text style={styles.quantity}>× {item.quantity ?? 0}</Text>
                                         </View>
                                         <Text style={[
                                             styles.subtotal,
                                             { color: orderDataColor || '#22C55E' }
-                                        ]}>Tạm tính: {formatCurrency(item.subtotal ?? (item.price * (item.quantity || 0)))} đ</Text>
+                                        ]}>Tạm tính: {formatDetailAmount(item.subtotal ?? (item.price * (item.quantity || 0)))}</Text>
                                     </View>
                                 </View>
                                 {renderRatingSection(pidStr || pid)}
@@ -518,7 +522,7 @@ const OrderDetailsScreen = ({ navigation }) => {
                             <View style={styles.voucherTextWrap}>
                                 <Text style={styles.voucherLabel}>Đã dùng voucher</Text>
                                 <Text style={styles.voucherValue}>
-                                    {orderData.discount_code ? `${orderData.discount_code}, giảm ${formatCurrency(orderData.discount_amount ?? 0)} đ` : `Giảm ${formatCurrency(orderData.discount_amount ?? 0)} đ`}
+                                    {orderData.discount_code ? `${orderData.discount_code}, giảm ${formatDetailAmount(orderData.discount_amount ?? 0)}` : `Giảm ${formatDetailAmount(orderData.discount_amount ?? 0)}`}
                                 </Text>
                             </View>
                         </View>
@@ -528,12 +532,12 @@ const OrderDetailsScreen = ({ navigation }) => {
                     <View style={styles.summaryContainer}>
                         <View style={styles.summaryRow}>
                             <Text style={styles.summaryLabel}>Tạm tính (sản phẩm)</Text>
-                            <Text style={styles.summaryValue}>{formatCurrency(calculateSubtotal())} đ</Text>
+                            <Text style={styles.summaryValue}>{formatDetailAmount(calculateSubtotal())}</Text>
                         </View>
                         <View style={styles.summaryRow}>
                             <Text style={styles.summaryLabel}>Phí vận chuyển</Text>
                             <Text style={styles.summaryValue}>
-                                {formatCurrency(orderData?.shipping_fee ?? 0)} đ
+                                {formatDetailAmount(orderData?.shipping_fee ?? 0)}
                             </Text>
                         </View>
                         {(orderData?.discount_code || (orderData?.discount_amount != null && Number(orderData.discount_amount) > 0)) && (
@@ -541,23 +545,23 @@ const OrderDetailsScreen = ({ navigation }) => {
                                 <View style={styles.summaryRow}>
                                     <Text style={styles.summaryLabel}>Tổng trước voucher</Text>
                                     <Text style={styles.summaryValue}>
-                                        {formatCurrency((orderData?.total_price ?? 0) + (orderData?.discount_amount ?? 0))} đ
+                                        {formatDetailAmount((orderData?.total_price ?? 0) + (orderData?.discount_amount ?? 0))}
                                     </Text>
                                 </View>
                                 <View style={styles.summaryRow}>
                                     <Text style={styles.summaryLabel}>Đã dùng voucher{orderData.discount_code ? `: ${orderData.discount_code}, giảm` : ', giảm'}</Text>
-                                    <Text style={styles.discountValue}>-{formatCurrency(orderData.discount_amount ?? 0)} đ</Text>
+                                    <Text style={styles.discountValue}>-{formatDetailAmount(orderData.discount_amount ?? 0)}</Text>
                                 </View>
                             </>
                         )}
                         <View style={[styles.summaryRow, styles.totalRow]}>
                             <Text style={styles.totalLabel}>Tổng cộng</Text>
-                            <Text style={styles.totalValue}>{formatCurrency(orderData?.total_price ?? 0)} đ</Text>
+                            <Text style={styles.totalValue}>{formatDetailAmount(orderData?.total_price ?? 0)}</Text>
                         </View>
                     </View>
                 </View>
             </ScrollView>
-            )}
+            ) : null}
         </SafeAreaView>
     );
 };
@@ -698,9 +702,11 @@ const styles = StyleSheet.create({
         borderColor: '#E5E7EB',
         padding: 16,
         marginBottom: 16,
+        overflow: 'hidden',
     },
     productInfo: {
         flexDirection: 'row',
+        flexWrap: 'wrap',
     },
     productImage: {
         width: 80,
@@ -710,6 +716,7 @@ const styles = StyleSheet.create({
     },
     productDetails: {
         flex: 1,
+        minWidth: 0,
     },
     productName: {
         fontSize: 16,
@@ -727,24 +734,32 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         marginBottom: 4,
+        flexWrap: 'wrap',
+    },
+    priceRowLeft: {
+        flex: 1,
+        minWidth: 0,
+        flexDirection: 'row',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: 6,
     },
     price: {
         fontSize: 16,
         fontWeight: '500',
         color: '#000',
+        flexShrink: 0,
     },
     originalPrice: {
         fontSize: 14,
         color: '#9CA3AF',
         textDecorationLine: 'line-through',
-        marginRight: 8,
     },
     discountBadge: {
         backgroundColor: '#FEF3C7',
         paddingHorizontal: 6,
         paddingVertical: 2,
         borderRadius: 4,
-        marginRight: 8,
     },
     discountBadgeText: {
         fontSize: 11,
@@ -757,6 +772,7 @@ const styles = StyleSheet.create({
     quantity: {
         fontSize: 14,
         color: '#6B7280',
+        flexShrink: 0,
     },
     subtotal: {
         fontSize: 14,
@@ -902,17 +918,6 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: '#374151',
         fontWeight: '500',
-    },
-    detailLoadingContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: 24,
-        gap: 12,
-    },
-    detailLoadingText: {
-        fontSize: 16,
-        color: '#6B7280',
     },
     detailErrorContainer: {
         flex: 1,
