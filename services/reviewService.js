@@ -3,37 +3,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_BASE_URL } from '../config/api';
 
 /**
- * Gửi FormData (có file) bằng XMLHttpRequest.
- * Trên React Native, XHR thường xử lý multipart ổn định hơn fetch/axios.
- * Không set Content-Type để runtime tự gắn multipart/form-data; boundary=...
- */
-function sendFormDataWithXHR(method, url, formData, token) {
-  return new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    const TIMEOUT_MS = 30000;
-    xhr.timeout = TIMEOUT_MS;
-    xhr.onload = () => {
-      try {
-        const result = JSON.parse(xhr.responseText || '{}');
-        if (xhr.status >= 200 && xhr.status < 300) {
-          resolve({ status: xhr.status, data: result });
-        } else {
-          reject(new Error(result.message || `Lỗi ${xhr.status}`));
-        }
-      } catch (_) {
-        reject(new Error('Phản hồi không hợp lệ'));
-      }
-    };
-    xhr.onerror = () => reject(new Error('Network request failed'));
-    xhr.ontimeout = () => reject(new Error('Gửi quá lâu. Thử lại hoặc giảm kích thước ảnh.'));
-    xhr.open(method, url);
-    xhr.setRequestHeader('Accept', 'application/json');
-    xhr.setRequestHeader('Authorization', `Bearer ${token}`);
-    xhr.send(formData);
-  });
-}
-
-/**
  * Chuẩn hóa review từ backend cho UI: content (từ comment), user (từ user_id)
  */
 function normalizeReview(r) {
@@ -48,22 +17,14 @@ function normalizeReview(r) {
 }
 
 /**
- * Backend: GET /reviews/product/:productId
- * Query: page, limit, rating (optional, 1-5: filter by star. Backend cần thêm query.rating vào filter.)
- * Response: { status: "OK", data: Review[], pagination: { page, limit, total, totalPages } }
+ * Backend: GET /reviews/product/:productId (hoặc GET /reviews?productId=)
+ * Response: { status: "OK", data: Review[], pagination }
  */
-export async function getProductReviewsByProductId(product_id, { page = 1, limit = 10, rating } = {}) {
+export async function getProductReviewsByProductId(product_id, { page = 1, limit = 20 } = {}) {
   try {
     if (!product_id) throw new Error('Product ID is required');
 
-    const params = new URLSearchParams({
-      page: String(Math.max(1, parseInt(page, 10) || 1)),
-      limit: String(Math.min(100, Math.max(1, parseInt(limit, 10) || 10))),
-    });
-    if (rating !== undefined && rating !== '' && rating !== null) {
-      const r = parseInt(rating, 10);
-      if (r >= 1 && r <= 5) params.append('rating', String(r));
-    }
+    const params = new URLSearchParams({ page: String(page), limit: String(limit) });
     const response = await axios.get(
       `${API_BASE_URL}/reviews/product/${product_id}?${params.toString()}`,
       {
@@ -77,8 +38,7 @@ export async function getProductReviewsByProductId(product_id, { page = 1, limit
     }
 
     const list = (result.data || []).map(normalizeReview);
-    const pagination = result.pagination || { page: 1, limit: 10, total: list.length, totalPages: 1 };
-    return { list, pagination };
+    return list;
   } catch (error) {
     console.error('getProductReviewsByProductId error:', error);
     throw new Error(
@@ -130,20 +90,20 @@ export async function createReviewApi({ order_id, product_id, rating, comment })
 /**
  * POST /reviews với FormData (orderId, productId, rating, comment, images)
  * Dùng khi có ảnh đính kèm (multipart/form-data).
- * Dùng XMLHttpRequest để gửi FormData + file ổn định trên React Native.
  */
 export async function createReviewWithFormDataApi(formData) {
   try {
     const token = await AsyncStorage.getItem('token');
     if (!token) throw new Error('Vui lòng đăng nhập để đánh giá.');
 
-    const { data: result } = await sendFormDataWithXHR(
-      'POST',
-      `${API_BASE_URL}/reviews`,
-      formData,
-      token
-    );
+    const response = await axios.post(`${API_BASE_URL}/reviews`, formData, {
+      headers: {
+        Accept: 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+    });
 
+    const result = response.data;
     if (result.status !== 'OK') {
       throw new Error(result.message || 'Lỗi đánh giá sản phẩm');
     }
@@ -151,15 +111,9 @@ export async function createReviewWithFormDataApi(formData) {
     return { status: 'OK', data: normalizeReview(result.data), message: result.message };
   } catch (error) {
     console.error('createReviewWithFormDataApi error:', error);
-    const isNetworkError =
-      error.message === 'Network request failed' ||
-      (error.message && error.message.includes('Network'));
-    if (isNetworkError) {
-      throw new Error(
-        'Không kết nối được máy chủ. Kiểm tra: (1) Backend đang chạy, (2) Địa chỉ API trong config/api.js đúng với thiết bị (máy thật: IP máy tính; emulator: 10.0.2.2:3001), (3) Cùng mạng WiFi.'
-      );
-    }
-    throw new Error(error.message || 'Lỗi không xác định khi đánh giá');
+    throw new Error(
+      error.response?.data?.message || error.message || 'Lỗi không xác định khi đánh giá'
+    );
   }
 }
 
@@ -203,20 +157,20 @@ export async function updateReviewApi({ review_id, rating, comment }) {
 
 /**
  * PUT /reviews/:id với FormData (rating, comment, existingImages, existingImagePublicIds, images)
- * Dùng XMLHttpRequest để gửi FormData + file ổn định trên React Native.
  */
 export async function updateReviewWithFormDataApi(reviewId, formData) {
   try {
     const token = await AsyncStorage.getItem('token');
     if (!token) throw new Error('Vui lòng đăng nhập.');
 
-    const { data: result } = await sendFormDataWithXHR(
-      'PUT',
-      `${API_BASE_URL}/reviews/${reviewId}`,
-      formData,
-      token
-    );
+    const response = await axios.put(`${API_BASE_URL}/reviews/${reviewId}`, formData, {
+      headers: {
+        Accept: 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+    });
 
+    const result = response.data;
     if (result.status !== 'OK') {
       throw new Error(result.message || 'Lỗi cập nhật đánh giá');
     }
@@ -224,15 +178,9 @@ export async function updateReviewWithFormDataApi(reviewId, formData) {
     return { status: 'OK', data: normalizeReview(result.data), message: result.message };
   } catch (error) {
     console.error('updateReviewWithFormDataApi error:', error);
-    const isNetworkError =
-      error.message === 'Network request failed' ||
-      (error.message && error.message.includes('Network'));
-    if (isNetworkError) {
-      throw new Error(
-        'Không kết nối được máy chủ. Kiểm tra: (1) Backend đang chạy, (2) Địa chỉ API trong config/api.js đúng với thiết bị (máy thật: IP máy tính; emulator: 10.0.2.2:3001), (3) Cùng mạng WiFi.'
-      );
-    }
-    throw new Error(error.message || 'Lỗi không xác định khi cập nhật đánh giá');
+    throw new Error(
+      error.response?.data?.message || error.message || 'Lỗi không xác định khi cập nhật đánh giá'
+    );
   }
 }
 
