@@ -75,6 +75,29 @@ export async function getProducts({
 }
 
 /**
+ * Backend: GET /products/featured (top 6 bán chạy)
+ * Response: { status: "OK", data: Product[] }
+ */
+export async function getFeaturedProducts() {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/products/featured`, {
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    });
+
+    const result = response.data;
+    if (result.status !== 'OK') {
+      throw new Error(result.message || 'Failed to fetch featured products');
+    }
+
+    const products = (result.data || []).map(normalizeProduct);
+    return { status: result.status, data: products };
+  } catch (error) {
+    console.error('getFeaturedProducts error:', error);
+    throw new Error(error.response?.data?.message || error.message || 'Failed to fetch featured products');
+  }
+}
+
+/**
  * Backend: GET /products/:id
  * Response: { status: "OK", data: Product }
  */

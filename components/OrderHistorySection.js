@@ -12,7 +12,7 @@ const OrderHistorySection = ({ orderHistory, onViewAll, onOrderPress }) => {
 
 
     const formatCurrency = (amount) => {
-        return amount.toLocaleString('vi-VN', { style: 'currency', currency: 'đ' });
+        return amount.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' });
     };
 
 

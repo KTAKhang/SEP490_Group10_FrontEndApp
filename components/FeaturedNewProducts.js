@@ -4,15 +4,15 @@ import { useNavigation } from '@react-navigation/native';
 import { useDispatch } from 'react-redux';
 import ProductCard from './ProductCard';
 import { COLORS } from '../constants/colors';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import { MaterialIcons } from '@expo/vector-icons';
 import { fetchProductReviewsByProductId } from '../store/slices/reviewSlice';
 
 const FeaturedNewProducts = ({ products, title }) => {
     const navigation = useNavigation();
     const dispatch = useDispatch();
 
-    // Filter chỉ lấy sản phẩm có status = true (active products) và giới hạn top 3
-    const activeProducts = products ? products.filter(product => product.status === true).slice(0, 3) : [];
+    // Filter chỉ lấy sản phẩm có status = true (active products) và giới hạn 6 sản phẩm
+    const activeProducts = products ? products.filter(product => product.status === true).slice(0, 6) : [];
 
     useEffect(() => {
         // Fetch reviews for all active products
@@ -41,7 +41,7 @@ const FeaturedNewProducts = ({ products, title }) => {
                     onPress={() => navigation.navigate('AllProducts')}
                 >
                     <Text style={styles.seeAllText}>Xem tất cả</Text>
-                    <Icon name="arrow-forward" size={20} color={COLORS.primary} />
+                    <MaterialIcons name="arrow-forward" size={20} color={COLORS.primary} />
                 </TouchableOpacity>
             </View>
             <ScrollView
