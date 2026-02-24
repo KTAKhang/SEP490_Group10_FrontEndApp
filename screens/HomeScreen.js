@@ -16,6 +16,7 @@ import { COLORS } from "../constants/colors";
 import { API_BASE_URL } from "../config/apiConfig";
 import { LinearGradient } from "expo-linear-gradient";
 import { Platform } from "react-native";
+
 const HomeScreen = () => {
   const dispatch = useDispatch();
   const navigation = useNavigation();
@@ -125,7 +126,7 @@ const styles = StyleSheet.create({
   },
   headerGradient: {
     paddingTop:
-    Platform.OS === "android" ? (StatusBar.currentHeight || 0) + 10 : 10,
+      Platform.OS === "android" ? (StatusBar.currentHeight || 0) + 10 : 10,
     paddingBottom: 20,
     borderBottomLeftRadius: 30,
     borderBottomRightRadius: 30,

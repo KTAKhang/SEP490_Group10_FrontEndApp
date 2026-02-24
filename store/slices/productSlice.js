@@ -76,8 +76,7 @@ export const fetchProductByIdAsync = createAsyncThunk(
     async (id, { rejectWithValue }) => {
         try {
             const response = await getProductById(id);
-
-            return response;  // Trả về response thay vì response.product
+            return response;
         } catch (error) {
             console.error('fetchProductByIdAsync error:', error);
             return rejectWithValue(error.message);
@@ -97,6 +96,7 @@ export const fetchTopSoldProductsAsync = createAsyncThunk(
         }
     }
 );
+
 const productSlice = createSlice({
     name: 'product',
     initialState,
@@ -185,8 +185,7 @@ const productSlice = createSlice({
             .addCase(fetchTopSoldProductsAsync.fulfilled, (state, action) => {
                 state.isLoadingTopSold = false;
                 state.error = null;
-                // Products are already filtered for status = true in productService
-                state.topSoldProducts = action.payload.products;
+                state.topSoldProducts = action.payload.products || [];
             })
             .addCase(fetchTopSoldProductsAsync.rejected, (state, action) => {
                 state.isLoadingTopSold = false;

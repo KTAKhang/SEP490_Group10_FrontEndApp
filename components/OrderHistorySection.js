@@ -2,24 +2,22 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 
 const OrderHistorySection = ({ orderHistory, onViewAll, onOrderPress }) => {
-
-    const simplifiedOrders = orderHistory.map(order => ({
-        order_id: order.order_id,
-        createdAt: order.createdAt,
-        total_price: order.total_price,
-        order_status_name: order.order_status.name
-    })).slice(0, 3);
-
+    const simplifiedOrders = orderHistory
+        .map(order => ({
+            order_id: order.order_id,
+            createdAt: order.createdAt,
+            total_price: order.total_price,
+            order_status_name: order.order_status.name
+        }))
+        .slice(0, 3);
 
     const formatCurrency = (amount) => {
         return amount.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' });
     };
 
-
     const formatDate = (isoString) => {
         return new Date(isoString).toLocaleDateString('vi-VN');
     };
-
 
     const getStatusStyle = (status) => {
         switch (status) {
@@ -41,51 +39,45 @@ const OrderHistorySection = ({ orderHistory, onViewAll, onOrderPress }) => {
     };
 
     return (
-        <>
-            <View style={styles.section}>
-                <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionTitle}>Lịch sử đơn hàng</Text>
-                    <TouchableOpacity onPress={onViewAll}>
-                        <Text style={styles.viewAllText}>Xem đơn hàng</Text>
-                    </TouchableOpacity>
-                </View>
-                {
-                    Array.isArray(orderHistory) && orderHistory.length > 0 ? (
-                        simplifiedOrders.map((order, index) => {
-                            const { backgroundColor, color } = getStatusStyle(order.order_status_name);
-                            return (
-                                <View
-                                    key={order.order_id}
-                                    style={[
-                                        styles.orderItem,
-                                        index === simplifiedOrders.length - 1 && { borderBottomWidth: 0 }
-                                    ]}
-                                >
-                                    <View style={styles.orderHeader}>
-                                        <Text style={styles.orderId}>#{order.order_id.slice(-8).toUpperCase()}</Text>
-                                        <View style={[styles.statusBadge, { backgroundColor }]}>
-                                            <Text style={[styles.statusText, { color }]}>
-                                                {order.order_status_name}
-                                            </Text>
-                                        </View>
-                                    </View>
-                                    <View style={styles.orderFooter}>
-                                        <Text style={styles.orderDate}>{formatDate(order.createdAt)}</Text>
-                                        <Text style={styles.orderAmount}>{formatCurrency(order.total_price)}</Text>
-                                    </View>
-                                </View>
-                            );
-                        })
-                    ) : (
-                        <Text style={{ textAlign: 'center', marginVertical: 20, color: 'gray' }}>
-                            Không có đơn hàng nào.
-                        </Text>
-                    )
-                }
-
+        <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Lịch sử đơn hàng</Text>
+                <TouchableOpacity onPress={onViewAll}>
+                    <Text style={styles.viewAllText}>Xem đơn hàng</Text>
+                </TouchableOpacity>
             </View>
-        </>
-
+            {Array.isArray(orderHistory) && orderHistory.length > 0 ? (
+                simplifiedOrders.map((order, index) => {
+                    const { backgroundColor, color } = getStatusStyle(order.order_status_name);
+                    return (
+                        <TouchableOpacity
+                            key={order.order_id}
+                            style={[
+                                styles.orderItem,
+                                index === simplifiedOrders.length - 1 && { borderBottomWidth: 0 }
+                            ]}
+                            onPress={() => onOrderPress?.(order)}
+                            activeOpacity={onOrderPress ? 0.7 : 1}
+                        >
+                            <View style={styles.orderHeader}>
+                                <Text style={styles.orderId}>#{order.order_id.slice(-8).toUpperCase()}</Text>
+                                <View style={[styles.statusBadge, { backgroundColor }]}>
+                                    <Text style={[styles.statusText, { color }]}>
+                                        {order.order_status_name}
+                                    </Text>
+                                </View>
+                            </View>
+                            <View style={styles.orderFooter}>
+                                <Text style={styles.orderDate}>{formatDate(order.createdAt)}</Text>
+                                <Text style={styles.orderAmount}>{formatCurrency(order.total_price)}</Text>
+                            </View>
+                        </TouchableOpacity>
+                    );
+                })
+            ) : (
+                <Text style={styles.emptyText}>Không có đơn hàng nào.</Text>
+            )}
+        </View>
     );
 };
 
@@ -151,6 +143,11 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: '600',
         color: '#374151'
+    },
+    emptyText: {
+        textAlign: 'center',
+        marginVertical: 20,
+        color: 'gray'
     },
 });
 

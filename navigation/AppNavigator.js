@@ -8,16 +8,15 @@ import ChatBotModal from '../components/ChatBotModal';
 import { navigateAfterLogin } from '../utils/authUtils';
 import { registerFCMTokenWithBackend } from '../utils/registerFCM';
 // Import screens
-import LoginScreen from "../screens/LoginScreen";
-import HomeScreen from "../screens/HomeScreen";
-import SplashScreen from "../screens/SplashScreen";
-import AdminScreen from "../screens/AdminScreen";
-import RegisterScreen from "../screens/RegisterScreen";
-import RegisterConfirmOTPScreen from "../screens/RegisterConfirmOTPScreen";
-import ProductDetailScreen from "../screens/ProductDetailScreen";
-import ForgotPasswordScreen from "../screens/ForgotPasswordScreen";
-import ForgotPasswordOTPScreen from "../screens/ForgotPasswordOTPScreen";
-// Thêm dòng này
+import LoginScreen from '../screens/LoginScreen';
+import HomeScreen from '../screens/HomeScreen';
+import SplashScreen from '../screens/SplashScreen';
+import AdminScreen from '../screens/AdminScreen';
+import RegisterScreen from '../screens/RegisterScreen';
+import RegisterConfirmOTPScreen from '../screens/RegisterConfirmOTPScreen';
+import ProductDetailScreen from '../screens/ProductDetailScreen';
+import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
+import ForgotPasswordOTPScreen from '../screens/ForgotPasswordOTPScreen';
 import CartScreen from '../screens/CartScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import OrderHistoryScreen from '../screens/OrderHistoryScreen';
@@ -32,18 +31,18 @@ import VouchersScreen from '../screens/VouchersScreen';
 import PreOrderScreen from '../screens/PreOrderScreen';
 import PreOrderDetailScreen from '../screens/PreOrderDetailScreen';
 import PreOrderCheckoutScreen from '../screens/PreOrderCheckoutScreen';
-import PaymentSuccess from "../screens/PaymentSuccess";
-import PaymentFail from "../screens/PaymentFail";
-import * as Linking from "expo-linking";
+import PaymentSuccess from '../screens/PaymentSuccess';
+import PaymentFail from '../screens/PaymentFail';
+import * as Linking from 'expo-linking';
 
 const Stack = createStackNavigator();
 
 const linking = {
-  prefixes: ["myshopapps://"],
+  prefixes: ['myshopapps://'],
   config: {
     screens: {
-      PaymentSuccess: "payment-success",
-      PaymentFail: "payment-fail",
+      PaymentSuccess: 'payment-success',
+      PaymentFail: 'payment-fail',
     },
   },
 };
@@ -67,12 +66,6 @@ export default function AppNavigator() {
   useEffect(() => {
     const handleNavigation = async () => {
       const initialUrl = await Linking.getInitialURL();
-
-      // Nếu app được mở bằng deep link → KHÔNG auto navigate
-      // if (initialUrl) {
-      //   console.log("Opened from deep link:", initialUrl);
-      //   return;
-      // }
       if (isAuthenticated && navigationRef.current && user) {
         navigateAfterLogin(navigationRef.current, user);
       }
@@ -176,7 +169,7 @@ export default function AppNavigator() {
         {/* Protected routes - Chỉ user đã đăng nhập mới xem được */}
         {isAuthenticated && (
           <>
-            {user?.role_name === "admin" ? (
+            {user?.role_name === 'admin' ? (
               <Stack.Screen name="Admin" component={AdminScreen} />
             ) : (
               <>
