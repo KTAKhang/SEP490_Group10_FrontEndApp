@@ -10,6 +10,7 @@ import {
     StatusBar,
     Alert,
     ActivityIndicator,
+    Platform,
 } from 'react-native';
 import { COLORS } from '../constants/colors';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -28,6 +29,7 @@ import {
 import { formatCurrency } from '../utils/formatCurrency';
 
 const DEFAULT_PRODUCT_IMAGE = 'https://via.placeholder.com/100?text=SP';
+
 function getItemImage(item) {
     if (!item) return DEFAULT_PRODUCT_IMAGE;
     const uri = item.product_image ?? item.image
@@ -60,11 +62,8 @@ const OrderDetailsScreen = ({ navigation }) => {
     const orderData = orderDetail?.order ?? paramOrderData;
     const orderItems = orderDetail?.details ?? orderData?.details ?? orderData?.items ?? orderData?.order_details ?? orderData?.orderDetails ?? [];
 
-    console.log('[OrderDetailsScreen] orderId=', orderId, 'detailLoading=', detailLoading, 'orderDetail?', !!orderDetail, 'orderDetail?.details?.length=', orderDetail?.details?.length, 'orderItems.length=', orderItems?.length ?? 0);
+    const alertShownRef = useRef(false);
 
-    const alertShownRef = useRef(false); // Dùng useRef để tránh lặp alert
-
-    // Map backend order status names to display format
     const statusMapping = {
         'PENDING': 'Chờ xử lý',
         'PAID': 'Đã thanh toán',
@@ -100,17 +99,10 @@ const OrderDetailsScreen = ({ navigation }) => {
     const [existingReviews, setExistingReviews] = useState(initialExistingReviews);
 
     useEffect(() => {
-        if (!orderId) {
-            console.log('[OrderDetailsScreen] useEffect skip: no orderId');
-            return;
-        }
-        console.log('[OrderDetailsScreen] useEffect: clear + fetch orderId=', orderId);
+        if (!orderId) return;
         dispatch(clearOrderDetail());
         dispatch(fetchOrderDetailByUser(orderId));
-        return () => {
-            console.log('[OrderDetailsScreen] useEffect cleanup: clearOrderDetail');
-            dispatch(clearOrderDetail());
-        };
+        return () => dispatch(clearOrderDetail());
     }, [dispatch, orderId]);
 
     useEffect(() => {
@@ -132,7 +124,6 @@ const OrderDetailsScreen = ({ navigation }) => {
         fetchReviews();
     }, [dispatch, orderId]);
 
-    // Refetch reviews when screen is focused (e.g. returning from CreateReview/EditReview)
     useFocusEffect(
         React.useCallback(() => {
             if (!orderId) return;
@@ -140,7 +131,6 @@ const OrderDetailsScreen = ({ navigation }) => {
         }, [dispatch, orderId])
     );
 
-    // Đồng bộ review từ Redux vào state local; chỉ phụ thuộc [review] để tránh vòng lặp
     useEffect(() => {
         if (!Array.isArray(review)) return;
         const items = orderDetail?.details ?? orderData?.details ?? orderData?.items ?? [];
@@ -169,7 +159,6 @@ const OrderDetailsScreen = ({ navigation }) => {
     useEffect(() => {
         if (successMessage && !isLoading && !reviewError && !alertShownRef.current) {
             alertShownRef.current = true;
-
             Alert.alert(
                 'Thành công',
                 'Đánh giá đã được gửi thành công!',
@@ -178,7 +167,6 @@ const OrderDetailsScreen = ({ navigation }) => {
                     onPress: async () => {
                         dispatch(clearReviewState());
                         alertShownRef.current = false;
-
                         setIsRefetchingReviews(true);
                         try {
                             await dispatch(getReviewsByOrderId(orderId));
@@ -189,39 +177,27 @@ const OrderDetailsScreen = ({ navigation }) => {
                 }]
             );
         }
-
         if (reviewError && !isLoading && !alertShownRef.current) {
             alertShownRef.current = true;
-
-            Alert.alert(
-                'Lỗi',
-                reviewError,
-                [{
-                    text: 'OK',
-                    onPress: () => {
-                        dispatch(clearReviewState());
-                        alertShownRef.current = false;
-                    }
-                }]
-            );
+            Alert.alert('Lỗi', reviewError, [{
+                text: 'OK',
+                onPress: () => {
+                    dispatch(clearReviewState());
+                    alertShownRef.current = false;
+                }
+            }]);
         }
-
         if (!successMessage && !reviewError) {
             alertShownRef.current = false;
         }
     }, [successMessage, reviewError, isLoading, dispatch, orderId]);
 
-    // Handle order error
     useEffect(() => {
         if (orderError) {
-            Alert.alert(
-                'Lỗi',
-                orderError,
-                [{
-                    text: 'OK',
-                    onPress: () => dispatch(clearOrderState())
-                }]
-            );
+            Alert.alert('Lỗi', orderError, [{
+                text: 'OK',
+                onPress: () => dispatch(clearOrderState())
+            }]);
         }
     }, [orderError, dispatch]);
 
@@ -242,13 +218,13 @@ const OrderDetailsScreen = ({ navigation }) => {
         const hasReviewed = submittedReviews[productId];
         const existingRev = existingReviews[productId];
         const showEditButton = hasReviewed && existingRev?._id && canShowEditReview(existingRev);
+        const accentColor = orderDataColor || '#1CD4D4';
 
-        // Show loading state when refetching reviews
         if (isRefetchingReviews) {
             return (
                 <View style={styles.ratingSection}>
                     <View style={styles.loadingContainer}>
-                        <ActivityIndicator size="small" color={orderDataColor || '#1CD4D4'} />
+                        <ActivityIndicator size="small" color={accentColor} />
                         <Text style={styles.loadingText}>Đang tải đánh giá...</Text>
                     </View>
                 </View>
@@ -261,11 +237,11 @@ const OrderDetailsScreen = ({ navigation }) => {
                     <View style={styles.reviewErrorBox}>
                         <Text style={styles.reviewErrorText}>{reviewError}</Text>
                         <TouchableOpacity
-                            style={[styles.retryReviewBtn, { borderColor: orderDataColor || '#1CD4D4' }]}
+                            style={[styles.retryReviewBtn, { borderColor: accentColor }]}
                             onPress={() => dispatch(getReviewsByOrderId(orderData._id ?? orderData.order_id))}
                         >
-                            <Icon name="refresh" size={16} color={orderDataColor || '#1CD4D4'} />
-                            <Text style={[styles.retryReviewBtnText, { color: orderDataColor || '#1CD4D4' }]}>Thử lại</Text>
+                            <Icon name="refresh" size={16} color={accentColor} />
+                            <Text style={[styles.retryReviewBtnText, { color: accentColor }]}>Thử lại</Text>
                         </TouchableOpacity>
                     </View>
                 ) : null}
@@ -274,12 +250,9 @@ const OrderDetailsScreen = ({ navigation }) => {
                 </Text>
 
                 {hasReviewed ? (
-                    // Display existing review with edit option (chỉ hiện nút Chỉnh sửa khi còn trong hạn)
                     <View style={styles.reviewedContainer}>
                         <View style={styles.existingReviewContent}>
-                            <Text style={styles.existingReviewText}>
-                                "{reviews[productId]}"
-                            </Text>
+                            <Text style={styles.existingReviewText}>"{reviews[productId]}"</Text>
                         </View>
                         <View style={styles.reviewActions}>
                             <View style={styles.submittedIndicator}>
@@ -307,10 +280,8 @@ const OrderDetailsScreen = ({ navigation }) => {
                                     }}
                                     disabled={isRefetchingReviews}
                                 >
-                                    <Icon name="edit" size={16} color={orderDataColor || '#1CD4D4'} />
-                                    <Text style={[styles.editButtonText, { color: orderDataColor || '#1CD4D4' }]}>
-                                        Chỉnh sửa
-                                    </Text>
+                                    <Icon name="edit" size={16} color={accentColor} />
+                                    <Text style={[styles.editButtonText, { color: accentColor }]}>Chỉnh sửa</Text>
                                 </TouchableOpacity>
                             ) : (
                                 hasReviewed && existingRev && (
@@ -324,9 +295,8 @@ const OrderDetailsScreen = ({ navigation }) => {
                         </View>
                     </View>
                 ) : (
-                    // Chưa đánh giá: chỉ nút mở màn hình đánh giá
                     <TouchableOpacity
-                        style={[styles.openReviewScreenBtn, { borderColor: orderDataColor || '#1CD4D4' }]}
+                        style={[styles.openReviewScreenBtn, { borderColor: accentColor }]}
                         onPress={() => {
                             const item = orderItems.find(i => (i.product_id ?? i.product_id?._id)?.toString?.() === productId?.toString?.());
                             navigation.navigate('CreateReview', {
@@ -336,8 +306,8 @@ const OrderDetailsScreen = ({ navigation }) => {
                             });
                         }}
                     >
-                        <Icon name="add-a-photo" size={18} color={orderDataColor || '#1CD4D4'} />
-                        <Text style={[styles.openReviewScreenBtnText, { color: orderDataColor || '#1CD4D4' }]}>
+                        <Icon name="add-a-photo" size={18} color={accentColor} />
+                        <Text style={[styles.openReviewScreenBtnText, { color: accentColor }]}>
                             Mở màn hình đánh giá (có thể đính kèm ảnh)
                         </Text>
                     </TouchableOpacity>
@@ -346,34 +316,23 @@ const OrderDetailsScreen = ({ navigation }) => {
         );
     };
 
-
-
-    // Format ngày
     const formatDate = (dateString) => {
         const date = new Date(dateString);
-        return date.toLocaleDateString('vi-VN', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric'
-        });
+        return date.toLocaleDateString('vi-VN', { year: 'numeric', month: 'short', day: 'numeric' });
     };
 
-    // Tính tổng tiền items
     const calculateSubtotal = () => {
         const fromApi = orderData?.subtotal_products ?? orderData?.subtotalProducts;
         if (fromApi != null && Number(fromApi) >= 0) return Number(fromApi);
         return orderItems.reduce((total, item) => total + (item.subtotal ?? item.price * (item.quantity || 0)), 0) || 0;
     };
 
+    const accentColor = orderDataColor || '#1CD4D4';
+
     return (
         <SafeAreaView style={styles.container}>
-            <StatusBar
-                barStyle="light-content"
-                backgroundColor={COLORS.secondary}
-                translucent
-            />
+            <StatusBar barStyle="light-content" backgroundColor={COLORS.secondary} translucent />
 
-            {/* Header */}
             <LinearGradient
                 colors={COLORS.gradient.primary}
                 start={{ x: 0, y: 0 }}
@@ -382,10 +341,7 @@ const OrderDetailsScreen = ({ navigation }) => {
             >
                 <SafeAreaView>
                     <View style={styles.header}>
-                        <TouchableOpacity
-                            style={styles.backButton}
-                            onPress={() => navigation.goBack()}
-                        >
+                        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
                             <Icon name="arrow-back" size={24} color="#ffffff" />
                         </TouchableOpacity>
                         <Text style={styles.headerTitle}>Chi tiết đơn hàng</Text>
@@ -393,22 +349,20 @@ const OrderDetailsScreen = ({ navigation }) => {
                     </View>
                 </SafeAreaView>
             </LinearGradient>
-            {/* Global Loading Overlay */}
-            {isRefetchingReviews && (
+
+            {/* Một overlay loading chung: chi tiết đơn hàng hoặc đánh giá */}
+            {(detailLoading || isRefetchingReviews) && (
                 <View style={styles.globalLoadingOverlay}>
                     <View style={styles.globalLoadingContainer}>
-                        <ActivityIndicator size="large" color={orderDataColor || '#1CD4D4'} />
-                        <Text style={styles.globalLoadingText}>Đang cập nhật đánh giá...</Text>
+                        <ActivityIndicator size="large" color={accentColor} />
+                        <Text style={styles.globalLoadingText}>
+                            {detailLoading ? 'Đang tải chi tiết đơn hàng...' : 'Đang cập nhật đánh giá...'}
+                        </Text>
                     </View>
                 </View>
             )}
 
-            {orderId && detailLoading ? (
-                <View style={styles.detailLoadingContainer}>
-                    <ActivityIndicator size="large" color={orderDataColor || '#1CD4D4'} />
-                    <Text style={styles.detailLoadingText}>Đang tải chi tiết đơn hàng...</Text>
-                </View>
-            ) : paramOrderId && detailError ? (
+            {orderId && detailError && !detailLoading ? (
                 <View style={styles.detailErrorContainer}>
                     <Text style={styles.detailErrorText}>{detailError}</Text>
                     <TouchableOpacity
@@ -419,157 +373,143 @@ const OrderDetailsScreen = ({ navigation }) => {
                         <Text style={styles.retryDetailButtonText}>Thử lại</Text>
                     </TouchableOpacity>
                 </View>
-            ) : (
-            <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-                {/* Order Info */}
-                <View style={styles.orderInfo}>
-                    <View style={styles.orderHeader}>
-                        <View>
-                            <Text style={styles.orderNumber}>{`#ORD-${(orderData?.order_id ?? orderData?._id ?? '')?.toString().slice(-8).toUpperCase()}`}</Text>
-                            <Text style={styles.orderDate}>{formatDate(orderData?.createdAt)}</Text>
-                        </View>
-                        <View style={[
-                            styles.statusBadge,
-                            orderStatus === 'Đã giao' && styles.deliveredBadge,
-                            { backgroundColor: orderDataBg || 'rgba(255, 184, 0, 0.1)' }
-                        ]}>
-                            <Text style={[
-                                styles.statusText,
-                                orderStatus === 'Đã giao' && styles.deliveredText,
-                                { color: orderDataColor || '#FFB800' }
+            ) : !detailLoading ? (
+                <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+                    <View style={styles.orderInfo}>
+                        <View style={styles.orderHeader}>
+                            <View>
+                                <Text style={styles.orderNumber}>{`#ORD-${(orderData?.order_id ?? orderData?._id ?? '')?.toString().slice(-8).toUpperCase()}`}</Text>
+                                <Text style={styles.orderDate}>{formatDate(orderData?.createdAt)}</Text>
+                            </View>
+                            <View style={[
+                                styles.statusBadge,
+                                orderStatus === 'Đã giao' && styles.deliveredBadge,
+                                { backgroundColor: orderDataBg || 'rgba(255, 184, 0, 0.1)' }
                             ]}>
-                                {orderStatus}
-                            </Text>
-                        </View>
-                    </View>
-
-                    {/* Delivery Address */}
-                    <View style={styles.addressContainer}>
-                        <Text style={styles.addressTitle}>Địa chỉ giao hàng</Text>
-                        <Text style={styles.customerName}>{orderData?.receiver_name}</Text>
-                        <Text style={styles.address}>
-                            {orderData?.receiver_address}{'\n'}
-                            Điện thoại: {orderData?.receiver_phone}
-                        </Text>
-                    </View>
-
-                    {/* Products */}
-                    <View style={styles.productsContainer}>
-                        <Text style={styles.productsSectionTitle}>Sản phẩm</Text>
-                        {orderItems.length === 0 && !detailLoading && orderData ? (
-                            <View style={styles.emptyProductsContainer}>
-                                <Icon name="inventory-2" size={48} color="#9CA3AF" />
-                                <Text style={styles.emptyProductsText}>Chưa tải được danh sách sản phẩm</Text>
-                                <TouchableOpacity
-                                    style={[styles.retryDetailButton, { alignSelf: 'center', marginTop: 12 }]}
-                                    onPress={() => orderId && dispatch(fetchOrderDetailByUser(orderId))}
-                                >
-                                    <Icon name="refresh" size={20} color="#fff" />
-                                    <Text style={styles.retryDetailButtonText}>Thử lại</Text>
-                                </TouchableOpacity>
-                            </View>
-                        ) : (
-                        orderItems.map((item, index) => {
-                            const pid = item.product_id ?? item.product_id?._id ?? item.product?._id;
-                            const pidStr = typeof pid === 'string' ? pid : pid?.toString?.() ?? '';
-                            return (
-                            <View key={pidStr || index} style={styles.productCard}>
-                                <View style={styles.productInfo}>
-                                    <Image
-                                        source={{ uri: getItemImage(item) }}
-                                        style={styles.productImage}
-                                    />
-                                    <View style={styles.productDetails}>
-                                        <Text style={styles.productName}>{item.product_name ?? item.name ?? 'Sản phẩm'}</Text>
-                                        {(item.product_category_name ?? item.product_category) && (
-                                            <Text style={styles.productVariant}>{item.product_category_name ?? item.product_category}</Text>
-                                        )}
-                                        <Text style={styles.productVariant}>SL: {item.quantity ?? 0}</Text>
-                                        <View style={styles.priceRow}>
-                                            {item.original_price != null && Number(item.original_price) > Number(item.price ?? 0) && (
-                                                <>
-                                                    <Text style={styles.originalPrice}>{formatCurrency(item.original_price)} đ</Text>
-                                                    <View style={styles.discountBadge}>
-                                                        <Text style={styles.discountBadgeText}>Giảm giá</Text>
-                                                    </View>
-                                                </>
-                                            )}
-                                            <Text style={[styles.price, item.original_price != null && Number(item.original_price) > Number(item.price ?? 0) && styles.priceDiscounted]}>
-                                                {formatCurrency(item.price)} đ
-                                            </Text>
-                                            <Text style={styles.quantity}>× {item.quantity ?? 0}</Text>
-                                        </View>
-                                        <Text style={[
-                                            styles.subtotal,
-                                            { color: orderDataColor || '#22C55E' }
-                                        ]}>Tạm tính: {formatCurrency(item.subtotal ?? (item.price * (item.quantity || 0)))} đ</Text>
-                                    </View>
-                                </View>
-                                {renderRatingSection(pidStr || pid)}
-                            </View>
-                        );})
-                        )}
-                    </View>
-
-                    {/* Voucher đã dùng (API: order.discount_code, order.discount_amount) */}
-                    {(orderData?.discount_code || (orderData?.discount_amount != null && Number(orderData.discount_amount) > 0)) && (
-                        <View style={styles.voucherContainer}>
-                            <Icon name="local-offer" size={20} color={COLORS.primary} />
-                            <View style={styles.voucherTextWrap}>
-                                <Text style={styles.voucherLabel}>Đã dùng voucher</Text>
-                                <Text style={styles.voucherValue}>
-                                    {orderData.discount_code ? `${orderData.discount_code}, giảm ${formatCurrency(orderData.discount_amount ?? 0)} đ` : `Giảm ${formatCurrency(orderData.discount_amount ?? 0)} đ`}
+                                <Text style={[
+                                    styles.statusText,
+                                    orderStatus === 'Đã giao' && styles.deliveredText,
+                                    { color: orderDataColor || '#FFB800' }
+                                ]}>
+                                    {orderStatus}
                                 </Text>
                             </View>
                         </View>
-                    )}
 
-                    {/* Order Summary: giống web — Tạm tính (sản phẩm), Phí ship, Tổng trước voucher, Giảm voucher, Tổng */}
-                    <View style={styles.summaryContainer}>
-                        <View style={styles.summaryRow}>
-                            <Text style={styles.summaryLabel}>Tạm tính (sản phẩm)</Text>
-                            <Text style={styles.summaryValue}>{formatCurrency(calculateSubtotal())} đ</Text>
-                        </View>
-                        <View style={styles.summaryRow}>
-                            <Text style={styles.summaryLabel}>Phí vận chuyển</Text>
-                            <Text style={styles.summaryValue}>
-                                {formatCurrency(orderData?.shipping_fee ?? 0)} đ
+                        <View style={styles.addressContainer}>
+                            <Text style={styles.addressTitle}>Địa chỉ giao hàng</Text>
+                            <Text style={styles.customerName}>{orderData?.receiver_name}</Text>
+                            <Text style={styles.address}>
+                                {orderData?.receiver_address}{'\n'}
+                                Điện thoại: {orderData?.receiver_phone}
                             </Text>
                         </View>
+
+                        <View style={styles.productsContainer}>
+                            <Text style={styles.productsSectionTitle}>Sản phẩm</Text>
+                            {orderItems.length === 0 && orderData ? (
+                                <View style={styles.emptyProductsContainer}>
+                                    <Icon name="inventory-2" size={48} color="#9CA3AF" />
+                                    <Text style={styles.emptyProductsText}>Chưa tải được danh sách sản phẩm</Text>
+                                    <TouchableOpacity
+                                        style={[styles.retryDetailButton, { alignSelf: 'center', marginTop: 12 }]}
+                                        onPress={() => orderId && dispatch(fetchOrderDetailByUser(orderId))}
+                                    >
+                                        <Icon name="refresh" size={20} color="#fff" />
+                                        <Text style={styles.retryDetailButtonText}>Thử lại</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            ) : (
+                                orderItems.map((item, index) => {
+                                    const pid = item.product_id ?? item.product_id?._id ?? item.product?._id;
+                                    const pidStr = typeof pid === 'string' ? pid : pid?.toString?.() ?? '';
+                                    return (
+                                        <View key={pidStr || index} style={styles.productCard}>
+                                            <View style={styles.productInfo}>
+                                                <Image source={{ uri: getItemImage(item) }} style={styles.productImage} />
+                                                <View style={styles.productDetails}>
+                                                    <Text style={styles.productName} numberOfLines={2}>{item.product_name ?? item.name ?? 'Sản phẩm'}</Text>
+                                                    {(item.product_category_name ?? item.product_category) && (
+                                                        <Text style={styles.productVariant}>{item.product_category_name ?? item.product_category}</Text>
+                                                    )}
+                                                    <Text style={styles.productVariant}>SL: {item.quantity ?? 0}</Text>
+                                                    <View style={styles.priceRow}>
+                                                        <View style={styles.priceRowLeft}>
+                                                            {item.original_price != null && Number(item.original_price) > Number(item.price ?? 0) && (
+                                                                <>
+                                                                    <Text style={styles.originalPrice} numberOfLines={1}>{formatCurrency(item.original_price)} </Text>
+                                                                    <View style={styles.discountBadge}>
+                                                                        <Text style={styles.discountBadgeText}>Giảm giá</Text>
+                                                                    </View>
+                                                                </>
+                                                            )}
+                                                            <Text style={[styles.price, item.original_price != null && Number(item.original_price) > Number(item.price ?? 0) && styles.priceDiscounted]} numberOfLines={1}>
+                                                                {formatCurrency(item.price)}
+                                                            </Text>
+                                                        </View>
+                                                        <Text style={styles.quantity}>× {item.quantity ?? 0}</Text>
+                                                    </View>
+                                                    <Text style={[styles.subtotal, { color: orderDataColor || '#22C55E' }]}>
+                                                        Tạm tính: {formatCurrency(item.subtotal ?? (item.price * (item.quantity || 0)))}
+                                                    </Text>
+                                                </View>
+                                            </View>
+                                            {renderRatingSection(pidStr || pid)}
+                                        </View>
+                                    );
+                                })
+                            )}
+                        </View>
+
                         {(orderData?.discount_code || (orderData?.discount_amount != null && Number(orderData.discount_amount) > 0)) && (
-                            <>
-                                <View style={styles.summaryRow}>
-                                    <Text style={styles.summaryLabel}>Tổng trước voucher</Text>
-                                    <Text style={styles.summaryValue}>
-                                        {formatCurrency((orderData?.total_price ?? 0) + (orderData?.discount_amount ?? 0))} đ
+                            <View style={styles.voucherContainer}>
+                                <Icon name="local-offer" size={20} color={COLORS.primary} />
+                                <View style={styles.voucherTextWrap}>
+                                    <Text style={styles.voucherLabel}>Đã dùng voucher</Text>
+                                    <Text style={styles.voucherValue}>
+                                        {orderData.discount_code ? `${orderData.discount_code}, giảm ${formatCurrency(orderData.discount_amount ?? 0)} ` : `Giảm ${formatCurrency(orderData.discount_amount ?? 0)} `}
                                     </Text>
                                 </View>
-                                <View style={styles.summaryRow}>
-                                    <Text style={styles.summaryLabel}>Đã dùng voucher{orderData.discount_code ? `: ${orderData.discount_code}, giảm` : ', giảm'}</Text>
-                                    <Text style={styles.discountValue}>-{formatCurrency(orderData.discount_amount ?? 0)} đ</Text>
-                                </View>
-                            </>
+                            </View>
                         )}
-                        <View style={[styles.summaryRow, styles.totalRow]}>
-                            <Text style={styles.totalLabel}>Tổng cộng</Text>
-                            <Text style={styles.totalValue}>{formatCurrency(orderData?.total_price ?? 0)} đ</Text>
+
+                        <View style={styles.summaryContainer}>
+                            <View style={styles.summaryRow}>
+                                <Text style={styles.summaryLabel}>Tạm tính (sản phẩm)</Text>
+                                <Text style={styles.summaryValue}>{formatCurrency(calculateSubtotal())} </Text>
+                            </View>
+                            <View style={styles.summaryRow}>
+                                <Text style={styles.summaryLabel}>Phí vận chuyển</Text>
+                                <Text style={styles.summaryValue}>{formatCurrency(orderData?.shipping_fee ?? 0)} </Text>
+                            </View>
+                            {(orderData?.discount_code || (orderData?.discount_amount != null && Number(orderData.discount_amount) > 0)) && (
+                                <>
+                                    <View style={styles.summaryRow}>
+                                        <Text style={styles.summaryLabel}>Tổng trước voucher</Text>
+                                        <Text style={styles.summaryValue}>{formatCurrency((orderData?.total_price ?? 0) + (orderData?.discount_amount ?? 0))} </Text>
+                                    </View>
+                                    <View style={styles.summaryRow}>
+                                        <Text style={styles.summaryLabel}>Đã dùng voucher{orderData.discount_code ? `: ${orderData.discount_code}, giảm` : ', giảm'}</Text>
+                                        <Text style={styles.discountValue}>-{formatCurrency(orderData.discount_amount ?? 0)} </Text>
+                                    </View>
+                                </>
+                            )}
+                            <View style={[styles.summaryRow, styles.totalRow]}>
+                                <Text style={styles.totalLabel}>Tổng cộng</Text>
+                                <Text style={styles.totalValue}>{formatCurrency(orderData?.total_price ?? 0)} </Text>
+                            </View>
                         </View>
                     </View>
-                </View>
-            </ScrollView>
-            )}
+                </ScrollView>
+            ) : null}
         </SafeAreaView>
     );
 };
 
-
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#FFFFFF',
-    },
+    container: { flex: 1, backgroundColor: '#FFFFFF' },
     headerGradient: {
-        paddingTop: StatusBar.currentHeight + 10,
+        paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 0) + 10 : 10,
         paddingBottom: 20,
         borderBottomLeftRadius: 30,
         borderBottomRightRadius: 30,
@@ -596,86 +536,33 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: 'rgba(255, 255, 255, 0.3)',
     },
-    headerTitle: {
-        flex: 1,
-        textAlign: 'center',
-        fontSize: 18,
-        fontWeight: '500',
-        color: '#FFFFFF',
-    },
-    headerSpacer: {
-        width: 40,
-    },
-    content: {
-        flex: 1,
-    },
-    orderInfo: {
-        padding: 16,
-    },
+    headerTitle: { flex: 1, textAlign: 'center', fontSize: 18, fontWeight: '500', color: '#FFFFFF' },
+    headerSpacer: { width: 40 },
+    content: { flex: 1 },
+    orderInfo: { padding: 16 },
     orderHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'flex-start',
         marginBottom: 16,
     },
-    orderNumber: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        color: '#000',
-    },
-    orderDate: {
-        fontSize: 14,
-        color: '#6B7280',
-        marginTop: 2,
-    },
+    orderNumber: { fontSize: 20, fontWeight: 'bold', color: '#000' },
+    orderDate: { fontSize: 14, color: '#6B7280', marginTop: 2 },
     statusBadge: {
         paddingHorizontal: 12,
         paddingVertical: 4,
         backgroundColor: 'rgba(255, 184, 0, 0.1)',
         borderRadius: 20,
     },
-    deliveredBadge: {
-        backgroundColor: 'rgba(34, 197, 94, 0.1)',
-    },
-    statusText: {
-        fontSize: 14,
-        fontWeight: '500',
-        color: '#FFB800',
-    },
-    deliveredText: {
-        color: '#22C55E',
-    },
-    addressContainer: {
-        backgroundColor: '#F9FAFB',
-        borderRadius: 8,
-        padding: 16,
-        marginBottom: 24,
-    },
-    addressTitle: {
-        fontSize: 16,
-        fontWeight: '500',
-        color: '#000',
-        marginBottom: 8,
-    },
-    customerName: {
-        fontSize: 16,
-        color: '#4B5563',
-        marginBottom: 4,
-    },
-    address: {
-        fontSize: 14,
-        color: '#4B5563',
-        lineHeight: 20,
-    },
-    productsContainer: {
-        marginBottom: 24,
-    },
-    productsSectionTitle: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#111827',
-        marginBottom: 12,
-    },
+    deliveredBadge: { backgroundColor: 'rgba(34, 197, 94, 0.1)' },
+    statusText: { fontSize: 14, fontWeight: '500', color: '#FFB800' },
+    deliveredText: { color: '#22C55E' },
+    addressContainer: { backgroundColor: '#F9FAFB', borderRadius: 8, padding: 16, marginBottom: 24 },
+    addressTitle: { fontSize: 16, fontWeight: '500', color: '#000', marginBottom: 8 },
+    customerName: { fontSize: 16, color: '#4B5563', marginBottom: 4 },
+    address: { fontSize: 14, color: '#4B5563', lineHeight: 20 },
+    productsContainer: { marginBottom: 24 },
+    productsSectionTitle: { fontSize: 16, fontWeight: '600', color: '#111827', marginBottom: 12 },
     emptyProductsContainer: {
         paddingVertical: 24,
         paddingHorizontal: 16,
@@ -685,12 +572,7 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: '#E5E7EB',
     },
-    emptyProductsText: {
-        fontSize: 14,
-        color: '#6B7280',
-        marginTop: 8,
-        textAlign: 'center',
-    },
+    emptyProductsText: { fontSize: 14, color: '#6B7280', marginTop: 8, textAlign: 'center' },
     productCard: {
         backgroundColor: '#FFFFFF',
         borderRadius: 8,
@@ -698,83 +580,37 @@ const styles = StyleSheet.create({
         borderColor: '#E5E7EB',
         padding: 16,
         marginBottom: 16,
+        overflow: 'hidden',
     },
-    productInfo: {
-        flexDirection: 'row',
-    },
-    productImage: {
-        width: 80,
-        height: 80,
-        borderRadius: 8,
-        marginRight: 16,
-    },
-    productDetails: {
-        flex: 1,
-    },
-    productName: {
-        fontSize: 16,
-        fontWeight: '500',
-        color: '#000',
-        marginBottom: 4,
-    },
-    productVariant: {
-        fontSize: 14,
-        color: '#6B7280',
-        marginBottom: 8,
-    },
+    productInfo: { flexDirection: 'row', flexWrap: 'wrap' },
+    productImage: { width: 80, height: 80, borderRadius: 8, marginRight: 16 },
+    productDetails: { flex: 1, minWidth: 0 },
+    productName: { fontSize: 16, fontWeight: '500', color: '#000', marginBottom: 4 },
+    productVariant: { fontSize: 14, color: '#6B7280', marginBottom: 8 },
     priceRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
         marginBottom: 4,
+        flexWrap: 'wrap',
     },
-    price: {
-        fontSize: 16,
-        fontWeight: '500',
-        color: '#000',
+    priceRowLeft: {
+        flex: 1,
+        minWidth: 0,
+        flexDirection: 'row',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: 6,
     },
-    originalPrice: {
-        fontSize: 14,
-        color: '#9CA3AF',
-        textDecorationLine: 'line-through',
-        marginRight: 8,
-    },
-    discountBadge: {
-        backgroundColor: '#FEF3C7',
-        paddingHorizontal: 6,
-        paddingVertical: 2,
-        borderRadius: 4,
-        marginRight: 8,
-    },
-    discountBadgeText: {
-        fontSize: 11,
-        color: '#B45309',
-        fontWeight: '600',
-    },
-    priceDiscounted: {
-        color: '#16A34A',
-    },
-    quantity: {
-        fontSize: 14,
-        color: '#6B7280',
-    },
-    subtotal: {
-        fontSize: 14,
-        fontWeight: '500',
-        color: '#22C55E',
-    },
-    ratingSection: {
-        marginTop: 16,
-        paddingTop: 16,
-        borderTopWidth: 1,
-        borderTopColor: '#E5E7EB',
-    },
-    ratingTitle: {
-        fontSize: 14,
-        fontWeight: '500',
-        color: '#000',
-        marginBottom: 8,
-    },
+    price: { fontSize: 16, fontWeight: '500', color: '#000', flexShrink: 0 },
+    originalPrice: { fontSize: 14, color: '#9CA3AF', textDecorationLine: 'line-through' },
+    discountBadge: { backgroundColor: '#FEF3C7', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
+    discountBadgeText: { fontSize: 11, color: '#B45309', fontWeight: '600' },
+    priceDiscounted: { color: '#16A34A' },
+    quantity: { fontSize: 14, color: '#6B7280', flexShrink: 0 },
+    subtotal: { fontSize: 14, fontWeight: '500', color: '#22C55E' },
+    ratingSection: { marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: '#E5E7EB' },
+    ratingTitle: { fontSize: 14, fontWeight: '500', color: '#000', marginBottom: 8 },
     openReviewScreenBtn: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -786,13 +622,7 @@ const styles = StyleSheet.create({
         borderWidth: 2,
         marginBottom: 12,
     },
-    openReviewScreenBtnText: {
-        fontSize: 13,
-        fontWeight: '600',
-    },
-    disabledButton: {
-        opacity: 0.7,
-    },
+    openReviewScreenBtnText: { fontSize: 13, fontWeight: '600' },
     reviewedContainer: {
         backgroundColor: '#F0FDF4',
         borderRadius: 8,
@@ -800,47 +630,14 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: '#BBF7D0',
     },
-    existingReviewContent: {
-        marginBottom: 12,
-    },
-    existingReviewText: {
-        fontSize: 14,
-        color: '#374151',
-        fontStyle: 'italic',
-        lineHeight: 20,
-    },
-    reviewActions: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-    },
-    submittedIndicator: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    submittedText: {
-        color: '#22C55E',
-        fontSize: 12,
-        fontWeight: '500',
-        marginLeft: 4,
-    },
-    editButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-    },
-    editButtonText: {
-        fontSize: 12,
-        fontWeight: '500',
-        marginLeft: 4,
-    },
-    editExpiredText: {
-        fontSize: 12,
-        color: COLORS.text.light,
-        fontStyle: 'italic',
-        marginLeft: 8,
-    },
+    existingReviewContent: { marginBottom: 12 },
+    existingReviewText: { fontSize: 14, color: '#374151', fontStyle: 'italic', lineHeight: 20 },
+    reviewActions: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+    submittedIndicator: { flexDirection: 'row', alignItems: 'center' },
+    submittedText: { color: '#22C55E', fontSize: 12, fontWeight: '500', marginLeft: 4 },
+    editButton: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, paddingVertical: 4 },
+    editButtonText: { fontSize: 12, fontWeight: '500', marginLeft: 4 },
+    editExpiredText: { fontSize: 12, color: COLORS.text.light, fontStyle: 'italic', marginLeft: 8 },
     reviewErrorBox: {
         marginBottom: 12,
         padding: 10,
@@ -868,10 +665,7 @@ const styles = StyleSheet.create({
         paddingVertical: 20,
         gap: 8,
     },
-    loadingText: {
-        fontSize: 14,
-        color: '#6B7280',
-    },
+    loadingText: { fontSize: 14, color: '#6B7280' },
     globalLoadingOverlay: {
         position: 'absolute',
         top: 0,
@@ -890,30 +684,12 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         gap: 12,
         shadowColor: '#000',
-        shadowOffset: {
-            width: 0,
-            height: 2,
-        },
+        shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.25,
         shadowRadius: 3.84,
         elevation: 5,
     },
-    globalLoadingText: {
-        fontSize: 16,
-        color: '#374151',
-        fontWeight: '500',
-    },
-    detailLoadingContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: 24,
-        gap: 12,
-    },
-    detailLoadingText: {
-        fontSize: 16,
-        color: '#6B7280',
-    },
+    globalLoadingText: { fontSize: 16, color: '#374151', fontWeight: '500' },
     detailErrorContainer: {
         flex: 1,
         justifyContent: 'center',
@@ -921,11 +697,7 @@ const styles = StyleSheet.create({
         padding: 24,
         gap: 16,
     },
-    detailErrorText: {
-        fontSize: 15,
-        color: '#B91C1C',
-        textAlign: 'center',
-    },
+    detailErrorText: { fontSize: 15, color: '#B91C1C', textAlign: 'center' },
     retryDetailButton: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -935,11 +707,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
         borderRadius: 8,
     },
-    retryDetailButtonText: {
-        fontSize: 16,
-        color: '#fff',
-        fontWeight: '600',
-    },
+    retryDetailButtonText: { fontSize: 16, color: '#fff', fontWeight: '600' },
     voucherContainer: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -950,95 +718,17 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: '#BBF7D0',
     },
-    voucherTextWrap: {
-        marginLeft: 10,
-        flex: 1,
-    },
-    voucherLabel: {
-        fontSize: 14,
-        color: '#166534',
-        fontWeight: '600',
-    },
-    voucherValue: {
-        fontSize: 14,
-        color: '#15803D',
-        marginTop: 2,
-    },
-    summaryContainer: {
-        backgroundColor: '#F9FAFB',
-        borderRadius: 8,
-        padding: 16,
-    },
-    summaryRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginBottom: 12,
-    },
-    summaryLabel: {
-        fontSize: 16,
-        color: '#4B5563',
-    },
-    summaryValue: {
-        fontSize: 16,
-        color: '#000',
-    },
-    discountValue: {
-        fontSize: 16,
-        color: '#16A34A',
-        fontWeight: '500',
-    },
-    totalRow: {
-        paddingTop: 12,
-        borderTopWidth: 1,
-        borderTopColor: '#E5E7EB',
-        marginBottom: 0,
-    },
-    totalLabel: {
-        fontSize: 16,
-        fontWeight: '500',
-        color: '#000',
-    },
-    totalValue: {
-        fontSize: 16,
-        fontWeight: '500',
-        color: '#000',
-    },
-    actionContainer: {
-        backgroundColor: '#FFFFFF',
-        borderTopWidth: 1,
-        borderTopColor: '#E5E7EB',
-        padding: 16,
-        shadowColor: '#000',
-        shadowOffset: {
-            width: 0,
-            height: -2,
-        },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 5,
-    },
-    actionButton: {
-        paddingVertical: 12,
-        paddingHorizontal: 24,
-        borderRadius: 8,
-        alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: 48,
-    },
-    cancelButton: {
-        backgroundColor: '#EF4444',
-    },
-    returnButton: {
-        backgroundColor: '#F59E0B',
-    },
-    actionButtonText: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#FFFFFF',
-    },
-    disabledButton: {
-        opacity: 0.6,
-    },
+    voucherTextWrap: { marginLeft: 10, flex: 1 },
+    voucherLabel: { fontSize: 14, color: '#166534', fontWeight: '600' },
+    voucherValue: { fontSize: 14, color: '#15803D', marginTop: 2 },
+    summaryContainer: { backgroundColor: '#F9FAFB', borderRadius: 8, padding: 16 },
+    summaryRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
+    summaryLabel: { fontSize: 16, color: '#4B5563' },
+    summaryValue: { fontSize: 16, color: '#000' },
+    discountValue: { fontSize: 16, color: '#16A34A', fontWeight: '500' },
+    totalRow: { paddingTop: 12, borderTopWidth: 1, borderTopColor: '#E5E7EB', marginBottom: 0 },
+    totalLabel: { fontSize: 16, fontWeight: '500', color: '#000' },
+    totalValue: { fontSize: 16, fontWeight: '500', color: '#000' },
 });
 
 export default OrderDetailsScreen;
