@@ -62,7 +62,7 @@ const ChangePasswordModal = ({
                         <View style={styles.inputContainer}>
                             <Ionicons name="key-outline" size={20} color={COLORS.primary} style={styles.inputIcon} />
                             <TextInput
-                                placeholder="Mật khẩu mới (tối thiểu 6 ký tự)"
+                                placeholder="Mật khẩu mới (gồm 8 ký tự ít nhất một chữ số và một chữ hoa)"
                                 placeholderTextColor={COLORS.text.light}
                                 secureTextEntry
                                 style={styles.input}
