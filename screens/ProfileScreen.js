@@ -33,7 +33,16 @@ const ProfileScreen = ({ navigation }) => {
     const [darkMode, setDarkMode] = useState(false);
     const [newsletter, setNewsletter] = useState(true);
     const dispatch = useDispatch();
-    const { profile, isLoading, isUpdateSuccess, isChangePasswordSuccess, error } = useSelector((state) => state.user);
+    const {
+        user: profile,
+        getProfileLoading: isLoading,
+        updateSuccess: isUpdateSuccess,
+        changePasswordSuccess: isChangePasswordSuccess,
+        updateLoading,
+        changePasswordLoading,
+        updateError,
+        changePasswordError,
+    } = useSelector((state) => state.user);
     const { orders, isLoading: orderLoading, error: orderError } = useSelector((state) => state.order);
     const [currentPassword, setCurrentPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
@@ -87,10 +96,10 @@ const ProfileScreen = ({ navigation }) => {
 
     // Handle error for change password
     useEffect(() => {
-        if (error && passwordModalVisible) {
+        if (changePasswordError && passwordModalVisible) {
             Alert.alert(
                 'Lỗi đổi mật khẩu',
-                error,
+                changePasswordError,
                 [
                     {
                         text: 'OK',
@@ -101,7 +110,7 @@ const ProfileScreen = ({ navigation }) => {
                 ]
             );
         }
-    }, [error, passwordModalVisible]);
+    }, [changePasswordError, passwordModalVisible]);
 
     const handleLogout = () => {
         Alert.alert(
@@ -118,9 +127,8 @@ const ProfileScreen = ({ navigation }) => {
         );
     };
 
-    const handleUpdateProfile = (updatedProfile) => {
-        dispatch(updateUserProfile(updatedProfile));
-
+    const handleUpdateProfile = async (updatedProfile) => {
+        return dispatch(updateUserProfile(updatedProfile)).unwrap();
     };
     const handleChangePassword = () => {
         // Validation
@@ -242,6 +250,7 @@ const ProfileScreen = ({ navigation }) => {
                 visible={editModalVisible}
                 onClose={() => setEditModalVisible(false)}
                 profile={profile}
+                // isUpdateSuccess={isUpdateSuccess}
                 onSave={handleUpdateProfile}
             />
             <ChangePasswordModal
@@ -254,7 +263,7 @@ const ProfileScreen = ({ navigation }) => {
                 setNewPassword={setNewPassword}
                 setConfirmPassword={setConfirmPassword}
                 onSubmit={handleChangePassword}
-                isLoading={isLoading}
+                isLoading={changePasswordLoading}
             />
         </View>
     );
@@ -264,9 +273,9 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: COLORS.background,
+        marginTop:10,
     },
     headerGradient: {
-        paddingTop: StatusBar.currentHeight + 10,
         paddingBottom: 20,
         borderBottomLeftRadius: 30,
         borderBottomRightRadius: 30,
