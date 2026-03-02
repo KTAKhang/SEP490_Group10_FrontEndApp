@@ -60,15 +60,22 @@ export async function createPreOrderPaymentIntent({ fruitTypeId, quantityKg, rec
 
 /** GET /preorder/my-pre-orders?page=&limit=&sortBy=&sortOrder=&status= */
 export async function getMyPreOrders(params = {}) {
+  const query = {
+    page: params.page ?? 1,
+    limit: params.limit ?? 10,
+    ...(params.sortBy != null && { sortBy: params.sortBy }),
+    ...(params.sortOrder != null && { sortOrder: params.sortOrder }),
+    ...(params.status != null && params.status !== '' && { status: params.status }),
+  };
   const response = await axios.get(`${API_BASE_URL}/preorder/my-pre-orders`, {
-    params: { page: 1, limit: 50, ...params },
+    params: query,
     headers: await authHeaders(),
   });
   const data = response.data;
   if (data.status === 'ERR') throw new Error(data.message || 'Lấy đơn đặt trước thất bại');
   return {
     list: data.data || [],
-    pagination: data.pagination || {},
+    pagination: data.pagination || { page: 1, limit: 10, total: 0, totalPages: 0 },
   };
 }
 

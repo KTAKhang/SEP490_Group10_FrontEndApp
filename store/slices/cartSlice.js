@@ -61,7 +61,7 @@ export const updateCartItem = createAsyncThunk(
 
 export const removeCartItem = createAsyncThunk(
   "cart/removeCartItem",
-  async ({ product_ids }, { rejectWithValue, dispatch }) => {
+  async ( product_ids , { rejectWithValue, dispatch }) => {
     try {
       // Nếu product_ids không phải mảng thì convert thành mảng
       const formattedProductIds = Array.isArray(product_ids)

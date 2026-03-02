@@ -17,9 +17,9 @@ export const fetchUserProfile = createAsyncThunk(
 
 export const updateUserProfile = createAsyncThunk(
     'user/updateUserProfile',
-    async ({ user_name, avatar }, { rejectWithValue }) => {
+    async ({ user_name, phone, address, birthday, gender, avatar }, { rejectWithValue }) => {
         try {
-            const response = await updateUserProfileApi({ user_name, avatar });
+            const response = await updateUserProfileApi({ user_name, phone, address, birthday, gender, avatar });
             return response;
         } catch (error) {
             return rejectWithValue(error.message);
@@ -41,76 +41,112 @@ export const changePassword = createAsyncThunk(
 );
 
 const initialState = {
-    profile: {},
-    isLoading: false,
+    user: null,
+    loading: false,
     error: null,
-    isUpdateSuccess: false,
-    isChangePasswordSuccess: false,
+    message: null,
+
+    // phân biệt theo action
+    updateLoading: false,
+    updateError: null,
+    updateMessage: null,
+    updateSuccess: false,
+
+    changePasswordLoading: false,
+    changePasswordError: null,
+    changePasswordMessage: null,
+    changePasswordSuccess: false,
+
+    getProfileLoading: false,
+    getProfileError: null,
 };
 
 const userSlice = createSlice({
-    name: 'user',
+    name: "user",
     initialState,
     reducers: {
-        clearUserState: (state) => {
-            state.profile = null;
-            state.isLoading = false;
-            state.error = null;
+        clearProfileMessages: (state) => {
+            state.updateMessage = null;
+            state.updateError = null;
+            state.changePasswordMessage = null;
+            state.changePasswordError = null;
+            state.updateSuccess = false;
+            state.changePasswordSuccess = false;
         },
         resetUpdateSuccess: (state) => {
-            state.isUpdateSuccess = false;
+            state.updateSuccess = false;
+            state.updateMessage = null;
+            state.updateError = null;
         },
         resetChangePasswordSuccess: (state) => {
-            state.isChangePasswordSuccess = false;
+            state.changePasswordSuccess = false;
+            state.changePasswordMessage = null;
+            state.changePasswordError = null;
         },
         clearError: (state) => {
-            state.error = null;
+            state.updateError = null;
+            state.changePasswordError = null;
+            state.getProfileError = null;
         },
     },
     extraReducers: (builder) => {
         builder
-            .addCase(fetchUserProfile.pending, (state) => {
-                state.isLoading = true;
-                state.error = null;
-            })
-            .addCase(fetchUserProfile.fulfilled, (state, action) => {
-                state.isLoading = false;
-                state.profile = action.payload;
-                state.error = null;
-            })
-            .addCase(fetchUserProfile.rejected, (state, action) => {
-                state.isLoading = false;
-                state.error = action.payload;
-            })
-            .addCase(updateUserProfile.pending, (state) => {
-                state.isLoading = true;
-                state.error = null;
-            })
-            .addCase(updateUserProfile.fulfilled, (state, action) => {
-                state.isLoading = false;
-                state.profile = action.payload;
-                state.isUpdateSuccess = true;
-            })
-            .addCase(updateUserProfile.rejected, (state, action) => {
-                state.isLoading = false;
-                state.error = action.payload;
-            })
-            .addCase(changePassword.pending, (state) => {
-                state.isLoading = true;
-                state.error = null;
-                state.isChangePasswordSuccess = false;
-            })
-            .addCase(changePassword.fulfilled, (state, action) => {
-                state.isLoading = false;
-                state.isChangePasswordSuccess = true;
-            })
-            .addCase(changePassword.rejected, (state, action) => {
-                state.isLoading = false;
-                state.error = action.payload;
-                state.isChangePasswordSuccess = false;
-            })
+
+        // ===== GET PROFILE =====
+        .addCase(fetchUserProfile.pending, (state) => {
+            state.getProfileLoading = true;
+            state.getProfileError = null;
+        })
+        .addCase(fetchUserProfile.fulfilled, (state, action) => {
+            state.getProfileLoading = false;
+            state.user = action.payload;
+        })
+        .addCase(fetchUserProfile.rejected, (state, action) => {
+            state.getProfileLoading = false;
+            state.getProfileError = action.payload;
+        })
+
+        // ===== UPDATE PROFILE =====
+        .addCase(updateUserProfile.pending, (state) => {
+            state.updateLoading = true;
+            state.updateError = null;
+            state.updateMessage = null;
+            state.updateSuccess = false;
+        })
+        .addCase(updateUserProfile.fulfilled, (state, action) => {
+            state.updateLoading = false;
+            state.user = {
+                ...state.user,
+                ...action.payload.data,
+            };
+            state.updateMessage = action.payload.message;
+            state.updateSuccess = true;
+        })
+        .addCase(updateUserProfile.rejected, (state, action) => {
+            state.updateLoading = false;
+            state.updateError = action.payload;
+            state.updateSuccess = false;
+        })
+
+        // ===== CHANGE PASSWORD =====
+        .addCase(changePassword.pending, (state) => {
+            state.changePasswordLoading = true;
+            state.changePasswordError = null;
+            state.changePasswordMessage = null;
+            state.changePasswordSuccess = false;
+        })
+        .addCase(changePassword.fulfilled, (state, action) => {
+            state.changePasswordLoading = false;
+            state.changePasswordMessage = action.payload;
+            state.changePasswordSuccess = true;
+        })
+        .addCase(changePassword.rejected, (state, action) => {
+            state.changePasswordLoading = false;
+            state.changePasswordError = action.payload;
+            state.changePasswordSuccess = false;
+        });
     },
 });
 
-export const { clearUserState, resetUpdateSuccess, resetChangePasswordSuccess, clearError } = userSlice.actions;
+export const { clearProfileMessages, resetUpdateSuccess, resetChangePasswordSuccess, clearError } = userSlice.actions;
 export default userSlice.reducer;

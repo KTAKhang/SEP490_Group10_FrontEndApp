@@ -4,7 +4,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { useDispatch, useSelector } from 'react-redux';
 import { checkAuthStatus } from '../store/slices/authSlice';
-import ChatBotModal from '../components/ChatBotModal';
+import CustomerChat from '../components/CustomerChat';
 import { navigateAfterLogin } from '../utils/authUtils';
 import { registerFCMTokenWithBackend } from '../utils/registerFCM';
 // Import screens
@@ -35,6 +35,9 @@ import PreOrderCheckoutScreen from '../screens/PreOrderCheckoutScreen';
 import ContactFormScreen from '../screens/ContactFormScreen';
 import PaymentSuccess from '../screens/PaymentSuccess';
 import PaymentFail from '../screens/PaymentFail';
+import OrderCreatedCOD from '../screens/OrderCreatedCOD';
+import PreOrderPaymentSuccess from "../screens/PreOrderPaymentSuccess";
+import PreOrderPaymentFail from "../screens/PreOrderPaymentFail";
 import ContactHistoryScreen from '../screens/ContactHistoryScreen';
 import ContactDetailScreen from '../screens/ContactDetailScreen';
 import * as Linking from 'expo-linking';
@@ -45,8 +48,11 @@ const linking = {
   prefixes: ['myshopapps://'],
   config: {
     screens: {
-      PaymentSuccess: 'payment-success',
-      PaymentFail: 'payment-fail',
+      PaymentSuccess: "payment-success",
+      PaymentFail: "payment-fail",
+      PreOrderPaymentSuccess: "preorder-payment-success",
+      PreOrderPaymentFail: "preorder-payment-fail",
+       OrderCreatedCOD:'create-order-success',
     },
   },
 };
@@ -106,7 +112,7 @@ export default function AppNavigator() {
       const code = params.vnp_ResponseCode || params.vnp_TransactionStatus;
       if (code === '00') {
         Alert.alert('Thanh toán thành công', 'Đơn đặt trước của bạn đã được thanh toán đặt cọc. Bạn có thể xem tại "Đặt trước" > "Đơn của tôi".', [
-          { text: 'OK', onPress: () => navigationRef.current?.navigate('PreOrder') },
+          { text: 'OK', onPress: () => navigationRef.current?.navigate('PreOrder', { remaining: 'success' }) },
         ]);
       } else {
         Alert.alert('Thanh toán thất bại', 'Giao dịch chưa thành công. Vui lòng thử lại hoặc liên hệ hỗ trợ.', [{ text: 'OK' }]);
@@ -148,7 +154,7 @@ export default function AppNavigator() {
 
   return (
     <NavigationContainer ref={navigationRef} theme={navTheme} linking={linking}>
-      {isAuthenticated && user?.role_name !== 'admin' && <ChatBotModal />}
+      {isAuthenticated && user?.role_name !== 'admin' && <CustomerChat />}
       <Stack.Navigator
         screenOptions={{ headerShown: false, cardStyle: { backgroundColor: '#F8F9FA' } }}
         initialRouteName="HomePage"
@@ -169,7 +175,9 @@ export default function AppNavigator() {
         />
         <Stack.Screen name="PaymentSuccess" component={PaymentSuccess} />
         <Stack.Screen name="PaymentFail" component={PaymentFail} />
-
+        <Stack.Screen name="PreOrderPaymentSuccess" component={PreOrderPaymentSuccess} />
+        <Stack.Screen name="PreOrderPaymentFail" component={PreOrderPaymentFail} />
+        <Stack.Screen name="OrderCreatedCOD" component={OrderCreatedCOD} />
         {/* Protected routes - Chỉ user đã đăng nhập mới xem được */}
         {isAuthenticated && (
           <>

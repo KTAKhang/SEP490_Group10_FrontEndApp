@@ -7,7 +7,10 @@ import {
     StyleSheet,
     RefreshControl,
     Alert,
+    Platform,
+    Modal,
 } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { getValidVouchers } from '../services/voucherService';
@@ -21,11 +24,23 @@ const formatDate = (d) => {
     return date.toLocaleDateString('vi-VN');
 };
 
-/** Vé voucher — thiết kế dạng thẻ vé (ticket) */
-const VoucherCard = ({ voucher }) => {
+/** Vé voucher — thiết kế dạng thẻ vé (ticket) + nút copy mã + nút xem chi tiết */
+const VoucherCard = ({ voucher, onCopy, onPressDetail }) => {
     const minOrder = voucher.minOrderValue ?? 0;
     const percent = voucher.discountPercent ?? 0;
     const maxAmount = voucher.maxDiscountAmount ?? null;
+
+    const handleCopy = async () => {
+        try {
+            await Clipboard.setStringAsync(voucher.code || '');
+            if (onCopy) onCopy();
+            if (Platform.OS === 'web') {
+                alert('Đã copy mã: ' + (voucher.code || ''));
+            }
+        } catch (e) {
+            if (onCopy) onCopy(false);
+        }
+    };
 
     return (
         <View style={styles.ticketWrap}>
@@ -45,13 +60,31 @@ const VoucherCard = ({ voucher }) => {
                 </LinearGradient>
             </View>
             <View style={styles.ticketRight}>
-                <Text style={styles.ticketCode}>{voucher.code}</Text>
+                <View style={styles.ticketCodeRow}>
+                    <Text style={styles.ticketCode} numberOfLines={1}>{voucher.code}</Text>
+                    <TouchableOpacity
+                        style={styles.copyBtn}
+                        onPress={handleCopy}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    >
+                        <MaterialIcons name="content-copy" size={18} color={COLORS.primary} />
+                        <Text style={styles.copyBtnText}>Sao chép</Text>
+                    </TouchableOpacity>
+                </View>
                 <Text style={styles.ticketDesc} numberOfLines={2}>
                     {voucher.description || `Đơn tối thiểu ${formatCurrency(minOrder)}`}
                 </Text>
                 <Text style={styles.ticketDate}>
                     HSĐ: {formatDate(voucher.startDate)} - {formatDate(voucher.endDate)}
                 </Text>
+                <TouchableOpacity
+                    style={styles.detailBtnBlock}
+                    onPress={() => onPressDetail?.(voucher)}
+                    activeOpacity={0.7}
+                >
+                    <MaterialIcons name="info-outline" size={18} color={COLORS.primary} />
+                    <Text style={styles.detailBtnBlockText}>Xem chi tiết</Text>
+                </TouchableOpacity>
             </View>
         </View>
     );
@@ -61,6 +94,7 @@ export default function VouchersScreen({ navigation }) {
     const [list, setList] = useState([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+    const [detailVoucher, setDetailVoucher] = useState(null);
 
     const load = useCallback(async (showRefresh = false) => {
         if (showRefresh) setRefreshing(true);
@@ -77,9 +111,103 @@ export default function VouchersScreen({ navigation }) {
         }
     }, []);
 
+    const handleCopySuccess = useCallback(() => {
+        if (Platform.OS !== 'web') {
+            Alert.alert('Đã copy', 'Mã voucher đã được sao chép vào clipboard.');
+        }
+    }, []);
+
+    const handleCopyInModal = useCallback(async () => {
+        if (!detailVoucher?.code) return;
+        try {
+            await Clipboard.setStringAsync(detailVoucher.code);
+            if (Platform.OS !== 'web') Alert.alert('Đã copy', 'Mã đã được sao chép.');
+        } catch (e) {}
+    }, [detailVoucher]);
+
     useEffect(() => {
         load();
     }, [load]);
+
+    const renderDetailModal = () => {
+        if (!detailVoucher) return null;
+        const v = detailVoucher;
+        const minOrder = v.minOrderValue ?? 0;
+        const percent = v.discountPercent ?? 0;
+        const maxAmount = v.maxDiscountAmount ?? null;
+        return (
+            <Modal
+                visible={!!detailVoucher}
+                animationType="fade"
+                transparent
+                onRequestClose={() => setDetailVoucher(null)}
+            >
+                <TouchableOpacity
+                    activeOpacity={1}
+                    style={styles.detailModalOverlay}
+                    onPress={() => setDetailVoucher(null)}
+                >
+                    <TouchableOpacity
+                        activeOpacity={1}
+                        style={styles.detailModalBox}
+                        onPress={(e) => e.stopPropagation()}
+                    >
+                        <View style={styles.detailModalHeader}>
+                            <Text style={styles.detailModalTitle}>Chi tiết voucher</Text>
+                            <TouchableOpacity
+                                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                                onPress={() => setDetailVoucher(null)}
+                            >
+                                <MaterialIcons name="close" size={22} color="#6b7280" />
+                            </TouchableOpacity>
+                        </View>
+                        <View style={styles.detailModalBody}>
+                            <View style={styles.detailRowCompact}>
+                                <Text style={styles.detailLabelCompact}>Mã giảm giá</Text>
+                                <Text style={styles.detailCodeCompact}>{v.code}</Text>
+                            </View>
+                            {(v.description || '').trim() ? (
+                                <View style={styles.detailRowCompact}>
+                                    <Text style={styles.detailLabelCompact}>Mô tả</Text>
+                                    <Text style={styles.detailValueCompact}>{v.description}</Text>
+                                </View>
+                            ) : null}
+                            <View style={styles.detailRowCompact}>
+                                <Text style={styles.detailLabelCompact}>Giảm giá</Text>
+                                <Text style={styles.detailValueCompact}>{percent}% đơn hàng</Text>
+                            </View>
+                            <View style={styles.detailRowCompact}>
+                                <Text style={styles.detailLabelCompact}>Đơn tối thiểu</Text>
+                                <Text style={styles.detailValueCompact}>{formatCurrency(minOrder)}</Text>
+                            </View>
+                            {maxAmount != null && (
+                                <View style={styles.detailRowCompact}>
+                                    <Text style={styles.detailLabelCompact}>Giảm tối đa</Text>
+                                    <Text style={styles.detailValueCompact}>{formatCurrency(maxAmount)}</Text>
+                                </View>
+                            )}
+                            <View style={styles.detailRowCompact}>
+                                <Text style={styles.detailLabelCompact}>Hiệu lực</Text>
+                                <Text style={styles.detailValueCompact}>
+                                    {formatDate(v.startDate)} – {formatDate(v.endDate)}
+                                </Text>
+                            </View>
+                        </View>
+                        <TouchableOpacity style={styles.detailModalCopyBtn} onPress={handleCopyInModal}>
+                            <MaterialIcons name="content-copy" size={18} color="#fff" />
+                            <Text style={styles.detailModalCopyBtnText}>Sao chép mã</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={styles.detailModalCloseBtn}
+                            onPress={() => setDetailVoucher(null)}
+                        >
+                            <Text style={styles.detailModalCloseBtnText}>Đóng</Text>
+                        </TouchableOpacity>
+                    </TouchableOpacity>
+                </TouchableOpacity>
+            </Modal>
+        );
+    };
 
     return (
         <View style={styles.container}>
@@ -111,10 +239,18 @@ export default function VouchersScreen({ navigation }) {
                             <Text style={styles.emptyText}>Chưa có voucher nào</Text>
                         </View>
                     ) : (
-                        list.map((v) => <VoucherCard key={v._id} voucher={v} />)
+                        list.map((v) => (
+                            <VoucherCard
+                                key={v._id}
+                                voucher={v}
+                                onCopy={handleCopySuccess}
+                                onPressDetail={setDetailVoucher}
+                            />
+                        ))
                     )}
                 </ScrollView>
             )}
+            {renderDetailModal()}
             <BottomNavigation />
         </View>
     );
@@ -174,9 +310,75 @@ const styles = StyleSheet.create({
         padding: 14,
         justifyContent: 'center',
     },
-    ticketCode: { fontSize: 16, fontWeight: '700', color: COLORS.secondary, marginBottom: 4 },
+    ticketCode: { fontSize: 16, fontWeight: '700', color: COLORS.secondary, flex: 1 },
+    ticketCodeRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 },
+    copyBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 4, paddingHorizontal: 8 },
+    copyBtnText: { fontSize: 12, color: COLORS.primary, fontWeight: '600' },
     ticketDesc: { fontSize: 13, color: COLORS.text.secondary, marginBottom: 4 },
-    ticketDate: { fontSize: 11, color: COLORS.text.light },
+    ticketDate: { fontSize: 11, color: COLORS.text.light, marginBottom: 10 },
+    detailBtnBlock: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 6,
+        paddingVertical: 8,
+        paddingHorizontal: 12,
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: COLORS.primary,
+        backgroundColor: '#f0fdfa',
+    },
+    detailBtnBlockText: { fontSize: 14, color: COLORS.primary, fontWeight: '600' },
     emptyWrap: { alignItems: 'center', paddingVertical: 48 },
     emptyText: { marginTop: 12, fontSize: 15, color: COLORS.text.light },
+    // Cửa sổ nhỏ chi tiết voucher (dialog)
+    detailModalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.45)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+    },
+    detailModalBox: {
+        width: '100%',
+        maxWidth: 340,
+        backgroundColor: '#fff',
+        borderRadius: 14,
+        paddingHorizontal: 16,
+        paddingTop: 14,
+        paddingBottom: 16,
+        elevation: 8,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 8,
+    },
+    detailModalHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: 12,
+        paddingBottom: 10,
+        borderBottomWidth: 1,
+        borderBottomColor: '#f3f4f6',
+    },
+    detailModalTitle: { fontSize: 16, fontWeight: '700', color: '#0d364c' },
+    detailModalBody: { marginBottom: 12 },
+    detailRowCompact: { marginBottom: 8 },
+    detailLabelCompact: { fontSize: 12, color: COLORS.text.light, marginBottom: 2 },
+    detailValueCompact: { fontSize: 14, color: '#0d364c', fontWeight: '500' },
+    detailCodeCompact: { fontSize: 16, fontWeight: '700', color: COLORS.secondary },
+    detailModalCopyBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 6,
+        backgroundColor: COLORS.primary,
+        paddingVertical: 10,
+        borderRadius: 8,
+        marginBottom: 8,
+    },
+    detailModalCopyBtnText: { fontSize: 14, fontWeight: '600', color: '#fff' },
+    detailModalCloseBtn: { alignItems: 'center', paddingVertical: 6 },
+    detailModalCloseBtnText: { fontSize: 14, color: '#6b7280', fontWeight: '500' },
 });
