@@ -147,18 +147,15 @@ export async function getMyOrderByIdApi(orderId) {
   }
 }
 
-export async function createOrderApi({ selected_product_ids, receiverInfo, payment_method,city }) {
+export async function createOrderApi({ selected_product_ids, receiverInfo, payment_method, city, discount_id }) {
     try {
         const token = await AsyncStorage.getItem('token');
 
-        const isMobile=true;
-         console.log("selected_product_ids",selected_product_ids)
-          console.log("receiverInfo",receiverInfo)
-        console.log("city",city)
+        const isMobile = true;
 
         const response = await axios.post(
             `${API_BASE_URL}/order/create`,
-            { selected_product_ids, receiverInfo, payment_method,city,isMobile },
+            { selected_product_ids, receiverInfo, payment_method, city, isMobile, discount_id: discount_id || undefined },
             {
                headers: {
                     'Content-Type': 'application/json',
@@ -169,7 +166,6 @@ export async function createOrderApi({ selected_product_ids, receiverInfo, payme
         );
 
         const data = response.data;
- console.log("response.data",response.data)
         if (!data.success) {
             throw new Error(data.message || 'Tạo đơn hàng thất bại');
         }

@@ -68,16 +68,16 @@ export const fetchOrderDetailByUser = createAsyncThunk(
 export const createOrder = createAsyncThunk(
   "order/createOrder",
   async (
-    { selected_product_ids, receiverInfo, payment_method, city },
+    { selected_product_ids, receiverInfo, payment_method, city, discount_id },
     { rejectWithValue }
   ) => {
     try {
-      console.log("createOrder slice");
       const response = await createOrderApi({
         selected_product_ids,
         receiverInfo,
         payment_method,
         city,
+        discount_id: discount_id || undefined,
       });
       if (response.success) {
         await AsyncStorage.removeItem("checkout_session_id");

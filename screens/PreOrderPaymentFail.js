@@ -4,40 +4,38 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 
 /**
- * Màn hình thành công thanh toán Order (đơn hàng thường).
- * Pre-order dùng PreOrderPaymentSuccess.
+ * Màn hình thất bại thanh toán Pre-order.
+ * Dùng riêng cho tính năng pre-order; order thường dùng PaymentFail.
  */
-export default function PaymentSuccess({ navigation }) {
+export default function PreOrderPaymentFail({ navigation }) {
   return (
     <LinearGradient
       colors={["#0f0f1a", "#12111f", "#0d1320"]}
       style={styles.container}
     >
       <View style={styles.iconWrapper}>
-        <View style={styles.iconCircle}>
-          <Ionicons name="checkmark" size={40} color="#fff" />
+        <View style={[styles.iconCircle, styles.iconCircleFail]}>
+          <Ionicons name="close" size={40} color="#fff" />
         </View>
       </View>
 
-      <Text style={styles.title}>Thanh toán hoàn tất!</Text>
+      <Text style={styles.title}>Thanh toán đặt trước thất bại</Text>
       <Text style={styles.subtitle}>
-        Giao dịch của bạn đã được xử lý thành công.
+        Giao dịch chưa thành công. Bạn có thể thử lại từ màn "Đơn của tôi" hoặc liên hệ hỗ trợ.
       </Text>
 
       <TouchableOpacity
         style={styles.primaryBtn}
-        onPress={() => navigation.navigate("HomePage")}
+        onPress={() => navigation.navigate("PreOrder")}
       >
-        <Text style={styles.primaryText}>Về trang chủ</Text>
+        <Text style={styles.primaryText}>Về đơn đặt trước</Text>
       </TouchableOpacity>
 
       <TouchableOpacity
         style={styles.secondaryBtn}
-        onPress={() => navigation.navigate("OrderHistory")}
+        onPress={() => navigation.navigate("HomePage")}
       >
-        <Text style={styles.secondaryText}>
-          Xem lịch sử giao dịch
-        </Text>
+        <Text style={styles.secondaryText}>Về trang chủ</Text>
       </TouchableOpacity>
     </LinearGradient>
   );
@@ -57,9 +55,11 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: "#10b981",
     alignItems: "center",
     justifyContent: "center",
+  },
+  iconCircleFail: {
+    backgroundColor: "#dc2626",
   },
   title: {
     fontSize: 24,

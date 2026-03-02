@@ -4,10 +4,12 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 
 /**
- * Màn hình thành công thanh toán Order (đơn hàng thường).
- * Pre-order dùng PreOrderPaymentSuccess.
+ * Màn hình thành công thanh toán Pre-order (đặt cọc hoặc thanh toán còn lại).
+ * Dùng riêng cho tính năng pre-order; order thường dùng PaymentSuccess.
  */
-export default function PaymentSuccess({ navigation }) {
+export default function PreOrderPaymentSuccess({ navigation, route }) {
+  const isRemaining = route.params?.remaining === "success" || route.params?.type === "remaining";
+
   return (
     <LinearGradient
       colors={["#0f0f1a", "#12111f", "#0d1320"]}
@@ -19,25 +21,25 @@ export default function PaymentSuccess({ navigation }) {
         </View>
       </View>
 
-      <Text style={styles.title}>Thanh toán hoàn tất!</Text>
+      <Text style={styles.title}>Thanh toán đặt trước thành công!</Text>
       <Text style={styles.subtitle}>
-        Giao dịch của bạn đã được xử lý thành công.
+        {isRemaining
+          ? "Bạn đã thanh toán phần còn lại cho đơn đặt trước thành công."
+          : "Bạn đã đặt cọc đơn đặt trước thành công. Vui lòng chờ phân bổ và thông báo thanh toán phần còn lại."}
       </Text>
 
       <TouchableOpacity
         style={styles.primaryBtn}
-        onPress={() => navigation.navigate("HomePage")}
+        onPress={() => navigation.navigate("PreOrder", { remaining: isRemaining ? "success" : undefined })}
       >
-        <Text style={styles.primaryText}>Về trang chủ</Text>
+        <Text style={styles.primaryText}>Xem đơn đặt trước</Text>
       </TouchableOpacity>
 
       <TouchableOpacity
         style={styles.secondaryBtn}
-        onPress={() => navigation.navigate("OrderHistory")}
+        onPress={() => navigation.navigate("HomePage")}
       >
-        <Text style={styles.secondaryText}>
-          Xem lịch sử giao dịch
-        </Text>
+        <Text style={styles.secondaryText}>Về trang chủ</Text>
       </TouchableOpacity>
     </LinearGradient>
   );
