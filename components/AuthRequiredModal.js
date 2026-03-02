@@ -14,7 +14,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 const { width, height } = Dimensions.get('window');
 
-const AuthRequiredModal = ({ visible, onClose, title, message, actionText = 'Đăng nhập' }) => {
+const AuthRequiredModal = ({ visible, onClose, title, message, actionText = 'Login' }) => {
     const navigation = useNavigation();
 
     const handleLogin = () => {
@@ -41,12 +41,12 @@ const AuthRequiredModal = ({ visible, onClose, title, message, actionText = 'Đ�
                         style={styles.header}
                     >
                         <MaterialIcons name="lock" size={40} color={COLORS.white} />
-                        <Text style={styles.title}>{title || 'Yêu cầu đăng nhập'}</Text>
+                        <Text style={styles.title}>{title || 'Login required'}</Text>
                     </LinearGradient>
 
                     <View style={styles.content}>
                         <Text style={styles.message}>
-                            {message || 'Bạn cần đăng nhập để sử dụng tính năng này.'}
+                            {message || 'You need to log in to use this feature.'}
                         </Text>
 
                         <View style={styles.buttonContainer}>
@@ -63,7 +63,7 @@ const AuthRequiredModal = ({ visible, onClose, title, message, actionText = 'Đ�
                                 onPress={handleRegister}
                             >
                                 <MaterialIcons name="person-add" size={20} color={COLORS.primary} />
-                                <Text style={styles.registerButtonText}>Đăng ký</Text>
+                                <Text style={styles.registerButtonText}>Register</Text>
                             </TouchableOpacity>
                         </View>
 
@@ -71,7 +71,7 @@ const AuthRequiredModal = ({ visible, onClose, title, message, actionText = 'Đ�
                             style={styles.cancelButton}
                             onPress={onClose}
                         >
-                            <Text style={styles.cancelButtonText}>Hủy</Text>
+                            <Text style={styles.cancelButtonText}>Cancel</Text>
                         </TouchableOpacity>
                     </View>
                 </View>

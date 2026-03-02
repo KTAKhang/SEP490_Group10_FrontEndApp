@@ -33,6 +33,7 @@ import PreOrderDetailScreen from '../screens/PreOrderDetailScreen';
 import PreOrderCheckoutScreen from '../screens/PreOrderCheckoutScreen';
 import PaymentSuccess from '../screens/PaymentSuccess';
 import PaymentFail from '../screens/PaymentFail';
+import OrderCreatedCOD from '../screens/OrderCreatedCOD';
 import * as Linking from 'expo-linking';
 
 const Stack = createStackNavigator();
@@ -43,6 +44,7 @@ const linking = {
     screens: {
       PaymentSuccess: 'payment-success',
       PaymentFail: 'payment-fail',
+      OrderCreatedCOD:'create-order-success',
     },
   },
 };
@@ -165,6 +167,7 @@ export default function AppNavigator() {
         />
         <Stack.Screen name="PaymentSuccess" component={PaymentSuccess} />
         <Stack.Screen name="PaymentFail" component={PaymentFail} />
+        <Stack.Screen name="OrderCreatedCOD" component={OrderCreatedCOD} />
 
         {/* Protected routes - Chỉ user đã đăng nhập mới xem được */}
         {isAuthenticated && (

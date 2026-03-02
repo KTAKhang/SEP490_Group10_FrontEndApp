@@ -31,11 +31,11 @@ const BottomNavigation = () => {
     const handleTabPress = (tab) => {
         if (tab.requiresAuth && !isAuthenticated) {
             Alert.alert(
-                'Yêu cầu đăng nhập',
-                `Bạn cần đăng nhập để truy cập ${tab.label.toLowerCase()}. Bạn có muốn đăng nhập ngay không?`,
+                'Login required',
+                `You need to log in to access ${tab.label.toLowerCase()}.Would you like to log in now?`,
                 [
-                    { text: 'Hủy', style: 'cancel' },
-                    { text: 'Đăng nhập', onPress: () => navigation.navigate('Login') }
+                    { text: 'Cancel', style: 'cancel' },
+                    { text: 'Log in', onPress: () => navigation.navigate('Login') }
                 ]
             );
             return;

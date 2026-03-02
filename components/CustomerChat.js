@@ -40,8 +40,8 @@ const formatDateHeader = (dateStr) => {
   const today = new Date();
   const yesterday = new Date();
   yesterday.setDate(today.getDate() - 1);
-  if (isSameDay(dateStr, today.toISOString())) return "Hôm nay";
-  if (isSameDay(dateStr, yesterday.toISOString())) return "Hôm qua";
+  if (isSameDay(dateStr, today.toISOString())) return "Today";
+  if (isSameDay(dateStr, yesterday.toISOString())) return "Yesterday";
   return d.toLocaleDateString("vi-VN", {
     day: "2-digit",
     month: "2-digit",
@@ -461,13 +461,13 @@ export default function CustomerChat() {
     try {
       const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (perm.status !== "granted") {
-        Alert.alert("Quyền bị từ chối", "Cần quyền truy cập ảnh để chọn hình.");
+        Alert.alert("The right to be denied", "You need photo access to select images.");
         return;
       }
 
       const remaining = 3 - selectedImages.length;
       if (remaining <= 0) {
-        Alert.alert("Giới hạn", "Bạn chỉ có thể chọn tối đa 3 ảnh.");
+        Alert.alert("Limit", "You can only select a maximum of 3 photos.");
         return;
       }
 
@@ -505,7 +505,7 @@ export default function CustomerChat() {
       setSelectedImages((prev) => [...prev, ...picked].slice(0, 3));
     } catch (err) {
       console.error("pickImages error:", err);
-      Alert.alert("Lỗi", "Không thể chọn ảnh");
+      Alert.alert("Error", "Cannot select image");
     }
   };
 
@@ -538,7 +538,7 @@ export default function CustomerChat() {
           style={styles.fab}
           onPress={() => {
             if (!isAuthenticated) {
-              Alert.alert("Thông báo", "Vui lòng đăng nhập để chat.");
+              Alert.alert("Notification", "Please log in to chat.");
               return;
             }
             setIsOpen(true);
@@ -578,14 +578,14 @@ export default function CustomerChat() {
                 )}
                 <View>
                   <Text style={styles.headerTitle}>
-                    {selectedStaff ? selectedStaff.userName : "Hỗ trợ Chat"}
+                    {selectedStaff ? selectedStaff.userName : "Chat Support"}
                   </Text>
                   <Text style={styles.headerSub}>
                     {selectedStaff
                       ? isReadOnly
-                        ? "🔒 Chỉ xem — nhân viên offline"
-                        : "🟢 Đang online"
-                      : `${onlineStaffs.length} nhân viên online`}
+                        ? "🔒 View only — offline staff"
+                        : "🟢 Online"
+                      : `${onlineStaffs.length} online staff`}
                   </Text>
                 </View>
               </View>
@@ -615,8 +615,8 @@ export default function CustomerChat() {
                         ]}
                       >
                         {tab === "online"
-                          ? "👥 Nhân viên online"
-                          : "🕐 Lịch sử"}
+                          ? "👥 online staff"
+                          : "🕐 History"}
                       </Text>
                     </TouchableOpacity>
                   ))}
@@ -626,7 +626,7 @@ export default function CustomerChat() {
                 {activeTab === "online" && (
                   <ScrollView contentContainerStyle={styles.onlineTab}>
                     <Text style={styles.sectionLabel}>
-                      CHỌN NHÂN VIÊN ĐỂ CHAT
+                      SELECT A STAFF MEMBER TO CHAT WITH
                     </Text>
                     <View style={styles.staffGrid}>
                       {onlineStaffs.map((staff) => (
@@ -650,7 +650,7 @@ export default function CustomerChat() {
                     </View>
                     {onlineStaffs.length === 0 && (
                       <Text style={styles.emptyText}>
-                        Hiện không có nhân viên online
+                        There are currently no staff online.
                       </Text>
                     )}
                   </ScrollView>

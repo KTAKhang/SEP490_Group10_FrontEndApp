@@ -41,7 +41,7 @@ export const checkoutHold = createAsyncThunk(
 
 export const checkoutCancel = createAsyncThunk(
   "checkout/checkoutCancel",
-    async ({ checkout_session_id }, { rejectWithValue, dispatch }) => {
+  async ({ checkout_session_id }, { rejectWithValue, dispatch }) => {
     try {
       // Pass an object to the API helper which expects { checkout_session_id }
       const response = await checkoutCancelApi({ checkout_session_id });
@@ -49,9 +49,12 @@ export const checkoutCancel = createAsyncThunk(
       await AsyncStorage.removeItem("checkout_session_id");
       // Use Toast.show to display messages (react-native-toast-message API)
       try {
-        Toast.show({ type: 'success', text1: response?.message || 'Checkout cancelled' });
+        Toast.show({
+          type: "success",
+          text1: response?.message || "Checkout cancelled",
+        });
       } catch (tErr) {
-        console.warn('Toast display failed', tErr);
+        console.warn("Toast display failed", tErr);
       }
       // await dispatch(fetchCartByUser());
       return response;
@@ -75,8 +78,9 @@ const checkoutSlice = createSlice({
   name: "checkout",
   initialState,
   reducers: {
-    clearCartState: (state) => {
+    clearCheckoutState: (state) => {
       state.error = null;
+      state.checkout_session_id = null;
       state.message = null;
     },
   },
@@ -110,7 +114,8 @@ const checkoutSlice = createSlice({
         state.checkout_session_id = null;
         state.items = [];
         state.item_count = 0;
-        state.message = action.payload?.message || action.payload || "Checkout cancelled";
+        state.message =
+          action.payload?.message || action.payload || "Checkout cancelled";
       })
       .addCase(checkoutCancel.rejected, (state, action) => {
         state.loading = false;
@@ -119,5 +124,5 @@ const checkoutSlice = createSlice({
   },
 });
 
-export const { clearCartState } = checkoutSlice.actions;
+export const { clearCheckoutState } = checkoutSlice.actions;
 export default checkoutSlice.reducer;

@@ -10,6 +10,7 @@ import {
 } from "../../services/orderService";
 import * as Linking from "expo-linking";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { clearCheckoutState } from "./checkoutSlice";
 
 export const fetchOrderByUser = createAsyncThunk(
   "order/fetchOrderByUser",
@@ -23,7 +24,7 @@ export const fetchOrderByUser = createAsyncThunk(
       sortBy = "createdAt",
       sortOrder = "desc",
     } = {},
-    { rejectWithValue }
+    { rejectWithValue },
   ) => {
     try {
       const options = { status_names, search, sortBy, sortOrder };
@@ -33,7 +34,7 @@ export const fetchOrderByUser = createAsyncThunk(
       console.error("fetchOrderByUser error:", error);
       return rejectWithValue(error.message || "Failed to fetch orders");
     }
-  }
+  },
 );
 
 export const fetchOrderDetailByUser = createAsyncThunk(
@@ -43,60 +44,65 @@ export const fetchOrderDetailByUser = createAsyncThunk(
       console.log(
         "[orderSlice] fetchOrderDetailByUser called, orderId:",
         orderId,
-        typeof orderId
+        typeof orderId,
       );
       const order = await getMyOrderByIdApi(orderId);
       console.log(
         "[orderSlice] fetchOrderDetailByUser fulfilled, order?",
         !!order,
         "details.length:",
-        order?.details?.length ?? 0
+        order?.details?.length ?? 0,
       );
       return order;
     } catch (error) {
       console.error(
         "[orderSlice] fetchOrderDetailByUser error:",
-        error?.message
+        error?.message,
       );
-      return rejectWithValue(
-        error.message || "Failed to fetch order detail"
-      );
+      return rejectWithValue(error.message || "Failed to fetch order detail");
     }
-  }
+  },
 );
 
 export const createOrder = createAsyncThunk(
   "order/createOrder",
   async (
     { selected_product_ids, receiverInfo, payment_method, city },
-    { rejectWithValue }
+    { rejectWithValue, dispatch }, // ✅ LẤY dispatch TỪ ĐÂY
   ) => {
     try {
-      console.log("createOrder slice");
       const response = await createOrderApi({
         selected_product_ids,
         receiverInfo,
         payment_method,
         city,
       });
+
       if (response.success) {
         await AsyncStorage.removeItem("checkout_session_id");
 
+        const check = await AsyncStorage.getItem("checkout_session_id");
+        console.log("Sau khi xóa:", check); // phải là null
+
         if (response.redirect_url) {
           await Linking.openURL(response.redirect_url);
-          return;
         }
+
         if (response.payment_url) {
           await Linking.openURL(response.payment_url);
-          return response;
         }
       }
-
+      dispatch(clearCheckoutState());
       return response;
     } catch (error) {
+      if (error.message === "The holding period has expired") {
+        await AsyncStorage.removeItem("checkout_session_id");
+        dispatch(clearCheckoutState()); // ✅ cũng sửa ở đây
+      }
+
       return rejectWithValue(error.message);
     }
-  }
+  },
 );
 
 export const checkShipping = createAsyncThunk(
@@ -112,7 +118,7 @@ export const checkShipping = createAsyncThunk(
     } catch (error) {
       return rejectWithValue(error.message);
     }
-  }
+  },
 );
 
 export const cancelOrder = createAsyncThunk(
@@ -124,7 +130,7 @@ export const cancelOrder = createAsyncThunk(
     } catch (error) {
       return rejectWithValue(error.message);
     }
-  }
+  },
 );
 
 export const returnOrder = createAsyncThunk(
@@ -136,14 +142,21 @@ export const returnOrder = createAsyncThunk(
     } catch (error) {
       return rejectWithValue(error.message);
     }
-  }
+  },
 );
 
 export const retryPayment = createAsyncThunk(
   "order/retryPayment",
   async (order_id, { rejectWithValue }) => {
     try {
+      console.log("retryPayment", order_id);
       const response = await retryPaymentApi(order_id);
+      console.log("retryPayment", response);
+
+      if (response?.paymentUrl) {
+        await Linking.openURL(response?.paymentUrl);
+        return response;
+      }
       return {
         order_id,
         message: response.message,
@@ -152,7 +165,7 @@ export const retryPayment = createAsyncThunk(
     } catch (error) {
       return rejectWithValue(error.message);
     }
-  }
+  },
 );
 
 const initialState = {
@@ -349,7 +362,7 @@ const orderSlice = createSlice({
         state.orders = state.orders.map((order) =>
           order._id === action.payload.order_id
             ? { ...order, status: "cancelled" }
-            : order
+            : order,
         );
       })
       .addCase(cancelOrder.rejected, (state, action) => {
@@ -372,7 +385,7 @@ const orderSlice = createSlice({
         state.orders = state.orders.map((order) =>
           order._id === action.payload.order_id
             ? { ...order, status: "returned" }
-            : order
+            : order,
         );
       })
       .addCase(returnOrder.rejected, (state, action) => {
@@ -391,7 +404,7 @@ const orderSlice = createSlice({
         state.detailError = null;
         console.log(
           "[orderSlice] fulfilled: orderDetail.details.length=",
-          action.payload?.details?.length ?? 0
+          action.payload?.details?.length ?? 0,
         );
       })
       .addCase(fetchOrderDetailByUser.rejected, (state, action) => {
@@ -409,9 +422,6 @@ const orderSlice = createSlice({
   },
 });
 
-export const {
-  clearOrderState,
-  resetPagination,
-  clearOrderDetail,
-} = orderSlice.actions;
+export const { clearOrderState, resetPagination, clearOrderDetail } =
+  orderSlice.actions;
 export default orderSlice.reducer;
