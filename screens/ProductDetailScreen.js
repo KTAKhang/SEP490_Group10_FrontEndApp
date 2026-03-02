@@ -25,6 +25,12 @@ import {
     selectProductReviewsLoadingMore,
 } from '../store/slices/reviewSlice';
 import { addToCart } from '../store/slices/cartSlice';
+import {
+    checkFavoriteStatus,
+    addFavorite,
+    removeFavorite,
+    selectIsFavorite,
+} from '../store/slices/favoriteSlice';
 import { InlineLoading, OverlayLoading } from '../components/Loading';
 import { COLORS } from '../constants/colors';
 import Toast from 'react-native-toast-message';
@@ -60,6 +66,9 @@ const ProductDetailScreen = ({ navigation, route }) => {
     // Get authentication state
     const { isAuthenticated } = useSelector((state) => state.auth);
 
+    // Favorite state
+    const isFavorite = useSelector(state => selectIsFavorite(state, productId));
+
     // Get reviews for this specific product ONLY (paginated)
     const reviews = useSelector(state => selectProductReviews(state, productId));
     const reviewsLoading = useSelector(state => selectProductReviewsLoading(state, productId));
@@ -72,6 +81,7 @@ const ProductDetailScreen = ({ navigation, route }) => {
     useEffect(() => {
         if (productId && productId !== 'undefined') {
             dispatch(fetchProductByIdAsync(productId));
+            dispatch(checkFavoriteStatus(productId));
         }
     }, [dispatch, productId]);
 
@@ -294,6 +304,7 @@ const ProductDetailScreen = ({ navigation, route }) => {
     const handleRefresh = useCallback(() => {
         if (productId) {
             dispatch(fetchProductByIdAsync(productId));
+            dispatch(checkFavoriteStatus(productId));
             dispatch(fetchProductReviewsByProductId({
                 product_id: productId,
                 page: 1,
@@ -309,6 +320,50 @@ const ProductDetailScreen = ({ navigation, route }) => {
             });
         }
     }, [dispatch, productId, reviewRatingFilter]);
+
+    const handleToggleFavorite = async () => {
+        if (!productId || productId === 'undefined') return;
+
+        if (!isAuthenticated) {
+            Alert.alert(
+                'Yêu cầu đăng nhập',
+                'Bạn cần đăng nhập để sử dụng danh sách yêu thích. Bạn có muốn đăng nhập ngay không?',
+                [
+                    { text: 'Hủy', style: 'cancel' },
+                    { text: 'Đăng nhập', onPress: () => navigation.navigate('Login') }
+                ]
+            );
+            return;
+        }
+
+        try {
+            if (isFavorite) {
+                await dispatch(removeFavorite(productId)).unwrap();
+                Toast.show({
+                    type: 'success',
+                    text1: 'Đã bỏ khỏi yêu thích',
+                    position: 'top',
+                    visibilityTime: 2000,
+                });
+            } else {
+                await dispatch(addFavorite(productId)).unwrap();
+                Toast.show({
+                    type: 'success',
+                    text1: 'Đã thêm vào yêu thích',
+                    position: 'top',
+                    visibilityTime: 2000,
+                });
+            }
+        } catch (error) {
+            Toast.show({
+                type: 'error',
+                text1: 'Không thể cập nhật yêu thích',
+                text2: error?.toString() || 'Vui lòng thử lại sau',
+                position: 'top',
+                visibilityTime: 2500,
+            });
+        }
+    };
 
     const loadMoreReviews = useCallback(() => {
         if (!productId || reviewsLoadingMore || reviewsLoading) return;
@@ -353,17 +408,29 @@ const ProductDetailScreen = ({ navigation, route }) => {
 
                     <Text style={styles.headerTitle}>Product Details</Text>
 
-                    <TouchableOpacity
-                        style={styles.headerButton}
-                        onPress={handleCartPress}
-                    >
-                        <Icon name="shopping-cart" size={24} color="rgba(255, 255, 255, 0.85)" />
-                        {itemCount > 0 && (
-                            <View style={styles.badge}>
-                                <Text style={styles.badgeText}>{itemCount}</Text>
-                            </View>
-                        )}
-                    </TouchableOpacity>
+                    <View style={styles.headerRightGroup}>
+                        <TouchableOpacity
+                            style={styles.headerButton}
+                            onPress={handleToggleFavorite}
+                        >
+                            <Icon
+                                name={isFavorite ? 'favorite' : 'favorite-border'}
+                                size={24}
+                                color={isFavorite ? '#ff6b6b' : 'rgba(255, 255, 255, 0.85)'}
+                            />
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={styles.headerButton}
+                            onPress={handleCartPress}
+                        >
+                            <Icon name="shopping-cart" size={24} color="rgba(255, 255, 255, 0.85)" />
+                            {itemCount > 0 && (
+                                <View style={styles.badge}>
+                                    <Text style={styles.badgeText}>{itemCount}</Text>
+                                </View>
+                            )}
+                        </TouchableOpacity>
+                    </View>
                 </View>
 
                 {/* Loading Content */}
@@ -403,17 +470,29 @@ const ProductDetailScreen = ({ navigation, route }) => {
 
                     <Text style={styles.headerTitle}>Chi tiết sản phẩm</Text>
 
-                    <TouchableOpacity
-                        style={styles.headerButton}
-                        onPress={handleCartPress}
-                    >
-                        <Icon name="shopping-cart" size={24} color="rgba(255, 255, 255, 0.85)" />
-                        {itemCount > 0 && (
-                            <View style={styles.badge}>
-                                <Text style={styles.badgeText}>{itemCount}</Text>
-                            </View>
-                        )}
-                    </TouchableOpacity>
+                    <View style={styles.headerRightGroup}>
+                        <TouchableOpacity
+                            style={styles.headerButton}
+                            onPress={handleToggleFavorite}
+                        >
+                            <Icon
+                                name={isFavorite ? 'favorite' : 'favorite-border'}
+                                size={24}
+                                color={isFavorite ? '#ff6b6b' : 'rgba(255, 255, 255, 0.85)'}
+                            />
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={styles.headerButton}
+                            onPress={handleCartPress}
+                        >
+                            <Icon name="shopping-cart" size={24} color="rgba(255, 255, 255, 0.85)" />
+                            {itemCount > 0 && (
+                                <View style={styles.badge}>
+                                    <Text style={styles.badgeText}>{itemCount}</Text>
+                                </View>
+                            )}
+                        </TouchableOpacity>
+                    </View>
                 </View>
 
                 <View style={styles.inactiveContainer}>
@@ -457,17 +536,29 @@ const ProductDetailScreen = ({ navigation, route }) => {
 
                 <Text style={styles.headerTitle}>Product Details</Text>
 
-                <TouchableOpacity
-                    style={styles.headerButton}
-                    onPress={handleCartPress}
-                >
-                    <Icon name="shopping-cart" size={24} color="rgba(255, 255, 255, 0.85)" />
-                    {itemCount > 0 && (
-                        <View style={styles.badge}>
-                            <Text style={styles.badgeText}>{itemCount}</Text>
-                        </View>
-                    )}
-                </TouchableOpacity>
+                <View style={styles.headerRightGroup}>
+                    <TouchableOpacity
+                        style={styles.headerButton}
+                        onPress={handleToggleFavorite}
+                    >
+                        <Icon
+                            name={isFavorite ? 'favorite' : 'favorite-border'}
+                            size={24}
+                            color={isFavorite ? '#ff6b6b' : 'rgba(255, 255, 255, 0.85)'}
+                        />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={styles.headerButton}
+                        onPress={handleCartPress}
+                    >
+                        <Icon name="shopping-cart" size={24} color="rgba(255, 255, 255, 0.85)" />
+                        {itemCount > 0 && (
+                            <View style={styles.badge}>
+                                <Text style={styles.badgeText}>{itemCount}</Text>
+                            </View>
+                        )}
+                    </TouchableOpacity>
+                </View>
             </View>
 
             <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
@@ -943,6 +1034,11 @@ const styles = StyleSheet.create({
         fontSize: 20,
         fontWeight: '600',
         color: COLORS.white,
+    },
+    headerRightGroup: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
     },
     content: {
         flex: 1,

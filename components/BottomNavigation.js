@@ -22,7 +22,7 @@ const BottomNavigation = () => {
 
     const tabs = [
         { name: 'HomePage', icon: 'home', label: 'Trang chủ', requiresAuth: false },
-        { name: 'Cart', icon: 'shopping-cart', label: 'Giỏ hàng', requiresAuth: true },
+        { name: 'Contact', icon: 'support-agent', label: 'Liên hệ', requiresAuth: true },
         { name: 'OrderHistory', icon: 'local-shipping', label: 'Đơn hàng', requiresAuth: true },
         { name: 'Vouchers', icon: 'confirmation-number', label: 'Voucher', requiresAuth: true },
         { name: 'Profile', icon: 'person', label: 'Hồ sơ', requiresAuth: true },

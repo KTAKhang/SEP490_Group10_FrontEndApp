@@ -27,12 +27,16 @@ import EditReviewScreen from '../screens/EditReviewScreen';
 import AllProductsScreen from '../screens/AllProductsScreen';
 import BuyNowScreen from '../screens/BuyNowScreen';
 import NotificationsScreen from '../screens/NotificationsScreen';
+import FavoritesScreen from '../screens/FavoritesScreen';
 import VouchersScreen from '../screens/VouchersScreen';
 import PreOrderScreen from '../screens/PreOrderScreen';
 import PreOrderDetailScreen from '../screens/PreOrderDetailScreen';
 import PreOrderCheckoutScreen from '../screens/PreOrderCheckoutScreen';
+import ContactFormScreen from '../screens/ContactFormScreen';
 import PaymentSuccess from '../screens/PaymentSuccess';
 import PaymentFail from '../screens/PaymentFail';
+import ContactHistoryScreen from '../screens/ContactHistoryScreen';
+import ContactDetailScreen from '../screens/ContactDetailScreen';
 import * as Linking from 'expo-linking';
 
 const Stack = createStackNavigator();
@@ -175,6 +179,9 @@ export default function AppNavigator() {
               <>
                 <Stack.Screen name="Cart" component={CartScreen} />
                 <Stack.Screen name="Profile" component={ProfileScreen} />
+                <Stack.Screen name="Contact" component={ContactFormScreen} />
+                <Stack.Screen name="ContactHistory" component={ContactHistoryScreen} />
+                <Stack.Screen name="ContactDetail" component={ContactDetailScreen} />
                 <Stack.Screen name="Payment" component={PaymentScreen} />
                 <Stack.Screen name="OrderHistory" component={OrderHistoryScreen} />
                 <Stack.Screen name="OrderDetails" component={OrderDetailsScreen} />
@@ -182,6 +189,7 @@ export default function AppNavigator() {
                 <Stack.Screen name="EditReview" component={EditReviewScreen} />
                 <Stack.Screen name="BuyNow" component={BuyNowScreen} />
                 <Stack.Screen name="Notifications" component={NotificationsScreen} />
+                <Stack.Screen name="Favorites" component={FavoritesScreen} />
                 <Stack.Screen name="Vouchers" component={VouchersScreen} />
                 <Stack.Screen name="PreOrder" component={PreOrderScreen} />
                 <Stack.Screen name="PreOrderDetail" component={PreOrderDetailScreen} />
