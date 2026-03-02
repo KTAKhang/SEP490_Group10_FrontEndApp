@@ -31,10 +31,13 @@ import VouchersScreen from '../screens/VouchersScreen';
 import PreOrderScreen from '../screens/PreOrderScreen';
 import PreOrderDetailScreen from '../screens/PreOrderDetailScreen';
 import PreOrderCheckoutScreen from '../screens/PreOrderCheckoutScreen';
-import PaymentSuccess from '../screens/PaymentSuccess';
-import PaymentFail from '../screens/PaymentFail';
+import PaymentSuccess from "../screens/PaymentSuccess";
+import PaymentFail from "../screens/PaymentFail";
 import OrderCreatedCOD from '../screens/OrderCreatedCOD';
-import * as Linking from 'expo-linking';
+import PreOrderPaymentSuccess from "../screens/PreOrderPaymentSuccess";
+import PreOrderPaymentFail from "../screens/PreOrderPaymentFail";
+import * as Linking from "expo-linking";
+
 
 const Stack = createStackNavigator();
 
@@ -42,9 +45,11 @@ const linking = {
   prefixes: ['myshopapps://'],
   config: {
     screens: {
-      PaymentSuccess: 'payment-success',
-      PaymentFail: 'payment-fail',
-      OrderCreatedCOD:'create-order-success',
+      PaymentSuccess: "payment-success",
+      PaymentFail: "payment-fail",
+      PreOrderPaymentSuccess: "preorder-payment-success",
+      PreOrderPaymentFail: "preorder-payment-fail",
+       OrderCreatedCOD:'create-order-success',
     },
   },
 };
@@ -104,7 +109,7 @@ export default function AppNavigator() {
       const code = params.vnp_ResponseCode || params.vnp_TransactionStatus;
       if (code === '00') {
         Alert.alert('Thanh toán thành công', 'Đơn đặt trước của bạn đã được thanh toán đặt cọc. Bạn có thể xem tại "Đặt trước" > "Đơn của tôi".', [
-          { text: 'OK', onPress: () => navigationRef.current?.navigate('PreOrder') },
+          { text: 'OK', onPress: () => navigationRef.current?.navigate('PreOrder', { remaining: 'success' }) },
         ]);
       } else {
         Alert.alert('Thanh toán thất bại', 'Giao dịch chưa thành công. Vui lòng thử lại hoặc liên hệ hỗ trợ.', [{ text: 'OK' }]);
@@ -167,8 +172,9 @@ export default function AppNavigator() {
         />
         <Stack.Screen name="PaymentSuccess" component={PaymentSuccess} />
         <Stack.Screen name="PaymentFail" component={PaymentFail} />
+        <Stack.Screen name="PreOrderPaymentSuccess" component={PreOrderPaymentSuccess} />
+        <Stack.Screen name="PreOrderPaymentFail" component={PreOrderPaymentFail} />
         <Stack.Screen name="OrderCreatedCOD" component={OrderCreatedCOD} />
-
         {/* Protected routes - Chỉ user đã đăng nhập mới xem được */}
         {isAuthenticated && (
           <>

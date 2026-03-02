@@ -198,38 +198,31 @@ export async function getMyOrderByIdApi(orderId) {
   }
 }
 
-export async function createOrderApi({
-  selected_product_ids,
-  receiverInfo,
-  payment_method,
-  city,
-}) {
-  try {
-    const token = await AsyncStorage.getItem("token");
+export async function createOrderApi({ selected_product_ids, receiverInfo, payment_method, city, discount_id }) {
+    try {
+        const token = await AsyncStorage.getItem('token');
 
-    const isMobile = true;
+        const isMobile = true;
 
-    const response = await axios.post(
-      `${API_BASE_URL}/order/create`,
-      { selected_product_ids, receiverInfo, payment_method, city, isMobile },
-      {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        withCredentials: true,
-      },
-    );
+        const response = await axios.post(
+            `${API_BASE_URL}/order/create`,
+            { selected_product_ids, receiverInfo, payment_method, city, isMobile, discount_id: discount_id || undefined },
+            {
+               headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`,
+                },
+                withCredentials: true
+            }
+        );
 
-    const data = response.data;
-    console.log("response.data", response.data);
-    if (!data.success) {
-      
-      throw new Error(data.message || "Tạo đơn hàng thất bại");
-    }
+        const data = response.data;
+        if (!data.success) {
+            throw new Error(data.message || 'Tạo đơn hàng thất bại');
+        }
 
-    return data;
-  } catch (error) {
+        return data;
+    } catch (error) {
     console.error("createOrderApi error:", error);
     throw new Error(
       error.response?.data?.message ||
@@ -238,7 +231,6 @@ export async function createOrderApi({
     );
   }
 }
-
 /**
  * Backend: hủy đơn (chỉ PENDING) - PUT /order/cancel/:order_id
  */

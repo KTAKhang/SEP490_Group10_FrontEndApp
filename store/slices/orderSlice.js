@@ -67,8 +67,9 @@ export const fetchOrderDetailByUser = createAsyncThunk(
 export const createOrder = createAsyncThunk(
   "order/createOrder",
   async (
-    { selected_product_ids, receiverInfo, payment_method, city },
-    { rejectWithValue, dispatch }, // ✅ LẤY dispatch TỪ ĐÂY
+    { selected_product_ids, receiverInfo, payment_method, city, discount_id },
+    { rejectWithValue,dispatch }
+
   ) => {
     try {
       const response = await createOrderApi({
@@ -76,6 +77,7 @@ export const createOrder = createAsyncThunk(
         receiverInfo,
         payment_method,
         city,
+        discount_id: discount_id || undefined,
       });
 
       if (response.success) {
