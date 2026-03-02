@@ -8,6 +8,8 @@ import categoryReducer from './slices/categorySlice';
 import productReducer from './slices/productSlice';
 import chatBotReducer from './slices/chatbotSlice';
 import checkoutReducer from './slices/checkoutSlice';
+import contactReducer from './slices/contactSlice';
+import favoriteReducer from './slices/favoriteSlice';
 export const store = configureStore({
     reducer: {
         auth: authReducer,
@@ -19,6 +21,8 @@ export const store = configureStore({
         product: productReducer,
         chatBot: chatBotReducer,
         checkout: checkoutReducer,
+        contact: contactReducer,
+        favorite: favoriteReducer,
 
     },
     middleware: (getDefaultMiddleware) =>

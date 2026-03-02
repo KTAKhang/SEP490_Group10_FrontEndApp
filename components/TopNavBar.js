@@ -35,6 +35,16 @@ const TopNavBar = () => {
         }
     };
 
+    const handleFavoritesPress = () => {
+        if (isAuthenticated) navigation.navigate('Favorites');
+        else {
+            Alert.alert('Yêu cầu đăng nhập', 'Bạn cần đăng nhập để xem sản phẩm yêu thích.', [
+                { text: 'Hủy', style: 'cancel' },
+                { text: 'Đăng nhập', onPress: () => navigation.navigate('Login') },
+            ]);
+        }
+    };
+
     const handleCartPress = () => {
         if (isAuthenticated) {
             navigation.navigate('Cart');
@@ -64,7 +74,7 @@ const TopNavBar = () => {
                 end={{ x: 1, y: 1 }}
                 style={styles.container}
             >
-                <Text style={styles.logo}>ShopApp</Text>
+                <Text style={styles.logo}>Fruit Store</Text>
                 
                 <View style={styles.rightButtons}>
                     {!isAuthenticated && (
@@ -77,14 +87,19 @@ const TopNavBar = () => {
                         </TouchableOpacity>
                     )}
                     {isAuthenticated && (
-                        <TouchableOpacity style={styles.cartButton} onPress={handleNotiPress}>
-                            <MaterialIcons name="notifications" size={24} color={COLORS.white} />
-                            {notiCount > 0 && (
-                                <View style={styles.badge}>
-                                    <Text style={styles.badgeText}>{notiCount > 99 ? '99+' : notiCount}</Text>
-                                </View>
-                            )}
-                        </TouchableOpacity>
+                        <>
+                            <TouchableOpacity style={styles.cartButton} onPress={handleNotiPress}>
+                                <MaterialIcons name="notifications" size={24} color={COLORS.white} />
+                                {notiCount > 0 && (
+                                    <View style={styles.badge}>
+                                        <Text style={styles.badgeText}>{notiCount > 99 ? '99+' : notiCount}</Text>
+                                    </View>
+                                )}
+                            </TouchableOpacity>
+                            <TouchableOpacity style={styles.cartButton} onPress={handleFavoritesPress}>
+                                <MaterialIcons name="favorite" size={24} color={COLORS.white} />
+                            </TouchableOpacity>
+                        </>
                     )}
                     <TouchableOpacity 
                         style={styles.cartButton}

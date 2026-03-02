@@ -43,12 +43,13 @@ const renderStars = (rating) => {
     return stars;
 };
 
-const ProductCard = ({ product }) => {
+const ProductCard = ({ product, onRemoveFavorite }) => {
     const navigation = useNavigation();
     const dispatch = useDispatch();
     const [showLoadingModal, setShowLoadingModal] = useState(false);
     const [showSuccessModal, setShowSuccessModal] = useState(false);
     const { isAuthenticated } = useSelector((state) => state.auth);
+    const isInFavorites = typeof onRemoveFavorite === 'function';
 
     // Safety check: Don't render inactive products
     if (!product || product.status === false) {
@@ -137,20 +138,38 @@ const ProductCard = ({ product }) => {
                     </View>
                     <View style={styles.priceContainer}>
                         <Text style={styles.price}>{formatCurrency(product.price)}</Text>
-                        <TouchableOpacity
-                            style={[
-                                styles.addButton,
-                                isOutOfStock && styles.addButtonDisabled
-                            ]}
-                            onPress={handleAddToCart}
-                            disabled={showLoadingModal || isOutOfStock}
-                        >
-                            <MaterialIcons
-                                name={isOutOfStock ? "remove-shopping-cart" : "add-shopping-cart"}
-                                size={16}
-                                color={isOutOfStock ? "#999" : COLORS.white}
-                            />
-                        </TouchableOpacity>
+                        <View style={styles.priceActions}>
+                            {isInFavorites && (
+                                <TouchableOpacity
+                                    style={styles.favoriteRemoveButton}
+                                    onPress={(e) => {
+                                        e.stopPropagation();
+                                        onRemoveFavorite && onRemoveFavorite(product._id);
+                                    }}
+                                    activeOpacity={0.8}
+                                >
+                                    <MaterialIcons
+                                        name="favorite-border"
+                                        size={16}
+                                        color="#EF4444"
+                                    />
+                                </TouchableOpacity>
+                            )}
+                            <TouchableOpacity
+                                style={[
+                                    styles.addButton,
+                                    isOutOfStock && styles.addButtonDisabled
+                                ]}
+                                onPress={handleAddToCart}
+                                disabled={showLoadingModal || isOutOfStock}
+                            >
+                                <MaterialIcons
+                                    name={isOutOfStock ? "remove-shopping-cart" : "add-shopping-cart"}
+                                    size={16}
+                                    color={isOutOfStock ? "#999" : COLORS.white}
+                                />
+                            </TouchableOpacity>
+                        </View>
                     </View>
                     {/* Stock indicator */}
                     <View style={styles.stockContainer}>
@@ -266,6 +285,11 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginBottom: 4,
     },
+    priceActions: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+    },
     price: {
         fontSize: 18,
         fontWeight: '700',
@@ -284,6 +308,13 @@ const styles = StyleSheet.create({
     addButtonDisabled: {
         backgroundColor: '#e0e0e0',
         shadowOpacity: 0,
+    },
+    favoriteRemoveButton: {
+        padding: 6,
+        borderRadius: 12,
+        backgroundColor: '#FEE2E2',
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     stockContainer: {
         marginTop: 4,
