@@ -123,7 +123,7 @@ export default function CreateReviewScreen() {
                 })).unwrap();
             }
         } catch (err) {
-            setSubmitError(err || 'Gửi đánh giá thất bại.');
+            setSubmitError(err?.message || String(err) || 'Gửi đánh giá thất bại.');
         }
     };
 

@@ -126,7 +126,7 @@ const checkout = useSelector((state) => state.checkout || {});
         ).unwrap();
 
         // Refresh cart after successful update to keep UI in sync
-        await dispatch(fetchCartByUser());
+      //  await dispatch(fetchCartByUser()); 
       } catch (error) {
         // Nếu lỗi liên quan kho hàng, show toast
         Toast.show({
@@ -254,7 +254,7 @@ const checkout = useSelector((state) => state.checkout || {});
       ).unwrap();
 
       // Refresh cart after successful update
-      await dispatch(fetchCartByUser());
+      // await dispatch(fetchCartByUser());
 
       setEditingQuantity((prev) => {
         const newState = { ...prev };
@@ -315,10 +315,11 @@ const checkout = useSelector((state) => state.checkout || {});
     setIsUpdating((prev) => ({ ...prev, [product_id]: true }));
 
     try {
-      await dispatch(removeCartItem({ product_ids: product_id })).unwrap();
+      console.log("removeItem")
+      await dispatch(removeCartItem(product_id)).unwrap();
 
       // Refresh cart after remove
-      await dispatch(fetchCartByUser());
+      // await dispatch(fetchCartByUser());
 
       // Remove from selected items if it was selected
       setSelectedItems((prev) => prev.filter((id) => id !== product_id));
@@ -347,8 +348,56 @@ const checkout = useSelector((state) => state.checkout || {});
   };
 
   // Bulk remove function - remove multiple items at once
-  const removeMultipleItems = async (productIds) => {
+  // Added `skipConfirm` so callers can skip the Alert and avoid nested modals
+  const removeMultipleItems = async (productIds, skipConfirm = false) => {
     if (!productIds || productIds.length === 0) return;
+
+    const performRemove = async () => {
+      // Set updating state for all items
+      const updatingState = {};
+      productIds.forEach((id) => {
+        updatingState[id] = true;
+      });
+      setIsUpdating((prev) => ({ ...prev, ...updatingState }));
+
+      try {
+        // Remove all items in a single request
+        await dispatch(removeCartItem(productIds)).unwrap();
+
+        // Refresh cart after bulk remove
+        // await dispatch(fetchCartByUser());
+
+        // Clear selected items
+        setSelectedItems([]);
+        setSelectAll(false);
+
+        Alert.alert(
+          "Thành công",
+          "Đã xóa các sản phẩm khỏi giỏ hàng thành công",
+          [{ text: "OK" }],
+        );
+      } catch (error) {
+        Alert.alert(
+          "Xóa thất bại",
+          error || "Không thể xóa một số sản phẩm khỏi giỏ hàng",
+          [{ text: "OK" }],
+        );
+      } finally {
+        // Clear updating state for all items
+        setIsUpdating((prev) => {
+          const newState = { ...prev };
+          productIds.forEach((id) => {
+            delete newState[id];
+          });
+          return newState;
+        });
+      }
+    };
+
+    if (skipConfirm) {
+      await performRemove();
+      return;
+    }
 
     Alert.alert(
       "Xóa sản phẩm",
@@ -358,49 +407,7 @@ const checkout = useSelector((state) => state.checkout || {});
         {
           text: "Xóa tất cả",
           style: "destructive",
-          onPress: async () => {
-            // Set updating state for all items
-            const updatingState = {};
-            productIds.forEach((id) => {
-              updatingState[id] = true;
-            });
-            setIsUpdating((prev) => ({ ...prev, ...updatingState }));
-
-            try {
-              // Remove all items in a single request
-              await dispatch(
-                removeCartItem({ product_ids: productIds }),
-              ).unwrap();
-
-              // Refresh cart after bulk remove
-              await dispatch(fetchCartByUser());
-
-              // Clear selected items
-              setSelectedItems([]);
-              setSelectAll(false);
-
-              Alert.alert(
-                "Thành công",
-                "Đã xóa các sản phẩm khỏi giỏ hàng thành công",
-                [{ text: "OK" }],
-              );
-            } catch (error) {
-              Alert.alert(
-                "Xóa thất bại",
-                error || "Không thể xóa một số sản phẩm khỏi giỏ hàng",
-                [{ text: "OK" }],
-              );
-            } finally {
-              // Clear updating state for all items
-              setIsUpdating((prev) => {
-                const newState = { ...prev };
-                productIds.forEach((id) => {
-                  delete newState[id];
-                });
-                return newState;
-              });
-            }
-          },
+          onPress: performRemove,
         },
       ],
     );
@@ -420,7 +427,8 @@ const checkout = useSelector((state) => state.checkout || {});
           style: "destructive",
           onPress: () => {
             const allProductIds = cartItems.map((item) => item.id);
-            removeMultipleItems(allProductIds);
+            // Skip inner confirmation to avoid nested modals
+            removeMultipleItems(allProductIds, true);
           },
         },
       ],
@@ -443,8 +451,7 @@ const checkout = useSelector((state) => state.checkout || {});
       try {
         
         const existingSession = await AsyncStorage.getItem("checkout_session_id");
-console.log("nek",existingSession)
-        if (existingSession) {
+        if (existingSession && navigation.isFocused()) {
           navigation.navigate("Payment");
         }
       } catch (err) {
@@ -712,7 +719,7 @@ console.log("nek",existingSession)
     );
   });
   // Show loading state
-  if (isLoading && !cart&& checkout.loading) {
+  if (isLoading && cartItems.length === 0 && checkout.loading) {
     return (
       <View style={styles.container}>
         <StatusBar

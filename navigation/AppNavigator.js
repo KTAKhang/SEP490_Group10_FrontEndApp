@@ -4,20 +4,19 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { useDispatch, useSelector } from 'react-redux';
 import { checkAuthStatus } from '../store/slices/authSlice';
-import ChatBotModal from '../components/ChatBotModal';
+import CustomerChat from '../components/CustomerChat';
 import { navigateAfterLogin } from '../utils/authUtils';
 import { registerFCMTokenWithBackend } from '../utils/registerFCM';
 // Import screens
-import LoginScreen from "../screens/LoginScreen";
-import HomeScreen from "../screens/HomeScreen";
-import SplashScreen from "../screens/SplashScreen";
-import AdminScreen from "../screens/AdminScreen";
-import RegisterScreen from "../screens/RegisterScreen";
-import RegisterConfirmOTPScreen from "../screens/RegisterConfirmOTPScreen";
-import ProductDetailScreen from "../screens/ProductDetailScreen";
-import ForgotPasswordScreen from "../screens/ForgotPasswordScreen";
-import ForgotPasswordOTPScreen from "../screens/ForgotPasswordOTPScreen";
-// Thêm dòng này
+import LoginScreen from '../screens/LoginScreen';
+import HomeScreen from '../screens/HomeScreen';
+import SplashScreen from '../screens/SplashScreen';
+import AdminScreen from '../screens/AdminScreen';
+import RegisterScreen from '../screens/RegisterScreen';
+import RegisterConfirmOTPScreen from '../screens/RegisterConfirmOTPScreen';
+import ProductDetailScreen from '../screens/ProductDetailScreen';
+import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
+import ForgotPasswordOTPScreen from '../screens/ForgotPasswordOTPScreen';
 import CartScreen from '../screens/CartScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import OrderHistoryScreen from '../screens/OrderHistoryScreen';
@@ -34,20 +33,23 @@ import PreOrderDetailScreen from '../screens/PreOrderDetailScreen';
 import PreOrderCheckoutScreen from '../screens/PreOrderCheckoutScreen';
 import PaymentSuccess from "../screens/PaymentSuccess";
 import PaymentFail from "../screens/PaymentFail";
+import OrderCreatedCOD from '../screens/OrderCreatedCOD';
 import PreOrderPaymentSuccess from "../screens/PreOrderPaymentSuccess";
 import PreOrderPaymentFail from "../screens/PreOrderPaymentFail";
 import * as Linking from "expo-linking";
 
+
 const Stack = createStackNavigator();
 
 const linking = {
-  prefixes: ["myshopapps://"],
+  prefixes: ['myshopapps://'],
   config: {
     screens: {
       PaymentSuccess: "payment-success",
       PaymentFail: "payment-fail",
       PreOrderPaymentSuccess: "preorder-payment-success",
       PreOrderPaymentFail: "preorder-payment-fail",
+       OrderCreatedCOD:'create-order-success',
     },
   },
 };
@@ -71,12 +73,6 @@ export default function AppNavigator() {
   useEffect(() => {
     const handleNavigation = async () => {
       const initialUrl = await Linking.getInitialURL();
-
-      // Nếu app được mở bằng deep link → KHÔNG auto navigate
-      // if (initialUrl) {
-      //   console.log("Opened from deep link:", initialUrl);
-      //   return;
-      // }
       if (isAuthenticated && navigationRef.current && user) {
         navigateAfterLogin(navigationRef.current, user);
       }
@@ -155,7 +151,7 @@ export default function AppNavigator() {
 
   return (
     <NavigationContainer ref={navigationRef} theme={navTheme} linking={linking}>
-      {isAuthenticated && user?.role_name !== 'admin' && <ChatBotModal />}
+      {isAuthenticated && user?.role_name !== 'admin' && <CustomerChat />}
       <Stack.Navigator
         screenOptions={{ headerShown: false, cardStyle: { backgroundColor: '#F8F9FA' } }}
         initialRouteName="HomePage"
@@ -178,11 +174,11 @@ export default function AppNavigator() {
         <Stack.Screen name="PaymentFail" component={PaymentFail} />
         <Stack.Screen name="PreOrderPaymentSuccess" component={PreOrderPaymentSuccess} />
         <Stack.Screen name="PreOrderPaymentFail" component={PreOrderPaymentFail} />
-
+        <Stack.Screen name="OrderCreatedCOD" component={OrderCreatedCOD} />
         {/* Protected routes - Chỉ user đã đăng nhập mới xem được */}
         {isAuthenticated && (
           <>
-            {user?.role_name === "admin" ? (
+            {user?.role_name === 'admin' ? (
               <Stack.Screen name="Admin" component={AdminScreen} />
             ) : (
               <>

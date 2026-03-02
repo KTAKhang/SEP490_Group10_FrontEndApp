@@ -270,14 +270,9 @@ const OrderHistoryScreen = ({ navigation }) => {
                     text: 'Có',
                     onPress: async () => {
                         try {
-                            const result = await dispatch(retryPayment(order.orderId)).unwrap();
-                            if (result?.paymentUrl) {
-                                const canOpen = await Linking.canOpenURL(result.paymentUrl);
-                                if (canOpen) Linking.openURL(result.paymentUrl);
-                                else Alert.alert('Lỗi', 'Không thể mở link thanh toán.');
-                            } else {
-                                Alert.alert('Thông báo', result?.message || 'Vui lòng thử lại sau.');
-                            }
+                            console.log("order.orderId",order.orderId)
+                            dispatch(retryPayment(order.orderId)).unwrap();
+
                         } catch (error) {
                             Alert.alert('Lỗi', error || 'Không thể tạo thanh toán lại.');
                         }
