@@ -40,7 +40,7 @@ const ChangePasswordModal = ({
                         <TouchableOpacity style={styles.closeButton} onPress={onClose}>
                             <Ionicons name="close" size={24} color={COLORS.white} />
                         </TouchableOpacity>
-                        <Text style={styles.title}>Đổi mật khẩu</Text>
+                        <Text style={styles.title}>Change password</Text>
                         <View style={styles.placeholder} />
                     </LinearGradient>
 
@@ -49,7 +49,7 @@ const ChangePasswordModal = ({
                         <View style={styles.inputContainer}>
                             <Ionicons name="lock-closed-outline" size={20} color={COLORS.primary} style={styles.inputIcon} />
                             <TextInput
-                                placeholder="Mật khẩu hiện tại"
+                                placeholder="Current password"
                                 placeholderTextColor={COLORS.text.light}
                                 secureTextEntry
                                 style={styles.input}
@@ -62,7 +62,7 @@ const ChangePasswordModal = ({
                         <View style={styles.inputContainer}>
                             <Ionicons name="key-outline" size={20} color={COLORS.primary} style={styles.inputIcon} />
                             <TextInput
-                                placeholder="Mật khẩu mới (gồm 8 ký tự ít nhất một chữ số và một chữ hoa)"
+                                placeholder="New password (8 characters, including at least one digit and one uppercase letter)"
                                 placeholderTextColor={COLORS.text.light}
                                 secureTextEntry
                                 style={styles.input}
@@ -75,7 +75,7 @@ const ChangePasswordModal = ({
                         <View style={styles.inputContainer}>
                             <Ionicons name="checkmark-circle-outline" size={20} color={COLORS.primary} style={styles.inputIcon} />
                             <TextInput
-                                placeholder="Xác nhận mật khẩu"
+                                placeholder="Confirm password"
                                 placeholderTextColor={COLORS.text.light}
                                 secureTextEntry
                                 style={styles.input}
@@ -91,7 +91,7 @@ const ChangePasswordModal = ({
                                 onPress={onClose}
                                 disabled={isLoading}
                             >
-                                <Text style={styles.cancelButtonText}>Huỷ</Text>
+                                <Text style={styles.cancelButtonText}>Cancel</Text>
                             </TouchableOpacity>
 
                             <TouchableOpacity
@@ -102,7 +102,7 @@ const ChangePasswordModal = ({
                                 {isLoading ? (
                                     <ActivityIndicator size="small" color={COLORS.white} />
                                 ) : (
-                                    <Text style={styles.submitButtonText}>Xác nhận</Text>
+                                    <Text style={styles.submitButtonText}>Confirm</Text>
                                 )}
                             </TouchableOpacity>
                         </View>

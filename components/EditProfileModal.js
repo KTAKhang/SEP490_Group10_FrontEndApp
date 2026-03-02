@@ -491,11 +491,11 @@ const EditProfileModal = ({ visible, onClose, profile, onSave }) => {
                     <Text style={styles.charCount}>{name.length}/50</Text>
                   </View>
 
-                  <View style={styles.inputGroup}>
+                  {/* <View style={styles.inputGroup}>
                     <Text style={styles.label}>URL ảnh đại diện</Text>
                     <TextInput
                       style={[styles.input, errors.avatar && styles.inputError]}
-                      placeholder="https://example.com/avatar.jpg"
+                      placeholder="https://example.com/avataraaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.jpg"
                       value={avatar}
                       onChangeText={(text) => {
                         setAvatar(text);
@@ -508,7 +508,7 @@ const EditProfileModal = ({ visible, onClose, profile, onSave }) => {
                       editable={!loading}
                     />
                     <ErrorText error={errors.avatar} />
-                  </View>
+                  </View> */}
 
                   <View style={styles.inputGroup}>
                     <Text style={styles.label}>Số điện thoại *</Text>
@@ -705,8 +705,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.5)",
     justifyContent: "center",
-    alignItems: "center",
-    padding: 20,
+    paddingHorizontal: 0,
   },
   modalContainer: {
     width: "100%",
@@ -825,6 +824,7 @@ const styles = StyleSheet.create({
   },
   inputGroup: {
     marginBottom: 20,
+    width: "100%",
   },
   label: {
     fontSize: 16,
@@ -833,6 +833,9 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   input: {
+    width: "100%",
+    flex: 1,
+    alignSelf: "stretch",
     borderWidth: 1,
     borderColor: "#d1d5db",
     borderRadius: 8,
