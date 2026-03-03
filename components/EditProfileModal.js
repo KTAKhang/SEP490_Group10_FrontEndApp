@@ -143,31 +143,31 @@ const EditProfileModal = ({ visible, onClose, profile, onSave }) => {
     const newErrors = {};
 
     if (!name.trim()) {
-      newErrors.name = "Vui lòng nhập tên người dùng";
+      newErrors.name = "Please enter your username.";
     } else if (name.trim().length < 2) {
-      newErrors.name = "Tên phải có ít nhất 2 ký tự";
+      newErrors.name = "The name must have at least 2 characters.";
     } else if (name.trim().length > 50) {
-      newErrors.name = "Tên không được vượt quá 50 ký tự";
+      newErrors.name = "Names must not exceed 50 characters.";
     }
 
     if (!phone || !/^[0-9]{9,11}$/.test(phone)) {
-      newErrors.phone = "Số điện thoại không hợp lệ";
+      newErrors.phone = "Invalid phone number";
     }
 
     if (!address || address.trim().length < 5) {
-      newErrors.address = "Vui lòng nhập địa chỉ";
+      newErrors.address = "Please enter the address";
     }
 
     if (!cityCode || !icity) {
-      newErrors.city = "Vui lòng chọn tỉnh/thành";
+      newErrors.city = "Please select a province/city.";
     }
 
     if (!ward) {
-      newErrors.ward = "Vui lòng chọn phường/xã";
+      newErrors.ward = "Please select a ward/commune.";
     }
 
     if (!gender) {
-      newErrors.gender = "Vui lòng chọn giới tính";
+      newErrors.gender = "Please select your gender.";
     }
 
     setErrors(newErrors);
@@ -177,7 +177,7 @@ const EditProfileModal = ({ visible, onClose, profile, onSave }) => {
   const pickImageFromLibrary = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted") {
-      Alert.alert("Lỗi", "Bạn cần cấp quyền truy cập thư viện.");
+      Alert.alert("Error", "You need to grant library access.");
       return;
     }
 
@@ -201,7 +201,7 @@ const EditProfileModal = ({ visible, onClose, profile, onSave }) => {
   const takePhotoFromCamera = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== "granted") {
-      Alert.alert("Lỗi", "Bạn cần cấp quyền truy cập camera.");
+      Alert.alert("Error", "You need to grant camera access.");
       return;
     }
 
@@ -228,11 +228,11 @@ const EditProfileModal = ({ visible, onClose, profile, onSave }) => {
     // Delay ngắn để đảm bảo modal đã ẩn
     setTimeout(() => {
       const options = [
-        "Chọn từ thư viện",
-        "Chụp ảnh mới",
-        "Nhập URL",
-        "Xóa ảnh",
-        "Hủy",
+        "Choose from the library",
+        "Take new photos",
+        "Enter URL",
+        "Delete photo",
+        "Cancel",
       ];
       const cancelButtonIndex = 4;
       const destructiveButtonIndex = 3;
@@ -302,10 +302,10 @@ const EditProfileModal = ({ visible, onClose, profile, onSave }) => {
 
   const showWardPicker = () => {
     if (!wardsList || wardsList.length === 0) {
-      Alert.alert("Thông báo", "Vui lòng chọn tỉnh/thành trước");
+      Alert.alert("Notification", "Please select the province/city first.");
       return;
     }
-    const options = wardsList.map((w) => w.name).concat("Hủy");
+    const options = wardsList.map((w) => w.name).concat("Cancel");
     const cancelButtonIndex = options.length - 1;
 
     setShowActionSheet(true); // ẩn modal trước
@@ -322,7 +322,7 @@ const EditProfileModal = ({ visible, onClose, profile, onSave }) => {
   };
 
   const showGenderPicker = () => {
-    const options = ["male", "female", "other", "Hủy"];
+    const options = ["male", "female", "other", "cancel"];
     const cancelButtonIndex = 3;
 
     setShowActionSheet(true); // ẩn modal trước
@@ -339,10 +339,10 @@ const EditProfileModal = ({ visible, onClose, profile, onSave }) => {
   };
   const showUrlInputDialog = () => {
     Alert.prompt(
-      "Nhập URL ảnh",
-      "Vui lòng nhập đường dẫn ảnh:",
+      "Enter image URL",
+      "Please enter the image link:",
       [
-        { text: "Hủy", style: "cancel" },
+        { text: "Cancel", style: "cancel" },
         {
           text: "OK",
           onPress: (url) => {
@@ -377,7 +377,7 @@ const EditProfileModal = ({ visible, onClose, profile, onSave }) => {
       // if(isUpdateSuccess){}
       onClose();
     } catch (error) {
-      Alert.alert("Lỗi", "Không thể cập nhật hồ sơ. Vui lòng thử lại.");
+      Alert.alert("Error", "Unable to update profile. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -388,9 +388,9 @@ const EditProfileModal = ({ visible, onClose, profile, onSave }) => {
       name !== (profile?.user_name || "") || avatar !== (profile?.avatar || "");
 
     if (hasChanges) {
-      Alert.alert("Xác nhận", "Bạn có muốn hủy những thay đổi chưa được lưu?", [
-        { text: "Tiếp tục chỉnh sửa", style: "cancel" },
-        { text: "Hủy thay đổi", onPress: onClose, style: "destructive" },
+      Alert.alert("Confirm", "Do you want to unsave any unsaved changes?", [
+        { text: "Continue editing", style: "cancel" },
+        { text: "Cancel changes", onPress: onClose, style: "destructive" },
       ]);
     } else {
       onClose();
@@ -432,7 +432,7 @@ const EditProfileModal = ({ visible, onClose, profile, onSave }) => {
                   >
                     <Text style={styles.closeButtonText}>✕</Text>
                   </TouchableOpacity>
-                  <Text style={styles.title}>Chỉnh sửa hồ sơ</Text>
+                  <Text style={styles.title}>Edit profile</Text>
                   <View style={styles.placeholder} />
                 </View>
 
@@ -466,17 +466,17 @@ const EditProfileModal = ({ visible, onClose, profile, onSave }) => {
                     style={styles.changeAvatarButton}
                     onPress={handleChangeAvatar}
                   >
-                    <Text style={styles.changeAvatarText}>Thay đổi ảnh</Text>
+                    <Text style={styles.changeAvatarText}>Change the image</Text>
                   </TouchableOpacity>
                 </View>
 
                 {/* Form Fields */}
                 <View style={styles.formSection}>
                   <View style={styles.inputGroup}>
-                    <Text style={styles.label}>Tên người dùng *</Text>
+                    <Text style={styles.label}>User name *</Text>
                     <TextInput
                       style={[styles.input, errors.name && styles.inputError]}
-                      placeholder="Nhập tên của bạn"
+                      placeholder="Enter your name"
                       value={name}
                       onChangeText={(text) => {
                         setName(text);
@@ -491,27 +491,8 @@ const EditProfileModal = ({ visible, onClose, profile, onSave }) => {
                     <Text style={styles.charCount}>{name.length}/50</Text>
                   </View>
 
-                  {/* <View style={styles.inputGroup}>
-                    <Text style={styles.label}>URL ảnh đại diện</Text>
-                    <TextInput
-                      style={[styles.input, errors.avatar && styles.inputError]}
-                      placeholder="https://example.com/avataraaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.jpg"
-                      value={avatar}
-                      onChangeText={(text) => {
-                        setAvatar(text);
-                        if (errors.avatar) {
-                          setErrors({ ...errors, avatar: null });
-                        }
-                      }}
-                      keyboardType="url"
-                      autoCapitalize="none"
-                      editable={!loading}
-                    />
-                    <ErrorText error={errors.avatar} />
-                  </View> */}
-
                   <View style={styles.inputGroup}>
-                    <Text style={styles.label}>Số điện thoại *</Text>
+                    <Text style={styles.label}>Phone number *</Text>
                     <TextInput
                       style={[styles.input, errors.phone && styles.inputError]}
                       placeholder="0123456789"
@@ -528,7 +509,7 @@ const EditProfileModal = ({ visible, onClose, profile, onSave }) => {
                   </View>
 
                   <View style={styles.inputGroup}>
-                    <Text style={styles.label}>Tỉnh / Thành *</Text>
+                    <Text style={styles.label}>Province/City *</Text>
                     <TouchableOpacity
                       style={[styles.input, errors.city && styles.inputError]}
                       onPress={showCityPicker}
@@ -541,7 +522,7 @@ const EditProfileModal = ({ visible, onClose, profile, onSave }) => {
                   </View>
 
                   <View style={styles.inputGroup}>
-                    <Text style={styles.label}>Phường / Xã *</Text>
+                    <Text style={styles.label}>Ward/Commune *</Text>
                     <TouchableOpacity
                       style={[styles.input, errors.ward && styles.inputError]}
                       onPress={showWardPicker}
@@ -554,13 +535,13 @@ const EditProfileModal = ({ visible, onClose, profile, onSave }) => {
                   </View>
 
                   <View style={styles.inputGroup}>
-                    <Text style={styles.label}>Địa chỉ *</Text>
+                    <Text style={styles.label}>Address *</Text>
                     <TextInput
                       style={[
                         styles.input,
                         errors.address && styles.inputError,
                       ]}
-                      placeholder="Số nhà, tên đường..."
+                      placeholder="House number, street name..."
                       value={address}
                       onChangeText={(text) => {
                         setAddress(text);
@@ -573,7 +554,7 @@ const EditProfileModal = ({ visible, onClose, profile, onSave }) => {
                   </View>
 
                   <View style={styles.inputGroup}>
-                    <Text style={styles.label}>Ngày sinh</Text>
+                    <Text style={styles.label}>Date of birth</Text>
 
                     {/* Nút mở picker */}
                     <TouchableOpacity
@@ -590,7 +571,7 @@ const EditProfileModal = ({ visible, onClose, profile, onSave }) => {
                           fontSize: 16,
                         }}
                       >
-                        {birthday || "Chọn ngày sinh"}
+                        {birthday || "Choose your birth date"}
                       </Text>
                     </TouchableOpacity>
                     <ErrorText error={errors.birthday} />
@@ -637,19 +618,19 @@ const EditProfileModal = ({ visible, onClose, profile, onSave }) => {
                         onPress={() => setShowDatePicker(false)}
                         style={styles.dateConfirmButton}
                       >
-                        <Text style={styles.dateConfirmText}>Xác nhận</Text>
+                        <Text style={styles.dateConfirmText}>Confirm</Text>
                       </TouchableOpacity>
                     )}
                   </View>
 
                   <View style={styles.inputGroup}>
-                    <Text style={styles.label}>Giới tính *</Text>
+                    <Text style={styles.label}>Gender *</Text>
                     <TouchableOpacity
                       style={[styles.input, errors.gender && styles.inputError]}
                       onPress={showGenderPicker}
                     >
                       <Text style={{ color: gender ? "#111" : "#9ca3af" }}>
-                        {gender ? gender.toUpperCase() : "Chọn giới tính"}
+                        {gender ? gender.toUpperCase() : "Choose your gender"}
                       </Text>
                     </TouchableOpacity>
                     <ErrorText error={errors.gender} />
@@ -672,7 +653,7 @@ const EditProfileModal = ({ visible, onClose, profile, onSave }) => {
                         loading && styles.disabledText,
                       ]}
                     >
-                      Hủy
+                      Cancel
                     </Text>
                   </TouchableOpacity>
 
@@ -687,7 +668,7 @@ const EditProfileModal = ({ visible, onClose, profile, onSave }) => {
                     {loading ? (
                       <MinimalLoading size="small" color="#fff" />
                     ) : (
-                      <Text style={styles.saveText}>Lưu thay đổi</Text>
+                      <Text style={styles.saveText}>Save</Text>
                     )}
                   </TouchableOpacity>
                 </View>

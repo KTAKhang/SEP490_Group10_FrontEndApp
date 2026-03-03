@@ -67,23 +67,23 @@ export default function PaymentFail({ navigation, route }) {
     ? [
         {
           icon: "receipt-outline",
-          label: "Mã đơn hàng",
+          label: "Order code",
           value: `#${order._id?.slice(-8).toUpperCase()}`,
         },
         {
           icon: "cash-outline",
-          label: "Tổng tiền",
+          label: "Total amount",
           value: `${order.total_price?.toLocaleString()} đ`,
           highlight: true,
         },
         {
           icon: "cube-outline",
-          label: "Trạng thái",
+          label: "Status",
           value: order.order_status?.name,
         },
         {
           icon: "wallet-outline",
-          label: "Thanh toán",
+          label: "Pay",
           value: orderDetail.payment?.status,
           error: true,
         },
@@ -121,30 +121,30 @@ export default function PaymentFail({ navigation, route }) {
 
         {/* Title */}
         <Animated.View style={{ opacity: fadeAnim, alignItems: "center" }}>
-          <Text style={styles.title}>Thanh toán thất bại!</Text>
+          <Text style={styles.title}>Payment failed!</Text>
           <Text style={styles.subtitle}>
-            Giao dịch không thể hoàn tất. Vui lòng thử lại hoặc chọn phương thức khác.
+            The transaction could not be completed. Please try again or choose a different method.
           </Text>
         </Animated.View>
 
         {/* Error Badge */}
         <Animated.View style={[styles.errorBadge, { opacity: fadeAnim }]}>
           <Ionicons name="alert-circle-outline" size={16} color="#f87171" />
-          <Text style={styles.errorBadgeText}>Giao dịch bị từ chối</Text>
+          <Text style={styles.errorBadgeText}>Transaction rejected</Text>
         </Animated.View>
 
         {/* Order Info Card */}
         {detailLoading ? (
           <View style={styles.loadingBox}>
             <ActivityIndicator size="large" color="#ef4444" />
-            <Text style={styles.loadingText}>Đang tải thông tin đơn...</Text>
+            <Text style={styles.loadingText}>Loading application information...</Text>
           </View>
         ) : (
           order && (
             <Animated.View style={[styles.card, { opacity: fadeAnim }]}>
               <View style={styles.cardHeader}>
                 <Ionicons name="document-text-outline" size={18} color="#ef4444" />
-                <Text style={styles.cardTitle}>Chi tiết đơn hàng</Text>
+                <Text style={styles.cardTitle}>Order details</Text>
               </View>
 
               <View style={styles.divider} />
@@ -191,7 +191,7 @@ export default function PaymentFail({ navigation, route }) {
               end={{ x: 1, y: 0 }}
             >
               <Ionicons name="refresh-outline" size={18} color="#fff" />
-              <Text style={styles.retryText}>Thanh toán lại</Text>
+              <Text style={styles.retryText}>Repayment</Text>
             </LinearGradient>
           </TouchableOpacity>
 
@@ -208,7 +208,7 @@ export default function PaymentFail({ navigation, route }) {
               end={{ x: 1, y: 0 }}
             >
               <Ionicons name="home-outline" size={18} color="#fff" />
-              <Text style={styles.primaryText}>Về trang chủ</Text>
+              <Text style={styles.primaryText}>Back to homepage</Text>
             </LinearGradient>
           </TouchableOpacity>
 
@@ -219,7 +219,7 @@ export default function PaymentFail({ navigation, route }) {
             activeOpacity={0.8}
           >
             <Ionicons name="time-outline" size={18} color="#9ca3af" />
-            <Text style={styles.secondaryText}>Xem lịch sử đơn hàng</Text>
+            <Text style={styles.secondaryText}>View order history</Text>
           </TouchableOpacity>
         </Animated.View>
       </ScrollView>

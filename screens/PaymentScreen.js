@@ -136,15 +136,15 @@ const PaymentScreen = ({ navigation, route }) => {
   const paymentMethods = [
     {
       id: "COD",
-      title: "Thanh toán khi nhận hàng",
-      subtitle: "Thanh toán khi bạn nhận được đơn hàng",
+      title: "Payment upon delivery",
+      subtitle: "Payment upon receipt of your order.",
       icon: "cash-outline",
       available: true,
     },
     {
       id: "VNPAY",
       title: "VNPAY e-wallet",
-      subtitle: "Thanh toán qua VNPAY (chuyển hướng sang cổng thanh toán)",
+      subtitle: "Pay via VNPAY (redirect to payment gateway)",
       icon: "card-outline",
       available: true,
     },
@@ -180,9 +180,9 @@ const PaymentScreen = ({ navigation, route }) => {
   // Handle order creation error
   useEffect(() => {
     if (error) {
-      Alert.alert("Đặt hàng thất bại", error, [
+      Alert.alert("Order failed", error, [
         {
-          text: "Thử lại",
+          text: "Retry",
           onPress: () => dispatch(clearOrderState()),
         },
       ]);
@@ -253,14 +253,14 @@ const PaymentScreen = ({ navigation, route }) => {
         checkoutSessionId ||
         (await AsyncStorage.getItem("checkout_session_id"));
       if (!sessionId) {
-        Alert.alert("Không có phiên thanh toán để hủy");
+        Alert.alert("No payment session to cancel");
         return;
       }
 
-      Alert.alert("Xác nhận", "Bạn có chắc chắn muốn hủy thanh toán này?", [
-        { text: "Không", style: "cancel" },
+      Alert.alert("Confirm", "Are you sure you want to cancel this payment?", [
+        { text: "No", style: "cancel" },
         {
-          text: "Có",
+          text: "Yes",
           onPress: async () => {
             try {
               // Remove local session immediately to avoid race where Cart reads it and redirects
@@ -273,17 +273,17 @@ const PaymentScreen = ({ navigation, route }) => {
               if (result && result.error) {
                 Toast.show({
                   type: "error",
-                  text1: "Hủy thanh toán thất bại",
+                  text1: "Payment cancellation failed.",
                   text2: result.error.message || result.error,
                 });
               } else {
-                Toast.show({ type: "success", text1: "Đã hủy thanh toán" });
+                Toast.show({ type: "success", text1: "Payment cancelled" });
                 // Navigate back to cart after a short delay to allow UI updates
                 setTimeout(() => navigation.navigate("Cart"), 300);
               }
             } catch (err) {
               console.error("Cancel checkout error", err);
-              Toast.show({ type: "error", text1: "Hủy thanh toán thất bại" });
+              Toast.show({ type: "error", text1: "Payment cancellation failed." });
             }
           },
         },
@@ -313,10 +313,10 @@ const PaymentScreen = ({ navigation, route }) => {
     const nameRegex =
       /^[a-zA-ZÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚÝàáâãèéêìíòóôõùúýĂăĐđĨĩŨũƠơƯưẠ-ỹ\s]+$/;
     if (!name.trim()) {
-      return "Vui lòng nhập tên người nhận";
+      return "Please enter the recipient's name.";
     }
     if (!nameRegex.test(name.trim())) {
-      return "Tên không được chứa số hoặc ký tự đặc biệt";
+      return "Names must not contain numbers or special characters.";
     }
     return null;
   };
@@ -324,10 +324,10 @@ const PaymentScreen = ({ navigation, route }) => {
   const validatePhone = (phone) => {
     const phoneRegex = /^0[0-9]{9}$/;
     if (!phone.trim()) {
-      return "Vui lòng nhập số điện thoại người nhận";
+      return "Please enter the recipient's phone number.";
     }
     if (!phoneRegex.test(phone.trim())) {
-      return "Số điện thoại phải có 10 số, bắt đầu bằng số 0 và không chứa ký tự đặc biệt";
+      return "Phone numbers must have 10 digits, start with the number 0, and not contain any special characters.";
     }
     return null;
   };
@@ -336,10 +336,10 @@ const PaymentScreen = ({ navigation, route }) => {
     const addressRegex =
       /^[a-zA-Z0-9ÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚÝàáâãèéêìíòóôõùúýĂăĐđĨĩŨũƠơƯưẠ-ỹ\s,./\-]+$/;
     if (!address.trim()) {
-      return "Vui lòng nhập địa chỉ giao hàng";
+      return "Please enter the delivery address.";
     }
     if (!addressRegex.test(address.trim())) {
-      return "Địa chỉ không được chứa ký tự đặc biệt (ngoại trừ dấu phẩy, chấm, gạch ngang)";
+      return "Addresses must not contain special characters (except commas, periods, and hyphens).";
     }
     return null;
   };
@@ -348,19 +348,19 @@ const PaymentScreen = ({ navigation, route }) => {
     // Validate all fields
     const nameError = validateName(tempReceiverInfo.receiver_name);
     if (nameError) {
-      Alert.alert("Lỗi", nameError);
+      Alert.alert("Error", nameError);
       return;
     }
 
     const phoneError = validatePhone(tempReceiverInfo.receiver_phone);
     if (phoneError) {
-      Alert.alert("Lỗi", phoneError);
+      Alert.alert("Error", phoneError);
       return;
     }
 
     const addressError = validateAddress(tempReceiverInfo.receiver_address);
     if (addressError) {
-      Alert.alert("Lỗi", addressError);
+      Alert.alert("Error", addressError);
       return;
     }
 
@@ -387,8 +387,8 @@ const PaymentScreen = ({ navigation, route }) => {
   const handlePlaceOrder = () => {
     if (!selectedPayment) {
       Alert.alert(
-        "Cần chọn phương thức thanh toán",
-        "Vui lòng chọn phương thức thanh toán để tiếp tục.",
+        "You need to choose a payment method.",
+        "Please select a payment method to continue.",
         [{ text: "OK" }],
       );
       return;
@@ -407,8 +407,8 @@ const PaymentScreen = ({ navigation, route }) => {
 
     if (!selectedIds || selectedIds.length === 0) {
       Alert.alert(
-        "Chưa chọn sản phẩm nào",
-        "Vui lòng chọn sản phẩm trước khi đặt hàng.",
+        "No products selected yet.",
+        "Please select your products before placing your order.",
         [{ text: "OK" }],
       );
       return;
@@ -418,8 +418,8 @@ const PaymentScreen = ({ navigation, route }) => {
     const nameError = validateName(receiverInfo.receiver_name);
     if (nameError) {
       Alert.alert(
-        "Lỗi thông tin giao hàng",
-        nameError + "\n\nVui lòng chỉnh sửa thông tin giao hàng.",
+        "Delivery information error",
+        nameError + "\n\nPlease correct the shipping information.",
       );
       return;
     }
@@ -427,8 +427,8 @@ const PaymentScreen = ({ navigation, route }) => {
     const phoneError = validatePhone(receiverInfo.receiver_phone);
     if (phoneError) {
       Alert.alert(
-        "Lỗi thông tin giao hàng",
-        phoneError + "\n\nVui lòng chỉnh sửa thông tin giao hàng.",
+        "Delivery information error",
+        phoneError + "\n\nPlease correct the shipping information.",
       );
       return;
     }
@@ -436,22 +436,22 @@ const PaymentScreen = ({ navigation, route }) => {
     const addressError = validateAddress(receiverInfo.receiver_address);
     if (addressError) {
       Alert.alert(
-        "Lỗi thông tin giao hàng",
-        addressError + "\n\nVui lòng chỉnh sửa thông tin giao hàng.",
+        "Delivery information error",
+        addressError + "\n\nPlease correct the shipping information.",
       );
       return;
     }
 
     Alert.alert(
-      "Xác nhận đơn hàng",
-      `Đặt hàng với ${paymentMethods.find((m) => m.id === selectedPayment)?.title}?\n\nTổng cộng: ${formatCurrency(finalAmount)}${discountAmount > 0 ? ` (đã giảm ${formatCurrency(discountAmount)})` : ""}\nGiao đến: ${receiverInfo.receiver_address}`,
+      "Confirm orders",
+      `Place your order with ${paymentMethods.find((m) => m.id === selectedPayment)?.title}?\n\nTotal: ${formatCurrency(finalAmount)}${discountAmount > 0 ? ` (has decreased ${formatCurrency(discountAmount)})` : ""}\nDelivered: ${receiverInfo.receiver_address}`,
       [
         {
-          text: "Hủy",
+          text: "Cancel",
           style: "cancel",
         },
         {
-          text: "Xác nhận",
+          text: "Confirm",
           style: "default",
           onPress: () => {
             dispatch(
@@ -557,7 +557,7 @@ const PaymentScreen = ({ navigation, route }) => {
         );
       })
       .catch((err) => {
-        setValidationError(err.message || "Mã giảm giá không hợp lệ");
+        setValidationError(err.message || "Invalid discount code");
         setSelectedDiscount(null);
         setValidationResult(null);
       })
@@ -593,7 +593,7 @@ const PaymentScreen = ({ navigation, route }) => {
         setAppliedByManualCode(true);
       })
       .catch((err) => {
-        setValidationError(err.message || "Mã giảm giá không hợp lệ");
+        setValidationError(err.message || "Invalid discount code");
       })
       .finally(() => setDiscountLoading(false));
   };
@@ -614,12 +614,12 @@ const PaymentScreen = ({ navigation, route }) => {
           >
             <Icon name="close" size={24} color="#0d364c" />
           </TouchableOpacity>
-          <Text style={styles.modalTitle}>Chỉnh sửa thông tin giao hàng</Text>
+          <Text style={styles.modalTitle}>Edit delivery information</Text>
           <TouchableOpacity
             onPress={handleSaveAddress}
             style={styles.modalHeaderButton}
           >
-            <Text style={styles.saveButtonText}>Lưu</Text>
+            <Text style={styles.saveButtonText}>Save</Text>
           </TouchableOpacity>
         </View>
 
@@ -629,7 +629,7 @@ const PaymentScreen = ({ navigation, route }) => {
         >
           {/* Receiver Name */}
           <View style={styles.inputSection}>
-            <Text style={styles.inputLabel}>Tên người nhận *</Text>
+            <Text style={styles.inputLabel}>Recipient's name *</Text>
             <TextInput
               style={[
                 styles.textInput,
@@ -646,7 +646,7 @@ const PaymentScreen = ({ navigation, route }) => {
               onBlur={() =>
                 validateField("receiver_name", tempReceiverInfo.receiver_name)
               }
-              placeholder="Nhập tên người nhận"
+              placeholder="Enter the recipient's name"
               placeholderTextColor="#9ca3af"
             />
             {fieldErrors.receiver_name && (
@@ -656,7 +656,7 @@ const PaymentScreen = ({ navigation, route }) => {
 
           {/* Phone Number */}
           <View style={styles.inputSection}>
-            <Text style={styles.inputLabel}>Số điện thoại *</Text>
+            <Text style={styles.inputLabel}>Phone number *</Text>
             <TextInput
               style={[
                 styles.textInput,
@@ -675,7 +675,7 @@ const PaymentScreen = ({ navigation, route }) => {
               onBlur={() =>
                 validateField("receiver_phone", tempReceiverInfo.receiver_phone)
               }
-              placeholder="Nhập số điện thoại"
+              placeholder="Enter phone number"
               placeholderTextColor="#9ca3af"
               keyboardType="phone-pad"
               maxLength={10}
@@ -687,7 +687,7 @@ const PaymentScreen = ({ navigation, route }) => {
 
           {/* Address */}
           <View style={styles.inputSection}>
-            <Text style={styles.inputLabel}>Địa chỉ giao hàng *</Text>
+            <Text style={styles.inputLabel}>Delivery address *</Text>
             <TextInput
               style={[
                 styles.textInput,
@@ -708,7 +708,7 @@ const PaymentScreen = ({ navigation, route }) => {
                   tempReceiverInfo.receiver_address,
                 )
               }
-              placeholder="Nhập địa chỉ giao hàng đầy đủ"
+              placeholder="Enter the full delivery address."
               placeholderTextColor="#9ca3af"
               multiline
               numberOfLines={3}
@@ -723,7 +723,7 @@ const PaymentScreen = ({ navigation, route }) => {
 
           {/* Province / Ward */}
           <View style={styles.inputSection}>
-            <Text style={styles.inputLabel}>Tỉnh/Thành *</Text>
+            <Text style={styles.inputLabel}>Province/City *</Text>
             <View style={styles.pickerWrapper}>
               <Picker
                 selectedValue={tempReceiverInfo.province_code}
@@ -734,7 +734,7 @@ const PaymentScreen = ({ navigation, route }) => {
                   }))
                 }
               >
-                <Picker.Item label="Chọn tỉnh/thành" value={null} />
+                <Picker.Item label="Select province/city" value={null} />
                 {provinces.map((p) => (
                   <Picker.Item key={p.code} label={p.name} value={p.code} />
                 ))}
@@ -743,7 +743,7 @@ const PaymentScreen = ({ navigation, route }) => {
           </View>
 
           <View style={styles.inputSection}>
-            <Text style={styles.inputLabel}>Phường/Xã *</Text>
+            <Text style={styles.inputLabel}>Ward/Commune *</Text>
             <View style={styles.pickerWrapper}>
               <Picker
                 selectedValue={tempReceiverInfo.ward}
@@ -752,7 +752,7 @@ const PaymentScreen = ({ navigation, route }) => {
                   setTempReceiverInfo((prev) => ({ ...prev, ward: val }))
                 }
               >
-                <Picker.Item label="Chọn phường/xã" value={""} />
+                <Picker.Item label="Select ward/commune" value={""} />
                 {wards.map((w) => (
                   <Picker.Item key={w.code} label={w.name} value={w.name} />
                 ))}
@@ -762,7 +762,7 @@ const PaymentScreen = ({ navigation, route }) => {
 
           {/* Note */}
           <View style={styles.inputSection}>
-            <Text style={styles.inputLabel}>Ghi chú đơn hàng (Tùy chọn)</Text>
+            <Text style={styles.inputLabel}>Order notes (Optional)</Text>
             <TextInput
               style={[styles.textInput, styles.textAreaInput]}
               value={tempReceiverInfo.note}
@@ -772,7 +772,7 @@ const PaymentScreen = ({ navigation, route }) => {
                   note: text,
                 }))
               }
-              placeholder="Thêm hướng dẫn đặc biệt cho việc giao hàng..."
+              placeholder="Additional special instructions for delivery..."
               placeholderTextColor="#9ca3af"
               multiline
               numberOfLines={3}
@@ -784,8 +784,7 @@ const PaymentScreen = ({ navigation, route }) => {
           <View style={styles.infoNote}>
             <Icon name="info-outline" size={16} color="#6b7280" />
             <Text style={styles.infoNoteText}>
-              Vui lòng đảm bảo thông tin giao hàng chính xác để tránh các vấn đề
-              giao hàng.
+              Please ensure the shipping information is accurate to avoid shipping problems.
             </Text>
           </View>
         </ScrollView>
@@ -822,30 +821,30 @@ const PaymentScreen = ({ navigation, route }) => {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Icon name="receipt" size={20} color="#0d364c" />
-            <Text style={styles.sectionTitle}>Tóm tắt đơn hàng</Text>
+            <Text style={styles.sectionTitle}>Order Summary</Text>
           </View>
           <View style={styles.sectionContent}>
             <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Tạm tính</Text>
+              <Text style={styles.summaryLabel}>Estimate</Text>
               <Text style={styles.summaryValue}>
                 {formatCurrency(subtotal)}
               </Text>
             </View>
             <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Vận chuyển</Text>
+              <Text style={styles.summaryLabel}>Transport</Text>
               <Text
                 style={[
                   styles.summaryValue,
                   shippingCost === 0 && styles.freeShipping,
                 ]}
               >
-                {shippingCost === 0 ? "Miễn phí" : formatCurrency(shippingCost)}
+                {shippingCost === 0 ? "Free of charge" : formatCurrency(shippingCost)}
               </Text>
             </View>
             {selectedDiscount && discountAmount > 0 && (
               <View style={styles.summaryRow}>
                 <Text style={styles.summaryLabel}>
-                  Giảm giá ({selectedDiscount.code})
+                  Discount ({selectedDiscount.code})
                 </Text>
                 <Text style={[styles.summaryValue, styles.discountValue]}>
                   - {formatCurrency(discountAmount)}
@@ -854,7 +853,7 @@ const PaymentScreen = ({ navigation, route }) => {
             )}
             <View style={styles.totalDivider} />
             <View style={[styles.summaryRow, styles.totalRow]}>
-              <Text style={styles.totalLabel}>Tổng số tiền</Text>
+              <Text style={styles.totalLabel}>Discount</Text>
               <Text style={styles.totalValue}>
                 {formatCurrency(finalAmount)}
               </Text>
@@ -866,13 +865,13 @@ const PaymentScreen = ({ navigation, route }) => {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Icon name="local-offer" size={20} color="#0d364c" />
-            <Text style={styles.sectionTitle}>Mã giảm giá</Text>
+            <Text style={styles.sectionTitle}>Discount code</Text>
             {selectedDiscount && (
               <TouchableOpacity
                 style={styles.changeButton}
                 onPress={handleRemoveVoucher}
               >
-                <Text style={styles.removeVoucherText}>Bỏ mã</Text>
+                <Text style={styles.removeVoucherText}>Remove code</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -885,7 +884,7 @@ const PaymentScreen = ({ navigation, route }) => {
                 ]}
                 value={manualCode}
                 onChangeText={(t) => setManualCode(t.toUpperCase())}
-                placeholder="Nhập mã (vd: YOURVOUCHER)"
+                placeholder="Enter the code (e.g., YOURVOUCHER)"
                 placeholderTextColor="#9ca3af"
                 editable={!selectedDiscount}
               />
@@ -906,24 +905,23 @@ const PaymentScreen = ({ navigation, route }) => {
                   (!!selectedDiscount && !appliedByManualCode)
                 }
               >
-                <Text style={styles.applyVoucherBtnText}>Áp dụng</Text>
+                <Text style={styles.applyVoucherBtnText}>Apply</Text>
               </TouchableOpacity>
             </View>
             {selectedDiscount && !appliedByManualCode ? (
               <Text style={styles.voucherNote}>
-                Đã chọn mã từ gợi ý. Bấm "Bỏ mã" nếu muốn nhập mã khác.
+                A code has been selected from the suggestions. Click "Remove code" if you want to enter a different code.
               </Text>
             ) : null}
             {validationError ? (
               <Text style={styles.voucherError}>{validationError}</Text>
             ) : null}
             <Text style={styles.voucherSuggestLabel}>
-              Gợi ý mã phù hợp đơn hàng
+              Suggest a suitable code for your order.
             </Text>
             {appliedByManualCode ? (
               <Text style={styles.voucherNote}>
-                Bạn đã áp mã nhập tay. Bấm "Bỏ mã" để chọn mã gợi ý. Mỗi đơn
-                chỉ dùng 1 mã.
+              You have manually entered the code. Click "Remove code" to choose a suggested code. Only one code can be used per order.
               </Text>
             ) : discountLoading && validDiscounts.length === 0 ? (
               <View style={styles.voucherLoadingWrap}>
@@ -932,8 +930,8 @@ const PaymentScreen = ({ navigation, route }) => {
             ) : !validDiscounts.length ? (
               <Text style={styles.voucherEmpty}>
                 {total < 1
-                  ? "Thêm sản phẩm để xem mã giảm giá"
-                  : "Không có mã gợi ý. Bạn vẫn có thể nhập mã phía trên."}
+                  ? "Add products to see discount codes."
+                  : "There is no code hint. You can still enter the code above."}
               </Text>
             ) : (
               <ScrollView
@@ -968,8 +966,7 @@ const PaymentScreen = ({ navigation, route }) => {
                           {v.code}
                         </Text>
                         <Text style={styles.voucherSuggestionMeta}>
-                          Tối đa {formatCurrency(v.maxDiscountAmount)} · Đơn tối
-                          thiểu {formatCurrency(v.minOrderValue)}
+                          Maximum {formatCurrency(v.maxDiscountAmount)} · Minimum Order {formatCurrency(v.minOrderValue)}
                         </Text>
                       </View>
                       <View style={styles.voucherSuggestionRight}>
@@ -980,7 +977,7 @@ const PaymentScreen = ({ navigation, route }) => {
                             color="#059669"
                           />
                         ) : (
-                          <Text style={styles.voucherApplyLabel}>Áp dụng</Text>
+                          <Text style={styles.voucherApplyLabel}>Apply</Text>
                         )}
                       </View>
                     </TouchableOpacity>
@@ -991,21 +988,21 @@ const PaymentScreen = ({ navigation, route }) => {
             {selectedDiscount && discountData && (
               <View style={styles.discountSummary}>
                 <View style={styles.summaryRow}>
-                  <Text style={styles.summaryLabel}>Tạm tính (gốc)</Text>
+                  <Text style={styles.summaryLabel}>Estimated (original)</Text>
                   <Text style={styles.summaryValue}>
                     {formatCurrency(total)}
                   </Text>
                 </View>
                 <View style={styles.summaryRow}>
                   <Text style={styles.discountLabel}>
-                    Giảm ({selectedDiscount.code})
+                    Reduce ({selectedDiscount.code})
                   </Text>
                   <Text style={styles.discountValue}>
                     - {formatCurrency(discountAmount)}
                   </Text>
                 </View>
                 <View style={[styles.summaryRow, styles.totalRow]}>
-                  <Text style={styles.totalLabel}>Thanh toán</Text>
+                  <Text style={styles.totalLabel}>Pay</Text>
                   <Text style={styles.totalValue}>
                     {formatCurrency(finalAmount)}
                   </Text>
@@ -1022,7 +1019,7 @@ const PaymentScreen = ({ navigation, route }) => {
             <View style={styles.sectionHeader}>
               <Icon name="shopping-cart" size={20} color="#0d364c" />
               <Text style={styles.sectionTitle}>
-                Sản phẩm ({selectedItems.length})
+                Product ({selectedItems.length})
               </Text>
             </View>
             <View style={styles.sectionContent}>
@@ -1048,7 +1045,7 @@ const PaymentScreen = ({ navigation, route }) => {
               })}
               {selectedItems.length > 3 && (
                 <Text style={styles.moreItemsText}>
-                  và {selectedItems.length - 3} sản phẩm khác...
+                  and {selectedItems.length - 3} sản phẩm khác...
                 </Text>
               )}
             </View>
@@ -1059,12 +1056,12 @@ const PaymentScreen = ({ navigation, route }) => {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Icon name="location-on" size={20} color="#0d364c" />
-            <Text style={styles.sectionTitle}>Địa chỉ giao hàng</Text>
+            <Text style={styles.sectionTitle}>Delivery address</Text>
             <TouchableOpacity
               style={styles.changeButton}
               onPress={handleEditAddress}
             >
-              <Text style={styles.changeButtonText}>Chỉnh sửa</Text>
+              <Text style={styles.changeButtonText}>Edit</Text>
             </TouchableOpacity>
           </View>
           <View style={styles.sectionContent}>
@@ -1090,14 +1087,14 @@ const PaymentScreen = ({ navigation, route }) => {
                 </>
               ) : (
                 <Text style={styles.emptyAddressText}>
-                  Vui lòng chỉnh sửa để thêm thông tin giao hàng
+                Please edit to add delivery information.
                 </Text>
               )}
               {receiverInfo.note && (
                 <View style={styles.noteContainer}>
                   <Icon name="note" size={14} color="#6b7280" />
                   <Text style={styles.notePreview}>
-                    Ghi chú: {receiverInfo.note}
+                  Note: {receiverInfo.note}
                   </Text>
                 </View>
               )}
@@ -1109,7 +1106,7 @@ const PaymentScreen = ({ navigation, route }) => {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Icon name="payment" size={20} color="#0d364c" />
-            <Text style={styles.sectionTitle}>Phương thức thanh toán</Text>
+            <Text style={styles.sectionTitle}>Payment methods</Text>
           </View>
           <View style={styles.sectionContent}>
             {paymentMethods.map((method, index) => (
@@ -1168,7 +1165,7 @@ const PaymentScreen = ({ navigation, route }) => {
                 </View>
                 {!method.available && (
                   <View style={styles.comingSoonBadge}>
-                    <Text style={styles.comingSoonText}>Sắp có</Text>
+                    <Text style={styles.comingSoonText}>Coming soon</Text>
                   </View>
                 )}
               </TouchableOpacity>
@@ -1180,14 +1177,13 @@ const PaymentScreen = ({ navigation, route }) => {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Icon name="note" size={20} color="#0d364c" />
-            <Text style={styles.sectionTitle}>Ghi chú đơn hàng</Text>
+            <Text style={styles.sectionTitle}>Order notes</Text>
           </View>
           <View style={styles.sectionContent}>
             <View style={styles.noteCard}>
               <Icon name="info-outline" size={16} color="#6b7280" />
               <Text style={styles.noteText}>
-                Đơn hàng của bạn sẽ được đóng gói cẩn thận và giao trong vòng
-                2-3 ngày làm việc. Thanh toán sẽ được thu khi giao hàng.
+                Your order will be carefully packaged and delivered within 2-3 business days. Payment will be collected upon delivery.
               </Text>
             </View>
           </View>
@@ -1214,8 +1210,8 @@ const PaymentScreen = ({ navigation, route }) => {
             )}
             <Text style={styles.placeOrderButtonText}>
               {isLoading
-                ? "Đang xử lý..."
-                : `Đặt hàng • ${formatCurrency(finalAmount)}`}
+                ? "Processing..."
+                : `Order • ${formatCurrency(finalAmount)}`}
             </Text>
           </View>
         </TouchableOpacity>
@@ -1223,14 +1219,14 @@ const PaymentScreen = ({ navigation, route }) => {
           style={[styles.cancelCheckoutButton]}
           onPress={handleCancel}
         >
-          <Text style={styles.cancelCheckoutButtonText}>Hủy thanh toán</Text>
+          <Text style={styles.cancelCheckoutButtonText}>Cancel payment</Text>
         </TouchableOpacity>
         {checkoutSessionId && (
           <TouchableOpacity
             style={[styles.cancelCheckoutButton]}
             onPress={handleCancel}
           >
-            <Text style={styles.cancelCheckoutButtonText}>Hủy thanh toán</Text>
+            <Text style={styles.cancelCheckoutButtonText}>Cancel payment</Text>
           </TouchableOpacity>
         )}
       </View>

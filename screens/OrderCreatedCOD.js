@@ -69,23 +69,23 @@ export default function OrderCreatedCOD({ navigation, route }) {
     ? [
         {
           icon: "receipt-outline",
-          label: "Mã đơn hàng",
+          label: "Order code",
           value: `#${order._id?.slice(-8).toUpperCase()}`,
         },
         {
           icon: "cash-outline",
-          label: "Tổng tiền",
+          label: "Total amount",
           value: `${order.total_price?.toLocaleString()} đ`,
           highlight: true,
         },
         {
           icon: "cube-outline",
-          label: "Trạng thái",
+          label: "Status",
           value: order.order_status?.name,
         },
         {
           icon: "wallet-outline",
-          label: "Thanh toán",
+          label: "Pay",
           value: orderDetail.payment?.status,
         },
       ]
@@ -118,30 +118,30 @@ export default function OrderCreatedCOD({ navigation, route }) {
 
         {/* Title */}
         <Animated.View style={{ opacity: fadeAnim }}>
-          <Text style={styles.title}>Đặt hàng thành công!</Text>
+          <Text style={styles.title}>Order placed successfully!</Text>
           <Text style={styles.subtitle}>
-            Cảm ơn bạn đã mua hàng. Đơn hàng đang được xử lý.
+            Thank you for your purchase. Your order is being processed.
           </Text>
         </Animated.View>
 
         {/* COD Badge */}
         <Animated.View style={[styles.codBadge, { opacity: fadeAnim }]}>
           <Ionicons name="bicycle-outline" size={16} color="#fbbf24" />
-          <Text style={styles.codText}>Thanh toán khi nhận hàng (COD)</Text>
+          <Text style={styles.codText}>Cash on delivery (COD)</Text>
         </Animated.View>
 
         {/* Order Info Card */}
         {detailLoading ? (
           <View style={styles.loadingBox}>
             <ActivityIndicator size="large" color="#10b981" />
-            <Text style={styles.loadingText}>Đang tải thông tin đơn...</Text>
+            <Text style={styles.loadingText}>Loading application information...</Text>
           </View>
         ) : (
           order && (
             <Animated.View style={[styles.card, { opacity: fadeAnim }]}>
               <View style={styles.cardHeader}>
                 <Ionicons name="document-text-outline" size={18} color="#10b981" />
-                <Text style={styles.cardTitle}>Chi tiết đơn hàng</Text>
+                <Text style={styles.cardTitle}>Order details</Text>
               </View>
 
               <View style={styles.divider} />
@@ -177,7 +177,7 @@ export default function OrderCreatedCOD({ navigation, route }) {
               end={{ x: 1, y: 0 }}
             >
               <Ionicons name="home-outline" size={18} color="#fff" />
-              <Text style={styles.primaryText}>Về trang chủ</Text>
+              <Text style={styles.primaryText}>Back to homepage</Text>
             </LinearGradient>
           </TouchableOpacity>
 
@@ -187,7 +187,7 @@ export default function OrderCreatedCOD({ navigation, route }) {
             activeOpacity={0.8}
           >
             <Ionicons name="time-outline" size={18} color="#10b981" />
-            <Text style={styles.secondaryText}>Xem lịch sử đơn hàng</Text>
+            <Text style={styles.secondaryText}>View order history</Text>
           </TouchableOpacity>
         </Animated.View>
       </ScrollView>

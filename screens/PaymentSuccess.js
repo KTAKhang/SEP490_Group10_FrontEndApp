@@ -70,23 +70,23 @@ export default function PaymentSuccess({ navigation, route }) {
     ? [
         {
           icon: "receipt-outline",
-          label: "Mã đơn hàng",
+          label: "Order code",
           value: `#${order._id?.slice(-8).toUpperCase()}`,
         },
         {
           icon: "cash-outline",
-          label: "Tổng tiền",
+          label: "Total amount",
           value: `${order.total_price?.toLocaleString()} đ`,
           highlight: true,
         },
         {
           icon: "cube-outline",
-          label: "Trạng thái",
+          label: "Status",
           value: order.order_status?.name,
         },
         {
           icon: "card-outline",
-          label: "Thanh toán",
+          label: "Pay",
           value: orderDetail.payment?.status,
           success: true,
         },
@@ -130,32 +130,32 @@ export default function PaymentSuccess({ navigation, route }) {
 
         {/* Title */}
         <Animated.View style={{ opacity: fadeAnim, alignItems: "center" }}>
-          <Text style={styles.title}>Thanh toán thành công!</Text>
+          <Text style={styles.title}>Payment successful!</Text>
           <Text style={styles.subtitle}>
-            Giao dịch đã được xác nhận. Đơn hàng đang được chuẩn bị.
+            The transaction has been confirmed. The order is being prepared.
           </Text>
         </Animated.View>
 
         {/* Success Badge */}
         <Animated.View style={[styles.successBadge, { opacity: fadeAnim }]}>
           <Ionicons name="shield-checkmark-outline" size={15} color="#34d399" />
-          <Text style={styles.successBadgeText}>Giao dịch được bảo mật</Text>
+          <Text style={styles.successBadgeText}>The transaction is secure.</Text>
         </Animated.View>
 
         {/* Card */}
         {detailLoading ? (
           <View style={styles.loadingBox}>
             <ActivityIndicator size="large" color="#10b981" />
-            <Text style={styles.loadingText}>Đang tải thông tin đơn...</Text>
+            <Text style={styles.loadingText}>Loading application information...</Text>
           </View>
         ) : (
           order && (
             <Animated.View style={[styles.card, { opacity: fadeAnim }]}>
               <View style={styles.cardHeader}>
                 <Ionicons name="document-text-outline" size={18} color="#10b981" />
-                <Text style={styles.cardTitle}>Chi tiết đơn hàng</Text>
+                <Text style={styles.cardTitle}>Order details</Text>
                 <View style={styles.paidTag}>
-                  <Text style={styles.paidTagText}>ĐÃ THANH TOÁN</Text>
+                  <Text style={styles.paidTagText}>PAYMENT COMPLETED</Text>
                 </View>
               </View>
 
@@ -209,13 +209,13 @@ export default function PaymentSuccess({ navigation, route }) {
               end={{ x: 1, y: 0 }}
             >
               <Ionicons name="home-outline" size={18} color="#fff" />
-              <Text style={styles.primaryText}>Về trang chủ</Text>
+              <Text style={styles.primaryText}>Back to homepage</Text>
             </LinearGradient>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.secondaryBtn} onPress={() => navigation.navigate("OrderHistory")} activeOpacity={0.8}>
             <Ionicons name="time-outline" size={18} color="#10b981" />
-            <Text style={styles.secondaryText}>Xem lịch sử đơn hàng</Text>
+            <Text style={styles.secondaryText}>View order history</Text>
           </TouchableOpacity>
         </Animated.View>
       </ScrollView>

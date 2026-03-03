@@ -449,7 +449,7 @@ const checkout = useSelector((state) => state.checkout || {});
   useEffect(() => {
     (async () => {
       try {
-        
+        console.log("hehe")
         const existingSession = await AsyncStorage.getItem("checkout_session_id");
         if (existingSession && navigation.isFocused()) {
           navigation.navigate("Payment");
@@ -737,7 +737,7 @@ const checkout = useSelector((state) => state.checkout || {});
             <View style={styles.header}>
               <TouchableOpacity
                 style={styles.headerButton}
-                onPress={() => navigation.goBack()}
+                onPress={() => navigation.navigate("HomePage")}
               >
                 <Icon name="arrow-back" size={24} color="#ffffff" />
               </TouchableOpacity>
@@ -882,7 +882,7 @@ const checkout = useSelector((state) => state.checkout || {});
           <View style={styles.summaryContainer}>
             <View style={styles.summaryHeader}>
               <Text style={styles.summaryTitle}>
-                Tổng kết đơn hàng ({selectedItems.length} sản phẩm)
+                Order summary ({selectedItems.length} products)
               </Text>
               {cartItems.length > 1 && (
                 <TouchableOpacity
@@ -890,20 +890,20 @@ const checkout = useSelector((state) => state.checkout || {});
                   disabled={isLoading}
                   style={styles.clearAllButton}
                 >
-                  <Text style={styles.clearAllText}>Xóa tất cả</Text>
+                  <Text style={styles.clearAllText}>Delete all</Text>
                 </TouchableOpacity>
               )}
             </View>
             <View style={styles.summaryContent}>
               <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>Tạm tính</Text>
+                <Text style={styles.summaryLabel}>Estimate</Text>
                 <Text style={styles.summaryValue}>
                   {formatCurrency(subtotal)}
                 </Text>
               </View>
               <View style={styles.totalDivider} />
               <View style={[styles.summaryRow, styles.totalRow]}>
-                <Text style={styles.totalLabel}>Tổng cộng</Text>
+                <Text style={styles.totalLabel}>Total</Text>
                 <Text style={styles.totalValue}>{formatCurrency(total)}</Text>
               </View>
             </View>
@@ -925,10 +925,10 @@ const checkout = useSelector((state) => state.checkout || {});
           >
             <Text style={styles.checkoutButtonText}>
               {isLoading
-                ? "Đang cập nhật..."
+                ? "Updating..."
                 : selectedItems.length === 0
-                  ? "Chọn sản phẩm để thanh toán"
-                  : `Tiến hành thanh toán (${selectedItems.length} sản phẩm)`}
+                  ? "Select products to pay for"
+                  : `Proceed with payment (${selectedItems.length} products)`}
             </Text>
           </TouchableOpacity>
         </View>

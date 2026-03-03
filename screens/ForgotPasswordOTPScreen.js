@@ -43,8 +43,8 @@ const ForgotPasswordOTPScreen = ({ route, navigation }) => {
         if (resetPasswordStatus === 'success') {
             Toast.show({
                 type: 'success',
-                text1: 'Thành công',
-                text2: 'Mật khẩu đã được đặt lại thành công',
+                text1: 'Success',
+                text2: 'Password has been successfully reset.',
             });
             setTimeout(() => {
                 navigation.navigate('Login');
@@ -52,7 +52,7 @@ const ForgotPasswordOTPScreen = ({ route, navigation }) => {
         } else if (resetPasswordStatus === 'error') {
             Toast.show({
                 type: 'error',
-                text1: 'Lỗi',
+                text1: 'Error',
                 text2: getErrorMessage(resetPasswordMessage),
             });
             setTimeout(() => {
@@ -77,24 +77,24 @@ const ForgotPasswordOTPScreen = ({ route, navigation }) => {
     }, []);
 
     const getErrorMessage = (error) => {
-        if (!error) return 'Đặt lại mật khẩu thất bại';
+        if (!error) return 'Password reset failed';
 
         const lowerError = error.toLowerCase();
 
         if (lowerError.includes('invalid') || lowerError.includes('incorrect')) {
-            return 'Mã OTP không hợp lệ';
+            return 'Invalid OTP code';
         }
         if (lowerError.includes('expired')) {
-            return 'Mã OTP đã hết hạn';
+            return 'The OTP code has expired.';
         }
         if (lowerError.includes('too many attempts')) {
-            return 'Bạn đã thử quá nhiều lần, vui lòng thử lại sau';
+            return 'You have tried too many times, please try again later.';
         }
         if (lowerError.includes('password must contain at least 8 characters') ||
             lowerError.includes('8 characters') ||
             lowerError.includes('uppercase') ||
             lowerError.includes('number')) {
-            return 'Mật khẩu phải có ít nhất 8 ký tự, bao gồm 1 chữ hoa và 1 chữ số';
+            return 'The password must be at least 8 characters long, including one uppercase letter and one digit.';
         }
 
         return error;
@@ -104,15 +104,15 @@ const ForgotPasswordOTPScreen = ({ route, navigation }) => {
         const errors = [];
 
         if (password.length < 8) {
-            errors.push('ít nhất 8 ký tự');
+            errors.push('at least 8 characters');
         }
 
         if (!/[A-Z]/.test(password)) {
-            errors.push('ít nhất 1 ký tự viết hoa');
+            errors.push('at least one uppercase character');
         }
 
         if (!/[0-9]/.test(password)) {
-            errors.push('ít nhất 1 chữ số');
+            errors.push('at least 1 digit');
         }
 
         return errors;
@@ -142,8 +142,8 @@ const ForgotPasswordOTPScreen = ({ route, navigation }) => {
         if (!otpString.trim()) {
             Toast.show({
                 type: 'error',
-                text1: 'Lỗi',
-                text2: 'Vui lòng nhập mã OTP',
+                text1: 'Error',
+                text2: 'Vui lòng nhập Please enter the OTP code.mã OTP',
             });
             return;
         }
@@ -153,8 +153,8 @@ const ForgotPasswordOTPScreen = ({ route, navigation }) => {
 
             Toast.show({
                 type: 'error',
-                text1: 'Lỗi',
-                text2: `Mã OTP phải có đủ 6 số (hiện tại: ${otpString.length} số)`,
+                text1: 'Error',
+                text2: `The OTP code must have 6 digits (currently: ${otpString.length} number)`,
             });
             return;
         }
@@ -162,8 +162,8 @@ const ForgotPasswordOTPScreen = ({ route, navigation }) => {
         if (!/^[0-9]*$/.test(otpString)) {
             Toast.show({
                 type: 'error',
-                text1: 'Lỗi',
-                text2: 'Mã OTP chỉ được chứa số',
+                text1: 'Error',
+                text2: 'The OTP code must only contain numbers.',
             });
             return;
         }
@@ -171,8 +171,8 @@ const ForgotPasswordOTPScreen = ({ route, navigation }) => {
         if (!newPassword) {
             Toast.show({
                 type: 'error',
-                text1: 'Lỗi',
-                text2: 'Vui lòng nhập mật khẩu mới',
+                text1: 'Error',
+                text2: 'Please enter your new password.',
             });
             return;
         }
@@ -182,8 +182,8 @@ const ForgotPasswordOTPScreen = ({ route, navigation }) => {
         if (passwordErrors.length > 0) {
             Toast.show({
                 type: 'error',
-                text1: 'Lỗi',
-                text2: `Mật khẩu phải có ${passwordErrors.join(', ')}`,
+                text1: 'Error',
+                text2: `Password required ${passwordErrors.join(', ')}`,
             });
             return;
         }
@@ -193,8 +193,8 @@ const ForgotPasswordOTPScreen = ({ route, navigation }) => {
 
             Toast.show({
                 type: 'error',
-                text1: 'Lỗi',
-                text2: 'Mật khẩu xác nhận không khớp',
+                text1: 'Error',
+                text2: 'The verification password does not match.',
             });
             return;
         }

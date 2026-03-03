@@ -58,7 +58,7 @@ const LoginScreen = () => {
     useEffect(() => {
     if (!error) return;
 
-    Alert.alert('Đăng Nhập Thất Bại', error);
+    Alert.alert('Login Failed', error);
     dispatch(clearError());
 }, [error, dispatch]);
 
@@ -107,11 +107,11 @@ const LoginScreen = () => {
                 // user cancelled the login flow
                 return;
             } else if (error.code === statusCodes.IN_PROGRESS) {
-                Toast.show({ type: 'info', text1: 'Đang xử lý', text2: 'Đang đăng nhập bằng Google...' });
+                Toast.show({ type: 'info', text1: 'Processing', text2: 'Logging in with Google...' });
             } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
-                Alert.alert('Lỗi', 'Google Play Services không khả dụng hoặc cần cập nhật.');
+                Alert.alert('Error', 'Google Play Services is unavailable or requires an update.');
             } else {
-                Alert.alert('Lỗi Google Sign-In', error.message || 'Đã xảy ra lỗi');
+                Alert.alert('Google Sign-In Error', error.message || 'An error has occurred.');
             }
         }
     };
@@ -221,7 +221,7 @@ const LoginScreen = () => {
                     </View>
                    
                     <View style={styles.footer}>
-                        <Text style={styles.footerText}>Bạn chưa có tài khoản?</Text>
+                        <Text style={styles.footerText}>Don't have an account yet?</Text>
                         <TouchableOpacity onPress={() => navigation.navigate('Register')}>
                             <Text style={styles.footerLink}>Register</Text>
                         </TouchableOpacity>

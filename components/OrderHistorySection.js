@@ -41,9 +41,9 @@ const OrderHistorySection = ({ orderHistory, onViewAll, onOrderPress }) => {
     return (
         <View style={styles.section}>
             <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>Lịch sử đơn hàng</Text>
+                <Text style={styles.sectionTitle}>Order History</Text>
                 <TouchableOpacity onPress={onViewAll}>
-                    <Text style={styles.viewAllText}>Xem đơn hàng</Text>
+                    <Text style={styles.viewAllText}>View Order</Text>
                 </TouchableOpacity>
             </View>
             {Array.isArray(orderHistory) && orderHistory.length > 0 ? (
