@@ -132,7 +132,7 @@ const RegisterScreen = () => {
     // ── Redux OTP confirm response ──────────────────────────────────────────
     useEffect(() => {
         if (confirmOtpStatus === 'success') {
-            Toast.show({ type: 'success', text1: 'Thành công', text2: confirmOtpMessage });
+            Toast.show({ type: 'success', text1: 'Success', text2: confirmOtpMessage });
             setTimeout(() => navigation.navigate('Login'), 1200);
         } else if (confirmOtpStatus === 'error') {
             Toast.show({ type: 'error', text1: 'Lỗi', text2: confirmOtpMessage  });
@@ -209,7 +209,7 @@ const RegisterScreen = () => {
     // ── Step 2 Confirm OTP ──────────────────────────────────────────────────
     const handleConfirmOTP = () => {
         if (!formData.otp || formData.otp.length !== 6) {
-            setErrors({ otp: 'OTP phải đủ 6 số' });
+            setErrors({ otp: 'The OTP must be 6 digits long.' });
             return;
         }
         console.log("formData.otp",formData.otp)
@@ -234,7 +234,7 @@ const RegisterScreen = () => {
                         ))}
                     </ScrollView>
                     <TouchableOpacity style={styles.pickerClose} onPress={onClose}>
-                        <Text style={{ color: '#22c55e', fontWeight: '600' }}>Đóng</Text>
+                        <Text style={{ color: '#22c55e', fontWeight: '600' }}>Close</Text>
                     </TouchableOpacity>
                 </View>
             </View>
@@ -318,7 +318,7 @@ const RegisterScreen = () => {
                             <Field icon={<Lock color="#22c55e" size={20} />} error={errors.password}>
                                 <TextInput
                                     style={styles.inputField}
-                                    placeholder="Mật khẩu"
+                                    placeholder="Password"
                                     placeholderTextColor="#aaa"
                                     value={formData.password}
                                     onChangeText={(v) => setField('password', v)}
@@ -373,7 +373,7 @@ const RegisterScreen = () => {
                             <Field icon={<Home color="#22c55e" size={20} />} error={errors.address}>
                                 <TextInput
                                     style={styles.inputField}
-                                    placeholder="Địa chỉ (số nhà, tên đường...)"
+                                    placeholder="Address (house number, street name...)"
                                     placeholderTextColor="#aaa"
                                     value={formData.address}
                                     onChangeText={(v) => setField('address', v)}
@@ -466,7 +466,7 @@ const RegisterScreen = () => {
                                 {confirmOtpLoading ? (
                                     <ActivityIndicator color="#fff" />
                                 ) : (
-                                    <Text style={styles.loginButtonText}>Xác Nhận OTP</Text>
+                                    <Text style={styles.loginButtonText}>OTP Verification</Text>
                                 )}
                             </TouchableOpacity>
 

@@ -727,8 +727,8 @@ export default function CustomerChat() {
                                   ]}
                                 >
                                   {staffOnline
-                                    ? "🟢 Online — nhấn để chat"
-                                    : "🔒 Chỉ xem lịch sử"}
+                                    ? "🟢 Online — press to chat"
+                                    : "🔒 Only view chat history"}
                                 </Text>
                               </View>
                             </TouchableOpacity>

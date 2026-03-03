@@ -57,8 +57,8 @@ const ProfileScreen = ({ navigation }) => {
         if (isUpdateSuccess) {
             dispatch(fetchUserProfile());
             Alert.alert(
-                'Cập nhật thành công',
-                'Thông tin cá nhân của bạn đã được cập nhật.',
+                'Update successful',
+                'Your personal information has been updated.',
                 [
                     {
                         text: 'OK',
@@ -75,8 +75,8 @@ const ProfileScreen = ({ navigation }) => {
     useEffect(() => {
         if (isChangePasswordSuccess) {
             Alert.alert(
-                'Đổi mật khẩu thành công',
-                'Mật khẩu của bạn đã được cập nhật.',
+                'Password changed successfully.',
+                'Your password has been updated.',
                 [
                     {
                         text: 'OK',
@@ -98,7 +98,7 @@ const ProfileScreen = ({ navigation }) => {
     useEffect(() => {
         if (changePasswordError && passwordModalVisible) {
             Alert.alert(
-                'Lỗi đổi mật khẩu',
+                'Password change error',
                 changePasswordError,
                 [
                     {
@@ -114,12 +114,12 @@ const ProfileScreen = ({ navigation }) => {
 
     const handleLogout = () => {
         Alert.alert(
-            'Đăng xuất',
-            'Bạn có chắc chắn muốn đăng xuất không?',
+            'Log out',
+            'Are you sure you want to log out?',
             [
-                { text: 'Hủy', style: 'cancel' },
+                { text: 'Cancel', style: 'cancel' },
                 {
-                    text: 'Đăng xuất',
+                    text: 'Logout',
                     style: 'destructive',
                     onPress: () => dispatch(logoutUser())
                 },
@@ -133,22 +133,22 @@ const ProfileScreen = ({ navigation }) => {
     const handleChangePassword = () => {
         // Validation
         if (!currentPassword || !newPassword || !confirmPassword) {
-            Alert.alert('Lỗi', 'Vui lòng nhập đầy đủ thông tin.');
+            Alert.alert('Error', 'Please enter all the required information.');
             return;
         }
 
         if (newPassword.length < 6) {
-            Alert.alert('Lỗi', 'Mật khẩu mới phải có ít nhất 6 ký tự.');
+            Alert.alert('Error', 'The new password must have at least 6 characters.');
             return;
         }
 
         if (newPassword !== confirmPassword) {
-            Alert.alert('Lỗi', 'Mật khẩu xác nhận không khớp.');
+            Alert.alert('Error', 'The verification password does not match.');
             return;
         }
 
         if (currentPassword === newPassword) {
-            Alert.alert('Lỗi', 'Mật khẩu mới phải khác mật khẩu hiện tại.');
+            Alert.alert('Error', 'The new password must be different from the current password.');
             return;
         }
 
@@ -181,7 +181,7 @@ const ProfileScreen = ({ navigation }) => {
             >
                 <SafeAreaView>
                     <View style={styles.header}>
-                        <Text style={styles.headerTitle}>Hồ sơ</Text>
+                        <Text style={styles.headerTitle}>Profile</Text>
                     </View>
                 </SafeAreaView>
             </LinearGradient>
@@ -193,7 +193,7 @@ const ProfileScreen = ({ navigation }) => {
             >
                 {isLoading ? (
                     <InlineLoading
-                        text="Đang tải thông tin..."
+                        text="Loading information..."
                         style={styles.loadingContainer}
                         color={COLORS.primary}
                     />
@@ -223,7 +223,7 @@ const ProfileScreen = ({ navigation }) => {
                                 onPress={() => navigation.navigate('Vouchers')}
                             >
                                 <MaterialIcons name="confirmation-number" size={22} color={COLORS.primary} />
-                                <Text style={styles.menuText}>Voucher của tôi</Text>
+                                <Text style={styles.menuText}>My voucher</Text>
                                 <MaterialIcons name="chevron-right" size={22} color={COLORS.text.light} />
                             </TouchableOpacity>
                             <TouchableOpacity
@@ -231,14 +231,14 @@ const ProfileScreen = ({ navigation }) => {
                                 onPress={() => navigation.navigate('PreOrder')}
                             >
                                 <MaterialIcons name="eco" size={22} color={COLORS.primary} />
-                                <Text style={styles.menuText}>Đặt trước</Text>
+                                <Text style={styles.menuText}>Book</Text>
                                 <MaterialIcons name="chevron-right" size={22} color={COLORS.text.light} />
                             </TouchableOpacity>
                         </View>
 
                         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
                             <Ionicons name="log-out-outline" size={20} color="#ef4444" />
-                            <Text style={styles.logoutText}>Đăng xuất</Text>
+                            <Text style={styles.logoutText}>Logout</Text>
                         </TouchableOpacity>
                     </>
                 )}
