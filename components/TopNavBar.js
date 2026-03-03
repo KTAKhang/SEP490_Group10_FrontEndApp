@@ -4,15 +4,21 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { COLORS } from '../constants/colors';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { getUnreadCount } from '../services/notificationService';
+import { fetchCartByUser } from '../store/slices/cartSlice';
 
 const TopNavBar = () => {
     const navigation = useNavigation();
-    const { cart } = useSelector((state) => state.cart);
+    const dispatch = useDispatch();
+    const { sum,item_count } = useSelector((state) => state.cart);
     const { isAuthenticated } = useSelector((state) => state.auth);
     const [notiCount, setNotiCount] = useState(0);
-    const itemCount = cart?.item_count || 0;
+    const itemCount = item_count || 0;
+
+    useEffect(() => {
+        dispatch(fetchCartByUser());
+      }, [dispatch]);
 
     useEffect(() => {
         if (!isAuthenticated) { setNotiCount(0); return; }

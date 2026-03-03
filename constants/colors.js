@@ -1,5 +1,5 @@
 export const COLORS = {
-    primary: '#13C2C2',
+    primary: '#22c55e',
     secondary: '#0D364C',
     white: '#FFFFFF',
     background: '#F8F9FA',
@@ -18,6 +18,6 @@ export const COLORS = {
         dark: 'rgba(13, 54, 76, 0.15)',
     },
     gradient: {
-        primary: ['#13C2C2', '#0D364C'],
+        primary: ['#22c55e', '#0D364C'],
     }
 }; 

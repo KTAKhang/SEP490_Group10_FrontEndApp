@@ -67,12 +67,12 @@ const LoginScreen = () => {
         if (isAuthenticated && user) {
             Toast.show({
                 type: 'success',
-                text1: 'Thành công',
-                text2: 'Đăng nhập thành công!',
+                text1: 'Success',
+                text2: 'Logged in successfully!',
                 visibilityTime: 2000,
             });
             
-            // Sử dụng utility function để navigate
+            // Use utility function to navigate
             handleLoginSuccess(navigation, user);
         }
     }, [isAuthenticated, user, navigation]);
@@ -80,7 +80,7 @@ const LoginScreen = () => {
     const handleLogin = () => {
         
         if (!email.trim() || !password.trim()) {
-            Alert.alert('Lỗi', 'Vui lòng nhập đầy đủ email và mật khẩu');
+            Alert.alert('Error', 'Please enter both email and password');
             return;
         }
         dispatch(loginUser({ email: email.trim(), password }));
@@ -122,7 +122,7 @@ const LoginScreen = () => {
 
     return (
         <LinearGradient
-            colors={['#0D364C', '#13C2C2']}
+            colors={['#0D364C', '#22c55e']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.container}
@@ -151,16 +151,16 @@ const LoginScreen = () => {
                             onPress={handleGoHome}
                             activeOpacity={0.7}
                         >
-                            <Home color="#13C2C2" size={20} />
-                            <Text style={styles.homeButtonText}>Về trang chủ</Text>
+                            <Home color="#22c55e" size={20} />
+                            <Text style={styles.homeButtonText}>Return Home</Text>
                         </TouchableOpacity>
                     </View>
 
-                    <Text style={styles.title}>Đăng Nhập</Text>
+                    <Text style={styles.title}>Login</Text>
 
                     {/* Email Input */}
                     <View style={styles.inputContainer}>
-                        <Mail color="#13C2C2" size={20} />
+                        <Mail color="#22c55e" size={20} />
                         <TextInput
                             style={styles.inputField}
                             placeholder="Email"
@@ -174,10 +174,10 @@ const LoginScreen = () => {
 
                     {/* Password Input */}
                     <View style={styles.inputContainer}>
-                        <Lock color="#13C2C2" size={20} />
+                        <Lock color="#22c55e" size={20} />
                         <TextInput
                             style={styles.inputField}
-                            placeholder="Mật khẩu"
+                            placeholder="Password"
                             placeholderTextColor="#aaa"
                             value={password}
                             onChangeText={setPassword}
@@ -185,9 +185,9 @@ const LoginScreen = () => {
                         />
                         <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
                             {showPassword ? (
-                                <EyeOff color="#13C2C2" size={20} />
+                                <EyeOff color="#22c55e" size={20} />
                             ) : (
-                                <Eye color="#13C2C2" size={20} />
+                                <Eye color="#22c55e" size={20} />
                             )}
                         </TouchableOpacity>
                     </View>
@@ -196,7 +196,7 @@ const LoginScreen = () => {
                         style={styles.forgotPasswordButton}
                         onPress={() => navigation.navigate('ForgotPassword')} // Điều hướng đến màn hình quên mật khẩu
                     >
-                        <Text style={styles.forgotPasswordText}>Quên mật khẩu?</Text>
+                        <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                         style={[styles.loginButton, isLoading && styles.disabledButton]}
@@ -206,7 +206,7 @@ const LoginScreen = () => {
                         {isLoading ? (
                             <ActivityIndicator color="#fff" />
                         ) : (
-                            <Text style={styles.loginButtonText}>Đăng nhập</Text>
+                            <Text style={styles.loginButtonText}>Login</Text>
                         )}
                     </TouchableOpacity>
 
@@ -223,7 +223,7 @@ const LoginScreen = () => {
                     <View style={styles.footer}>
                         <Text style={styles.footerText}>Bạn chưa có tài khoản?</Text>
                         <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-                            <Text style={styles.footerLink}> Đăng ký</Text>
+                            <Text style={styles.footerLink}>Register</Text>
                         </TouchableOpacity>
                     </View>
 
@@ -303,7 +303,7 @@ const styles = StyleSheet.create({
         borderColor: 'rgba(19, 194, 194, 0.3)',
     },
     homeButtonText: {
-        color: '#13C2C2',
+        color: '#22c55e',
         fontSize: 14,
         fontWeight: '600',
         marginLeft: 6,
@@ -311,14 +311,14 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 28,
         fontWeight: 'bold',
-        color: '#0D364C',
+        color: '#22c55e',
         marginBottom: 30,
         textAlign: 'center',
     },
     inputContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        borderColor: '#13C2C2',
+        borderColor: '#22c55e',
         borderWidth: 1,
         borderRadius: 12,
         paddingHorizontal: 12,
@@ -335,7 +335,7 @@ const styles = StyleSheet.create({
         paddingVertical: 8,
     },
     loginButton: {
-        backgroundColor: '#13C2C2',
+        backgroundColor: '#22c55e',
         paddingVertical: 14,
         borderRadius: 12,
         alignItems: 'center',
@@ -356,7 +356,7 @@ const styles = StyleSheet.create({
         fontSize: 14,
     },
     footerLink: {
-        color: '#13C2C2',
+        color: '#22c55e',
         fontWeight: '600',
     },
     disabledButton: {
@@ -367,7 +367,7 @@ const styles = StyleSheet.create({
         alignItems: 'flex-end',
     },
     forgotPasswordText: {
-        color: '#13C2C2',
+        color: '#22c55e',
         fontWeight: '600',
         fontSize: 14,
     },

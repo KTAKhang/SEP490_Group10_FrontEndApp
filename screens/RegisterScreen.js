@@ -12,7 +12,7 @@ import {
     Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Mail, Lock, User, Phone, Home, Key, MapPin, Calendar } from 'lucide-react-native';
+import { Mail, Lock, User, Phone, Home, Key, MapPin, Calendar, Eye, EyeOff } from 'lucide-react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { sendOtp, resetOtpState, confirmOtp } from '../store/slices/authSlice';
 import { useNavigation } from '@react-navigation/native';
@@ -57,6 +57,7 @@ const RegisterScreen = () => {
     const [showProvincePicker, setShowProvincePicker] = useState(false);
     const [showWardPicker, setShowWardPicker] = useState(false);
     const [showGenderPicker, setShowGenderPicker] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
 
     const [formData, setFormData] = useState({
         user_name: '',
@@ -112,18 +113,18 @@ const RegisterScreen = () => {
 
     useEffect(() => {
         if (otpStatus === 'success') {
-            Toast.show({ type: 'success', text1: 'Thành công', text2: otpMessage });
+            Toast.show({ type: 'success', text1: 'Success', text2: otpMessage });
             setStep(2);
             setTimeout(() => dispatch(resetOtpState()), 100);
         } else if (otpStatus === 'error') {
             const errorType = getErrorType(otpMessage);
             const msg =
                 errorType === 'username'
-                    ? 'Username đã tồn tại'
+                    ? 'Username already taken'
                     : errorType === 'email'
-                    ? 'Email đã tồn tại'
-                    : otpMessage || 'Đăng ký thất bại';
-            Toast.show({ type: 'error', text1: 'Lỗi', text2: msg });
+                    ? 'Email already taken'
+                    : otpMessage || 'Registration failed';
+            Toast.show({ type: 'error', text1: 'Error', text2: msg });
             setTimeout(() => dispatch(resetOtpState()), 100);
         }
     }, [otpStatus, otpMessage]);
@@ -159,35 +160,35 @@ const RegisterScreen = () => {
     // ── Step 1 Validation & Submit ──────────────────────────────────────────
     const handleSendOTP = () => {
         const err = {};
-        if (!formData.user_name.trim()) err.user_name = 'Vui lòng nhập username!';
-        else if (formData.user_name.trim().length < 3) err.user_name = 'Username phải có ít nhất 3 ký tự';
-        else if (/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(formData.user_name))
-            err.user_name = 'Username không được chứa ký tự đặc biệt';
+        if (!formData.user_name.trim()) err.user_name = 'Please enter username!';
+        else if (formData.user_name.trim().length < 3) err.user_name = 'Username must be at least 3 characters';
+        else if (/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>\/?]/.test(formData.user_name))
+            err.user_name = 'Username must not contain special characters';
 
-        if (!formData.email.trim()) err.email = 'Vui lòng nhập email!';
-        else if (!validateEmail(formData.email)) err.email = 'Email không hợp lệ';
+        if (!formData.email.trim()) err.email = 'Please enter email!';
+        else if (!validateEmail(formData.email)) err.email = 'Invalid email';
 
-        if (!formData.password) err.password = 'Vui lòng nhập mật khẩu!';
+        if (!formData.password) err.password = 'Please enter password!';
 
-        if (!formData.phone.trim()) err.phone = 'Vui lòng nhập số điện thoại!';
+        if (!formData.phone.trim()) err.phone = 'Please enter phone number!';
 
-        if (!formData.city) err.city = 'Vui lòng chọn tỉnh/thành phố!';
-        if (!formData.ward) err.ward = 'Vui lòng chọn phường/xã!';
-        if (!formData.address.trim()) err.address = 'Vui lòng nhập địa chỉ!';
+        if (!formData.city) err.city = 'Please select a province/city!';
+        if (!formData.ward) err.ward = 'Please select a ward!';
+        if (!formData.address.trim()) err.address = 'Please enter address!';
 
         if (!formData.birthday) {
-            err.birthday = 'Vui lòng chọn ngày sinh!';
+            err.birthday = 'Please select date of birth!';
         } else {
             const dob = new Date(formData.birthday);
-            if (isNaN(dob.getTime())) err.birthday = 'Ngày sinh không hợp lệ!';
-            else if (dob > new Date()) err.birthday = 'Ngày sinh không được là tương lai!';
+            if (isNaN(dob.getTime())) err.birthday = 'Invalid date of birth!';
+            else if (dob > new Date()) err.birthday = 'Date of birth cannot be in the future!';
         }
 
-        if (!formData.gender) err.gender = 'Vui lòng chọn giới tính!';
+        if (!formData.gender) err.gender = 'Please select gender!';
 
         if (Object.keys(err).length) {
             setErrors(err);
-            Toast.show({ type: 'error', text1: 'Lỗi', text2: 'Vui lòng kiểm tra lại thông tin' });
+            Toast.show({ type: 'error', text1: 'Error', text2: 'Please check your information' });
             return;
         }
 
@@ -233,7 +234,7 @@ const RegisterScreen = () => {
                         ))}
                     </ScrollView>
                     <TouchableOpacity style={styles.pickerClose} onPress={onClose}>
-                        <Text style={{ color: '#13C2C2', fontWeight: '600' }}>Đóng</Text>
+                        <Text style={{ color: '#22c55e', fontWeight: '600' }}>Đóng</Text>
                     </TouchableOpacity>
                 </View>
             </View>
@@ -249,7 +250,7 @@ const RegisterScreen = () => {
     // ── Render ──────────────────────────────────────────────────────────────
     return (
         <LinearGradient
-            colors={['#0D364C', '#13C2C2']}
+            colors={['#0D364C', '#22c55e']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.container}
@@ -277,19 +278,19 @@ const RegisterScreen = () => {
                             : <Key color="#fff" size={28} />}
                     </View>
                     <Text style={styles.title}>
-                        {step === 1 ? 'Đăng Ký' : 'Xác Nhận OTP'}
+                        {step === 1 ? 'Register' : 'Confirm OTP'}
                     </Text>
                     <Text style={styles.subtitle}>
                         {step === 1
-                            ? 'Tạo tài khoản mới'
-                            : `Nhập mã OTP được gửi đến\n${formData.email}`}
+                            ? 'Create a new account'
+                            : `Enter the OTP sent to\n${formData.email}`}
                     </Text>
 
                     {/* ══════════ STEP 1 ══════════ */}
                     {step === 1 && (
                         <>
                             {/* Username */}
-                            <Field icon={<User color="#13C2C2" size={20} />} error={errors.user_name}>
+                            <Field icon={<User color="#22c55e" size={20} />} error={errors.user_name}>
                                 <TextInput
                                     style={styles.inputField}
                                     placeholder="Username"
@@ -301,7 +302,7 @@ const RegisterScreen = () => {
                             </Field>
 
                             {/* Email */}
-                            <Field icon={<Mail color="#13C2C2" size={20} />} error={errors.email}>
+                            <Field icon={<Mail color="#22c55e" size={20} />} error={errors.email}>
                                 <TextInput
                                     style={styles.inputField}
                                     placeholder="Email"
@@ -314,22 +315,29 @@ const RegisterScreen = () => {
                             </Field>
 
                             {/* Password */}
-                            <Field icon={<Lock color="#13C2C2" size={20} />} error={errors.password}>
+                            <Field icon={<Lock color="#22c55e" size={20} />} error={errors.password}>
                                 <TextInput
                                     style={styles.inputField}
                                     placeholder="Mật khẩu"
                                     placeholderTextColor="#aaa"
                                     value={formData.password}
                                     onChangeText={(v) => setField('password', v)}
-                                    secureTextEntry
+                                    secureTextEntry={!showPassword}
                                 />
+                                <TouchableOpacity onPress={() => setShowPassword((s) => !s)}>
+                                    {showPassword ? (
+                                        <EyeOff color="#22c55e" size={20} />
+                                    ) : (
+                                        <Eye color="#22c55e" size={20} />
+                                    )}
+                                </TouchableOpacity>
                             </Field>
 
                             {/* Phone */}
-                            <Field icon={<Phone color="#13C2C2" size={20} />} error={errors.phone}>
+                            <Field icon={<Phone color="#22c55e" size={20} />} error={errors.phone}>
                                 <TextInput
                                     style={styles.inputField}
-                                    placeholder="Số điện thoại"
+                                    placeholder="Phone number"
                                     placeholderTextColor="#aaa"
                                     value={formData.phone}
                                     onChangeText={(v) => setField('phone', v)}
@@ -338,31 +346,31 @@ const RegisterScreen = () => {
                             </Field>
 
                             {/* City/Province Picker */}
-                            <Field icon={<MapPin color="#13C2C2" size={20} />} error={errors.city}>
+                            <Field icon={<MapPin color="#22c55e" size={20} />} error={errors.city}>
                                 <TouchableOpacity
                                     style={styles.pickerTrigger}
                                     onPress={() => setShowProvincePicker(true)}
                                 >
                                     <Text style={formData.city ? styles.pickerValue : styles.pickerPlaceholder}>
-                                        {selectedProvinceName || 'Chọn tỉnh/thành phố'}
-                                    </Text>
+                                            {selectedProvinceName || 'Select province/city'}
+                                        </Text>
                                 </TouchableOpacity>
                             </Field>
 
                             {/* Ward Picker */}
-                            <Field icon={<MapPin color="#13C2C2" size={20} />} error={errors.ward}>
+                            <Field icon={<MapPin color="#22c55e" size={20} />} error={errors.ward}>
                                 <TouchableOpacity
                                     style={styles.pickerTrigger}
                                     onPress={() => formData.city && setShowWardPicker(true)}
                                 >
                                     <Text style={formData.ward ? styles.pickerValue : styles.pickerPlaceholder}>
-                                        {formData.ward || (formData.city ? 'Chọn phường/xã' : 'Chọn tỉnh/thành phố trước')}
+                                        {formData.ward || (formData.city ? 'Select ward' : 'Select a province/city first')}
                                     </Text>
                                 </TouchableOpacity>
                             </Field>
 
                             {/* Address */}
-                            <Field icon={<Home color="#13C2C2" size={20} />} error={errors.address}>
+                            <Field icon={<Home color="#22c55e" size={20} />} error={errors.address}>
                                 <TextInput
                                     style={styles.inputField}
                                     placeholder="Địa chỉ (số nhà, tên đường...)"
@@ -373,14 +381,14 @@ const RegisterScreen = () => {
                             </Field>
 
                             {/* Birthday */}
-                            <Field icon={<Calendar color="#13C2C2" size={20} />} error={errors.birthday}>
+                            <Field icon={<Calendar color="#22c55e" size={20} />} error={errors.birthday}>
                                 <TouchableOpacity
                                     style={styles.pickerTrigger}
                                     onPress={() => setShowDatePicker(true)}
                                 >
                                     <Text style={formData.birthday ? styles.pickerValue : styles.pickerPlaceholder}>
-                                        {formData.birthday || 'Chọn ngày sinh'}
-                                    </Text>
+                                            {formData.birthday || 'Select date of birth'}
+                                        </Text>
                                 </TouchableOpacity>
                             </Field>
 
@@ -401,14 +409,14 @@ const RegisterScreen = () => {
                             )}
 
                             {/* Gender */}
-                            <Field icon={<User color="#13C2C2" size={20} />} error={errors.gender}>
+                            <Field icon={<User color="#22c55e" size={20} />} error={errors.gender}>
                                 <TouchableOpacity
                                     style={styles.pickerTrigger}
                                     onPress={() => setShowGenderPicker(true)}
                                 >
                                     <Text style={formData.gender ? styles.pickerValue : styles.pickerPlaceholder}>
-                                        {genderOptions.find((g) => g.value === formData.gender)?.name || 'Chọn giới tính'}
-                                    </Text>
+                                            {genderOptions.find((g) => g.value === formData.gender)?.name || 'Select gender'}
+                                        </Text>
                                 </TouchableOpacity>
                             </Field>
 
@@ -420,14 +428,14 @@ const RegisterScreen = () => {
                                 {isLoading ? (
                                     <ActivityIndicator color="#fff" />
                                 ) : (
-                                    <Text style={styles.loginButtonText}>Gửi OTP</Text>
+                                    <Text style={styles.loginButtonText}>Send OTP</Text>
                                 )}
                             </TouchableOpacity>
 
                             <View style={styles.footer}>
-                                <Text style={styles.footerText}>Đã có tài khoản?</Text>
+                                <Text style={styles.footerText}>Already have an account?</Text>
                                 <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-                                    <Text style={styles.footerLink}> Đăng nhập</Text>
+                                    <Text style={styles.footerLink}> Login</Text>
                                 </TouchableOpacity>
                             </View>
                         </>
@@ -436,10 +444,10 @@ const RegisterScreen = () => {
                     {/* ══════════ STEP 2 ══════════ */}
                     {step === 2 && (
                         <>
-                            <Field icon={<Key color="#13C2C2" size={20} />} error={errors.otp}>
+                            <Field icon={<Key color="#22c55e" size={20} />} error={errors.otp}>
                                 <TextInput
                                     style={styles.inputField}
-                                    placeholder="Nhập mã OTP (6 số)"
+                                    placeholder="Enter OTP (6 digits)"
                                     placeholderTextColor="#aaa"
                                     value={formData.otp}
                                     onChangeText={(v) =>
@@ -466,7 +474,7 @@ const RegisterScreen = () => {
                                 style={styles.backButton}
                                 onPress={() => setStep(1)}
                             >
-                                <Text style={styles.backButtonText}>← Quay lại chỉnh sửa thông tin</Text>
+                                <Text style={styles.backButtonText}>← Back to edit information</Text>
                             </TouchableOpacity>
                         </>
                     )}
@@ -539,7 +547,7 @@ const styles = StyleSheet.create({
         width: 56,
         height: 56,
         borderRadius: 14,
-        backgroundColor: '#13C2C2',
+        backgroundColor: '#22c55e',
         alignItems: 'center',
         justifyContent: 'center',
         alignSelf: 'center',
@@ -563,7 +571,7 @@ const styles = StyleSheet.create({
     inputContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        borderColor: '#13C2C2',
+        borderColor: '#22c55e',
         borderWidth: 1,
         borderRadius: 12,
         paddingHorizontal: 12,
@@ -585,7 +593,7 @@ const styles = StyleSheet.create({
     pickerValue: { color: '#000', fontSize: 15 },
 
     loginButton: {
-        backgroundColor: '#13C2C2',
+        backgroundColor: '#22c55e',
         paddingVertical: 14,
         borderRadius: 12,
         alignItems: 'center',
@@ -599,7 +607,7 @@ const styles = StyleSheet.create({
 
     footer: { marginTop: 20, flexDirection: 'row', justifyContent: 'center' },
     footerText: { color: '#333', fontSize: 14 },
-    footerLink: { color: '#13C2C2', fontWeight: '600', fontSize: 14 },
+    footerLink: { color: '#22c55e', fontWeight: '600', fontSize: 14 },
 
     // Picker Modal
     pickerOverlay: {

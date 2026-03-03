@@ -9,6 +9,7 @@ import {
   Alert,
   Modal,
   TextInput,
+  StatusBar,
 } from "react-native";
 import { MaterialIcons as Icon, Ionicons } from "@expo/vector-icons";
 import { useDispatch, useSelector } from "react-redux";
@@ -30,6 +31,8 @@ import {
   getValidVouchers,
   validateVoucherCode,
 } from "../services/voucherService";
+import { LinearGradient } from "expo-linear-gradient";
+import { COLORS } from "../constants/colors";
 const PaymentScreen = ({ navigation, route }) => {
   const dispatch = useDispatch();
   const [selectedPayment, setSelectedPayment] = useState("COD");
@@ -796,16 +799,23 @@ const PaymentScreen = ({ navigation, route }) => {
       {/* <OverlayLoading text="Đang tải đơn hàng của bạn..." visible={isLoading} /> */}
 
       {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.headerButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Icon name="arrow-back" size={24} color="#0d364c" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Thanh toán</Text>
-        <View style={styles.headerButton} />
-      </View>
+      <LinearGradient
+        colors={COLORS.gradient.primary}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.headerGradient}
+      >
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.headerButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Icon name="arrow-back" size={24} color="#ffffff" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Payment</Text>
+          <View style={styles.headerButton} />
+        </View>
+      </LinearGradient>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Order Summary */}
@@ -1236,6 +1246,17 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#f9fafb",
   },
+  headerGradient: {
+    paddingTop: StatusBar.currentHeight + 10,
+    paddingBottom: 20,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+    elevation: 5,
+    shadowColor: "rgba(13, 54, 76, 0.15)",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+  },
   loadingOverlay: {
     position: "absolute",
     top: 0,
@@ -1264,18 +1285,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: "#ffffff",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
-    marginTop: 20,
+    paddingHorizontal: 20,
+    
   },
   headerButton: {
     width: 32,
@@ -1288,7 +1299,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 20,
     fontWeight: "600",
-    color: "#0d364c",
+    color: "#FFFFFF",
     marginTop:25,
   },
   content: {
@@ -1330,10 +1341,10 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     backgroundColor: "#f0fdfd",
     borderWidth: 1,
-    borderColor: "#13c2c2",
+    borderColor: "#22c55e",
   },
   changeButtonText: {
-    color: "#13c2c2",
+    color: "#22c55e",
     fontSize: 12,
     fontWeight: "500",
   },
@@ -1647,7 +1658,7 @@ const styles = StyleSheet.create({
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: "#13c2c2",
+    backgroundColor: "#22c55e",
   },
   paymentIconContainer: {
     marginRight: 12,
@@ -1686,7 +1697,7 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 8,
     borderLeftWidth: 4,
-    borderLeftColor: "#0ea5e9",
+    borderLeftColor: "#22c55e",
   },
   noteText: {
     color: "#0f172a",
@@ -1713,11 +1724,11 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   placeOrderButton: {
-    backgroundColor: "#0d364c",
+    backgroundColor: "#22c55e",
     padding: 16,
     borderRadius: 12,
     alignItems: "center",
-    shadowColor: "#0d364c",
+    shadowColor: "#22c55e",
     shadowOffset: {
       width: 0,
       height: 4,
@@ -1782,7 +1793,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   saveButtonText: {
-    color: "#13c2c2",
+    color: "#22c55e",
     fontSize: 16,
     fontWeight: "600",
   },
