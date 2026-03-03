@@ -11,6 +11,7 @@ import {
   StyleSheet,
   StatusBar,
   Image,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -23,6 +24,7 @@ import {
   contactResetDetail,
 } from '../store/slices/contactSlice';
 import { COLORS } from '../constants/colors';
+import { API_BASE_URL } from '../config/api';
 
 const ContactDetailScreen = ({ route }) => {
   const { contactId } = route.params;
@@ -30,17 +32,15 @@ const ContactDetailScreen = ({ route }) => {
   const navigation = useNavigation();
   const scrollRef = useRef();
 
-  const {
-    contactDetail,
-    replies,
-    repliesLoading,
-    repliesError,
-    sendReplyLoading,
-    sendReplySuccess,
-    attachments,
-  } = useSelector((state) => state.contact);
+  const contactState = useSelector((state) => state.contact || {});
+  const contactDetail = contactState.contactDetail || null;
+  const repliesLoading = !!contactState.repliesLoading;
+  const repliesError = contactState.repliesError || null;
+  const sendReplyLoading = !!contactState.sendReplyLoading;
+  const sendReplySuccess = !!contactState.sendReplySuccess;
 
   const [message, setMessage] = useState('');
+  const [previewImage, setPreviewImage] = useState(null);
 
   useEffect(() => {
     dispatch(fetchContactDetail(contactId));
@@ -54,22 +54,104 @@ const ContactDetailScreen = ({ route }) => {
     }
   }, [sendReplySuccess]);
 
+  // Debug: log contactDetail để xem cấu trúc data thực tế
+  useEffect(() => {
+    if (contactDetail) {
+      console.log('[ContactDetail] full data:', JSON.stringify(contactDetail, null, 2));
+    }
+  }, [contactDetail]);
+
+  // ✅ FIX 1: Lấy replies & attachments an toàn từ Redux + contactDetail
+  const replies = Array.isArray(contactState.replies)
+    ? contactState.replies
+    : [];
+  const attachments =
+    contactDetail?.attachments ||
+    contactDetail?.files ||
+    contactDetail?.images ||
+    (Array.isArray(contactState.attachments) ? contactState.attachments : []) ||
+    [];
+
   const handleSendReply = () => {
     if (!message.trim()) return;
     dispatch(sendContactReply({ contactId, message }));
   };
 
-  const getStatusText = (status) => {
-    if (!status) return 'Đang xử lý';
-    if (status === 'resolved') return 'Đã phản hồi';
-    if (status === 'pending') return 'Chờ xử lý';
-    return status;
+  // ✅ FIX 2: Check image bằng cả mime type lẫn extension, kể cả URL có query string
+  const isImageFile = (str = '') => {
+    if (!str || typeof str !== 'string') return false;
+    // Bỏ query string trước khi check extension
+    const cleanStr = str.split('?')[0].split('#')[0];
+    return /\.(jpg|jpeg|png|webp|gif|bmp|svg)$/i.test(cleanStr);
   };
 
-  const getStatusColor = (status) => {
-    if (!status || status === 'pending') return '#F59E0B';
-    if (status === 'resolved') return '#10B981';
-    return '#6B7280';
+  // ✅ FIX 3: Build URL an toàn, tránh double slash
+  const buildFileUrl = (name) => {
+    if (!name) return null;
+    const base = API_BASE_URL.replace(/\/$/, '');
+    return `${base}/uploads/contacts/${name}`;
+  };
+
+  // ✅ FIX 4: Normalize mỗi attachment thành { url, name, isImage }
+  const normalizeAttachment = (file, idx) => {
+    if (!file) return null;
+
+    let url = null;
+    let name = `Tệp ${idx + 1}`;
+    let mime = '';
+
+    if (typeof file === 'string') {
+      // Nếu là string: có thể là full URL hoặc chỉ là filename
+      if (file.startsWith('http://') || file.startsWith('https://')) {
+        url = file;
+      } else {
+        url = buildFileUrl(file);
+      }
+      const lastSlash = file.lastIndexOf('/');
+      name = lastSlash >= 0 ? file.slice(lastSlash + 1) : file;
+    } else if (typeof file === 'object') {
+      url =
+        file.file_url ||   // ✅ key thực tế từ API
+        file.url ||
+        file.fileUrl ||
+        file.location ||
+        file.path ||
+        file.secure_url ||
+        null;
+      // Nếu URL là relative path → thêm base
+      if (url && !url.startsWith('http://') && !url.startsWith('https://')) {
+        url = `${API_BASE_URL.replace(/\/$/, '')}/${url.replace(/^\//, '')}`;
+      }
+
+      name =
+        file.originalName ||
+        file.originalname ||
+        file.fileName ||
+        file.filename ||
+        file.name ||
+        `Tệp ${idx + 1}`;
+
+      mime =
+        file.mimeType ||
+        file.mimetype ||
+        file.contentType ||
+        file.type ||
+        '';
+
+      // Fallback: build URL từ filename nếu chưa có
+      if (!url && name) {
+        url = buildFileUrl(name);
+      }
+    }
+
+    const isImage =
+      (mime && typeof mime === 'string' && mime.toLowerCase().startsWith('image/')) ||
+      isImageFile(name) ||
+      isImageFile(url);
+
+    console.log(`[Attachment ${idx}]`, { url, name, mime, isImage });
+
+    return { url, name, mime, isImage };
   };
 
   if (repliesLoading) {
@@ -93,7 +175,21 @@ const ContactDetailScreen = ({ route }) => {
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor={COLORS.secondary} />
 
-      {/* HEADER GRADIENT */}
+      {/* IMAGE PREVIEW MODAL */}
+      <Modal visible={!!previewImage} transparent animationType="fade">
+        <TouchableOpacity
+          style={styles.previewContainer}
+          activeOpacity={1}
+          onPress={() => setPreviewImage(null)}
+        >
+          <Image
+            source={{ uri: previewImage }}
+            style={styles.previewImage}
+            resizeMode="contain"
+          />
+        </TouchableOpacity>
+      </Modal>
+
       <LinearGradient
         colors={COLORS.gradient.primary}
         style={styles.headerGradient}
@@ -106,15 +202,12 @@ const ContactDetailScreen = ({ route }) => {
             >
               <Ionicons name="arrow-back" size={22} color="#fff" />
             </TouchableOpacity>
-
             <Text style={styles.headerTitle}>Chi tiết liên hệ</Text>
-
             <View style={{ width: 42 }} />
           </View>
         </SafeAreaView>
       </LinearGradient>
 
-      {/* CONTENT */}
       <KeyboardAvoidingView
         style={styles.content}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -128,53 +221,7 @@ const ContactDetailScreen = ({ route }) => {
         >
           {contactDetail && (
             <View style={styles.detailCard}>
-              <View style={styles.detailTopRow}>
-                {contactDetail.category && (
-                  <View style={styles.categoryBadge}>
-                    <Text style={styles.categoryBadgeText}>
-                      {contactDetail.category}
-                    </Text>
-                  </View>
-                )}
-                {contactDetail.status && (
-                  <View
-                    style={[
-                      styles.statusBadge,
-                      {
-                        backgroundColor: getStatusColor(
-                          contactDetail.status,
-                        ) + '20',
-                      },
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.statusBadgeText,
-                        { color: getStatusColor(contactDetail.status) },
-                      ]}
-                    >
-                      {getStatusText(contactDetail.status)}
-                    </Text>
-                  </View>
-                )}
-              </View>
-
               <Text style={styles.subject}>{contactDetail.subject}</Text>
-
-              <View style={styles.metaRow}>
-                <Ionicons
-                  name="calendar-outline"
-                  size={14}
-                  color={COLORS.text.light}
-                />
-                <Text style={styles.metaText}>
-                  {contactDetail.createdAt
-                    ? ` ${new Date(
-                        contactDetail.createdAt,
-                      ).toLocaleString('vi-VN')}`
-                    : ' Thời gian không xác định'}
-                </Text>
-              </View>
 
               <View style={styles.originalMessageBox}>
                 <Text style={styles.originalMessageLabel}>Nội dung liên hệ</Text>
@@ -183,69 +230,62 @@ const ContactDetailScreen = ({ route }) => {
                 </Text>
               </View>
 
-              {attachments && attachments.length > 0 && (
+              {/* ===== ATTACHMENTS ===== */}
+              {attachments.length > 0 && (
                 <View style={styles.attachmentsBox}>
-                  <Text style={styles.attachmentsLabel}>Tệp đính kèm</Text>
+                  <Text style={styles.attachmentsLabel}>
+                    Tệp đính kèm ({attachments.length})
+                  </Text>
+
                   <ScrollView
                     horizontal
                     showsHorizontalScrollIndicator={false}
                     contentContainerStyle={styles.attachmentsRow}
                   >
                     {attachments.map((file, idx) => {
-                      // Hỗ trợ cả dạng object và string URL
-                      let url = null;
-                      let name = '';
-                      let mime = '';
+                      const item = normalizeAttachment(file, idx);
+                      if (!item) return null;
+                      const { url, name, isImage } = item;
 
-                      if (typeof file === 'string') {
-                        url = file;
-                        const lastSlash = file.lastIndexOf('/');
-                        name =
-                          lastSlash >= 0 ? file.slice(lastSlash + 1) : file;
-                      } else if (file && typeof file === 'object') {
-                        url =
-                          file.url ||
-                          file.path ||
-                          file.fileUrl ||
-                          file.location ||
-                          null;
-                        name =
-                          file.originalName ||
-                          file.filename ||
-                          file.name ||
-                          `Tệp ${idx + 1}`;
-                        mime =
-                          file.mimeType ||
-                          file.contentType ||
-                          '';
-                      }
-
-                      const isImage =
-                        (typeof mime === 'string' &&
-                          mime.toLowerCase().startsWith('image/')) ||
-                        (typeof url === 'string' &&
-                          /\.(png|jpe?g|gif|webp|bmp)$/i.test(url));
-
+                      // ===== HÌNH ẢNH =====
                       if (isImage && url) {
                         return (
                           <View key={idx} style={styles.attachmentImageWrap}>
-                            <Image
-                              source={{ uri: url }}
-                              style={styles.attachmentImage}
-                              resizeMode="cover"
-                            />
-                            {name ? (
-                              <Text
-                                style={styles.attachmentCaption}
-                                numberOfLines={1}
-                              >
-                                {name}
-                              </Text>
-                            ) : null}
+                            <TouchableOpacity
+                              onPress={() => setPreviewImage(url)}
+                              activeOpacity={0.85}
+                            >
+                              <Image
+                                source={{ uri: url }}
+                                style={styles.attachmentImage}
+                                resizeMode="cover"
+                                onError={(e) =>
+                                  console.warn(
+                                    '[Image error]',
+                                    url,
+                                    e.nativeEvent.error
+                                  )
+                                }
+                              />
+                              <View style={styles.zoomIcon}>
+                                <Ionicons
+                                  name="expand-outline"
+                                  size={12}
+                                  color="#fff"
+                                />
+                              </View>
+                            </TouchableOpacity>
+                            <Text
+                              style={styles.attachmentCaption}
+                              numberOfLines={1}
+                            >
+                              {name}
+                            </Text>
                           </View>
                         );
                       }
 
+                      // ===== FILE KHÔNG PHẢI ẢNH =====
                       return (
                         <View key={idx} style={styles.attachmentFileChip}>
                           <Ionicons
@@ -257,7 +297,7 @@ const ContactDetailScreen = ({ route }) => {
                             style={styles.attachmentFileName}
                             numberOfLines={1}
                           >
-                            {name || `Tệp ${idx + 1}`}
+                            {name}
                           </Text>
                         </View>
                       );
@@ -268,22 +308,26 @@ const ContactDetailScreen = ({ route }) => {
             </View>
           )}
 
-          {replies?.length > 0 ? (
+          {/* ===== REPLIES (ADMIN / CUSTOMER CHAT) ===== */}
+          {replies && replies.length > 0 ? (
             replies.map((item, index) => {
-              const senderRole =
+              const senderRoleRaw =
                 (item.senderRole && String(item.senderRole)) ||
                 (item.sender?.role_name && String(item.sender.role_name)) ||
+                (item.sender?.role && String(item.sender.role)) ||
                 '';
-              const isAdmin =
-                item.isFromAdmin === true ||
-                senderRole.toLowerCase() === 'admin';
+              const senderRole = senderRoleRaw.toLowerCase();
+              // Theo chat nội bộ: senderRole === 'customer' là tin nhắn của khách,
+              // các giá trị khác (admin, staff, support, ...) xem như bên hỗ trợ.
+              const isCustomer = senderRole === 'customer';
+              const isAdmin = !isCustomer;
               const createdAtText = item.createdAt
                 ? new Date(item.createdAt).toLocaleString('vi-VN')
                 : '';
 
               return (
                 <View
-                  key={index}
+                  key={item._id || index}
                   style={[
                     styles.messageRow,
                     isAdmin ? styles.leftAlign : styles.rightAlign,
@@ -298,6 +342,7 @@ const ContactDetailScreen = ({ route }) => {
                       />
                     </View>
                   )}
+
                   <View style={styles.messageContent}>
                     <View
                       style={[
@@ -308,18 +353,19 @@ const ContactDetailScreen = ({ route }) => {
                       <Text
                         style={[
                           styles.bubbleText,
-                          !isAdmin && { color: '#fff' },
+                          isCustomer && { color: '#fff' },
                         ]}
                       >
                         {item.message}
                       </Text>
                     </View>
                     <Text style={styles.bubbleMetaText}>
-                      {isAdmin ? 'Hỗ trợ' : 'Bạn'}
+                      {isCustomer ? 'Bạn' : 'Hỗ trợ'}
                       {createdAtText ? ` • ${createdAtText}` : ''}
                     </Text>
                   </View>
-                  {!isAdmin && (
+
+                  {isCustomer && (
                     <View style={styles.avatarCircleUser}>
                       <Ionicons
                         name="person-outline"
@@ -338,9 +384,7 @@ const ContactDetailScreen = ({ route }) => {
                 size={40}
                 color="#CBD5E1"
               />
-              <Text style={styles.emptyRepliesTitle}>
-                Chưa có phản hồi nào
-              </Text>
+              <Text style={styles.emptyRepliesTitle}>Chưa có phản hồi nào</Text>
               <Text style={styles.emptyRepliesText}>
                 Bạn có thể gửi tin nhắn phía dưới, bộ phận hỗ trợ sẽ phản hồi
                 sớm nhất.
@@ -349,7 +393,7 @@ const ContactDetailScreen = ({ route }) => {
           )}
         </ScrollView>
 
-        {/* INPUT */}
+        {/* INPUT REPLY */}
         <View style={styles.replyContainer}>
           <TextInput
             style={styles.input}
@@ -359,7 +403,6 @@ const ContactDetailScreen = ({ route }) => {
             onChangeText={setMessage}
             multiline
           />
-
           <TouchableOpacity
             style={styles.sendButton}
             onPress={handleSendReply}
@@ -377,21 +420,43 @@ const ContactDetailScreen = ({ route }) => {
   );
 };
 
-export default ContactDetailScreen;
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
   },
-
+  center: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: COLORS.background,
+  },
+  loadingText: {
+    marginTop: 8,
+    fontSize: 14,
+    color: COLORS.text.secondary,
+  },
+  errorText: {
+    fontSize: 14,
+    color: '#EF4444',
+  },
+  previewContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.85)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  previewImage: {
+    width: '90%',
+    height: '80%',
+    borderRadius: 12,
+  },
   headerGradient: {
-    paddingTop: StatusBar.currentHeight + 10,
+    paddingTop: (StatusBar.currentHeight || 0) + 10,
     paddingBottom: 20,
     borderBottomLeftRadius: 30,
     borderBottomRightRadius: 30,
   },
-
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -399,7 +464,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 12,
   },
-
   headerButton: {
     width: 42,
     height: 42,
@@ -408,13 +472,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-
   headerTitle: {
     fontSize: 18,
     fontWeight: '700',
     color: '#fff',
   },
-
   content: {
     flex: 1,
     marginTop: -20,
@@ -422,7 +484,6 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
   },
-
   detailCard: {
     backgroundColor: '#fff',
     borderRadius: 16,
@@ -434,57 +495,12 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 4,
   },
-
-  detailTopRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-
-  categoryBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 20,
-    backgroundColor: '#E0F2FE',
-  },
-
-  categoryBadgeText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: COLORS.primary,
-  },
-
-  statusBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 20,
-  },
-
-  statusBadgeText: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-
   subject: {
     fontSize: 16,
     fontWeight: '700',
-    marginBottom: 6,
+    marginBottom: 10,
     color: COLORS.text.primary,
   },
-
-  metaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-
-  metaText: {
-    fontSize: 12,
-    color: COLORS.text.light,
-    marginLeft: 4,
-  },
-
   originalMessageBox: {
     marginTop: 4,
     padding: 12,
@@ -493,7 +509,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.border.light,
   },
-
   originalMessageLabel: {
     fontSize: 12,
     fontWeight: '600',
@@ -502,17 +517,14 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.4,
   },
-
   originalMessage: {
     fontSize: 14,
     lineHeight: 20,
     color: COLORS.text.primary,
   },
-
   attachmentsBox: {
     marginTop: 12,
   },
-
   attachmentsLabel: {
     fontSize: 12,
     fontWeight: '600',
@@ -521,30 +533,34 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.4,
   },
-
   attachmentsRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
+    paddingBottom: 4,
   },
-
   attachmentImageWrap: {
     width: 90,
     marginRight: 10,
   },
-
   attachmentImage: {
     width: 90,
     height: 70,
     borderRadius: 10,
     backgroundColor: '#E5E7EB',
   },
-
+  zoomIcon: {
+    position: 'absolute',
+    bottom: 4,
+    right: 4,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    borderRadius: 4,
+    padding: 2,
+  },
   attachmentCaption: {
     marginTop: 4,
     fontSize: 11,
     color: COLORS.text.secondary,
   },
-
   attachmentFileChip: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -554,60 +570,50 @@ const styles = StyleSheet.create({
     backgroundColor: '#E0F2FE',
     marginRight: 8,
   },
-
   attachmentFileName: {
     marginLeft: 6,
     fontSize: 12,
     maxWidth: 140,
     color: COLORS.text.primary,
   },
-
   messageRow: {
     flexDirection: 'row',
-    marginBottom: 12,
+    marginTop: 8,
+    marginBottom: 4,
     alignItems: 'flex-end',
   },
-
   leftAlign: {
     justifyContent: 'flex-start',
   },
-
   rightAlign: {
     justifyContent: 'flex-end',
   },
-
+  messageContent: {
+    maxWidth: '78%',
+  },
   bubble: {
-    maxWidth: '72%',
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 18,
+    maxWidth: '100%',
   },
-
   adminBubble: {
     backgroundColor: '#F3F4F6',
     borderTopLeftRadius: 4,
   },
-
   userBubble: {
     backgroundColor: COLORS.primary,
     borderTopRightRadius: 4,
   },
-
   bubbleText: {
     fontSize: 14,
     color: COLORS.text.primary,
   },
-
   bubbleMetaText: {
     marginTop: 4,
     fontSize: 11,
     color: COLORS.text.light,
   },
-
-  messageContent: {
-    maxWidth: '78%',
-  },
-
   avatarCircleAdmin: {
     width: 32,
     height: 32,
@@ -617,7 +623,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginRight: 8,
   },
-
   avatarCircleUser: {
     width: 32,
     height: 32,
@@ -627,7 +632,26 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginLeft: 8,
   },
-
+  emptyRepliesBox: {
+    marginTop: 12,
+    padding: 16,
+    borderRadius: 16,
+    backgroundColor: '#F9FAFB',
+    alignItems: 'center',
+  },
+  emptyRepliesTitle: {
+    marginTop: 8,
+    fontSize: 15,
+    fontWeight: '600',
+    color: COLORS.text.primary,
+  },
+  emptyRepliesText: {
+    marginTop: 4,
+    fontSize: 13,
+    color: COLORS.text.secondary,
+    textAlign: 'center',
+    lineHeight: 18,
+  },
   replyContainer: {
     position: 'absolute',
     bottom: 0,
@@ -639,7 +663,6 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderColor: '#eee',
   },
-
   input: {
     flex: 1,
     backgroundColor: '#F3F4F6',
@@ -648,7 +671,6 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     maxHeight: 100,
   },
-
   sendButton: {
     marginLeft: 8,
     backgroundColor: COLORS.primary,
@@ -658,44 +680,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-
-  center: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-  loadingText: {
-    marginTop: 8,
-    fontSize: 14,
-    color: COLORS.text.secondary,
-  },
-
-  errorText: {
-    fontSize: 14,
-    color: '#EF4444',
-  },
-
-  emptyRepliesBox: {
-    marginTop: 12,
-    padding: 16,
-    borderRadius: 16,
-    backgroundColor: '#F9FAFB',
-    alignItems: 'center',
-  },
-
-  emptyRepliesTitle: {
-    marginTop: 8,
-    fontSize: 15,
-    fontWeight: '600',
-    color: COLORS.text.primary,
-  },
-
-  emptyRepliesText: {
-    marginTop: 4,
-    fontSize: 13,
-    color: COLORS.text.secondary,
-    textAlign: 'center',
-    lineHeight: 18,
-  },
 });
+
+export default ContactDetailScreen;
