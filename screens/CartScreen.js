@@ -131,8 +131,8 @@ const checkout = useSelector((state) => state.checkout || {});
         // Nếu lỗi liên quan kho hàng, show toast
         Toast.show({
           type: "error",
-          text1: "Không thể cập nhật",
-          text2: error?.toString() || "Có lỗi xảy ra khi cập nhật số lượng",
+          text1: "Unable to update",
+          text2: error?.toString() || "An error occurred while updating the quantity.",
           position: "top",
           visibilityTime: 2500,
         });
@@ -179,14 +179,14 @@ const checkout = useSelector((state) => state.checkout || {});
 
     const newQuantity = parseInt(newQuantityText);
 
-    // Kiểm tra quantity hợp lệ (1-99)
+    // Kiểm tra quantity hợp lệ (1-1000)
     if (isNaN(newQuantity) || newQuantity < 1) {
       Alert.alert(
-        "Xóa sản phẩm",
-        "Số lượng không thể bằng 0. Bạn có muốn xóa sản phẩm này khỏi giỏ hàng không?",
+        "Delete product",
+        "The quantity cannot be zero. Do you want to remove this product from your shopping cart?",
         [
           {
-            text: "Hủy",
+            text: "Cancel",
             style: "cancel",
             onPress: () => {
               // Reset về giá trị cũ
@@ -198,7 +198,7 @@ const checkout = useSelector((state) => state.checkout || {});
             },
           },
           {
-            text: "Xóa",
+            text: "Delete",
             style: "destructive",
             onPress: () => {
               setEditingQuantity((prev) => {
@@ -214,15 +214,15 @@ const checkout = useSelector((state) => state.checkout || {});
       return;
     }
 
-    if (newQuantity > 99) {
-      Alert.alert("Số lượng không hợp lệ", "Số lượng tối đa cho phép là 99.", [
+    if (newQuantity > 1000) {
+      Alert.alert("Invalid quantity", "The maximum number allowed is 1000.", [
         {
           text: "OK",
           onPress: () => {
-            // Reset về giá trị hợp lệ (99)
+            // Reset về giá trị hợp lệ (1000)
             setEditingQuantity((prev) => ({
               ...prev,
-              [product_id]: "99",
+              [product_id]: "1000",
             }));
           },
         },
@@ -264,8 +264,8 @@ const checkout = useSelector((state) => state.checkout || {});
     } catch (error) {
       Toast.show({
         type: "error",
-        text1: "Không thể cập nhật",
-        text2: error?.toString() || "Có lỗi xảy ra khi cập nhật số lượng",
+        text1: "Unable to update",
+        text2: error?.toString() || "An error occurred while updating the quantity.",
         position: "top",
         visibilityTime: 2500,
       });
@@ -294,15 +294,15 @@ const checkout = useSelector((state) => state.checkout || {});
   const showRemoveConfirmation = (product_id) => {
     const item = cartItems.find((item) => item.id === product_id);
     Alert.alert(
-      "Xóa sản phẩm",
-      `Bạn có chắc chắn muốn xóa "${item?.name}" khỏi giỏ hàng của bạn không?`,
+      "Delete product",
+      `Are you sure you want to delete"${item?.name}" from your shopping cart?`,
       [
         {
-          text: "Hủy",
+          text: "Cancel",
           style: "cancel",
         },
         {
-          text: "Xóa",
+          text: "Delete",
           style: "destructive",
           onPress: () => removeItem(product_id),
         },
@@ -326,16 +326,16 @@ const checkout = useSelector((state) => state.checkout || {});
 
       // Show success message
       Alert.alert(
-        "Thành công",
-        "Đã xóa sản phẩm khỏi giỏ hàng thành công",
+        "Success",
+        "The product has been successfully removed from the shopping cart.",
         [{ text: "OK" }],
         { cancelable: true },
       );
     } catch (error) {
       console.error("Remove failed:", error);
       Alert.alert(
-        "Xóa thất bại",
-        error || "Không thể xóa sản phẩm khỏi giỏ hàng",
+        "Delete failure",
+        error || "Unable to remove product from cart",
         [{ text: "OK" }],
       );
     } finally {
@@ -372,14 +372,14 @@ const checkout = useSelector((state) => state.checkout || {});
         setSelectAll(false);
 
         Alert.alert(
-          "Thành công",
-          "Đã xóa các sản phẩm khỏi giỏ hàng thành công",
+          "Success",
+          "Products have been successfully removed from the shopping cart.",
           [{ text: "OK" }],
         );
       } catch (error) {
         Alert.alert(
-          "Xóa thất bại",
-          error || "Không thể xóa một số sản phẩm khỏi giỏ hàng",
+          "Delete failure",
+          error || "Unable to remove some products from the shopping cart.",
           [{ text: "OK" }],
         );
       } finally {
@@ -400,12 +400,12 @@ const checkout = useSelector((state) => state.checkout || {});
     }
 
     Alert.alert(
-      "Xóa sản phẩm",
-      `Bạn có chắc chắn muốn xóa ${productIds.length} sản phẩm khỏi giỏ hàng của bạn không?`,
+      "Delete product",
+      `Are you sure you want to remove ${productIds.length} products from your shopping cart?`,
       [
-        { text: "Hủy", style: "cancel" },
+        { text: "Cancel", style: "cancel" },
         {
-          text: "Xóa tất cả",
+          text: "Delete all",
           style: "destructive",
           onPress: performRemove,
         },
@@ -418,12 +418,12 @@ const checkout = useSelector((state) => state.checkout || {});
     if (cartItems.length === 0) return;
 
     Alert.alert(
-      "Xóa toàn bộ giỏ hàng",
-      "Bạn có chắc chắn muốn xóa tất cả sản phẩm khỏi giỏ hàng của bạn không?",
+      "Clear the entire shopping cart",
+      "Are you sure you want to remove all products from your shopping cart?",
       [
-        { text: "Hủy", style: "cancel" },
+        { text: "Cancel", style: "cancel" },
         {
-          text: "Xóa tất cả",
+          text: "Delete all",
           style: "destructive",
           onPress: () => {
             const allProductIds = cartItems.map((item) => item.id);
@@ -482,8 +482,8 @@ const checkout = useSelector((state) => state.checkout || {});
   const handleCheckout = async () => {
     if (!selectedItems?.length) {
       Alert.alert(
-        "Chưa chọn sản phẩm nào",
-        "Vui lòng chọn ít nhất một sản phẩm có sẵn để tiến hành thanh toán.",
+        "No products selected yet.",
+        "Please select at least one available product to proceed with checkout.",
       );
       return;
     }
@@ -498,8 +498,8 @@ const checkout = useSelector((state) => state.checkout || {});
 
     if (unavailableSelectedItems.length) {
       Alert.alert(
-        "Sản phẩm không khả dụng",
-        "Một số sản phẩm đã chọn đã hết hàng hoặc ngừng bán. Vui lòng bỏ chọn chúng.",
+        "The product is unavailable.",
+        "Some of the selected products are out of stock or discontinued. Please deselect them.",
       );
       return;
     }
@@ -508,7 +508,7 @@ const checkout = useSelector((state) => state.checkout || {});
     const sessionId = `cs_${uuidv4()}`;
 
     try {
-      Toast.show({ type: "info", text1: "Tạo phiên thanh toán..." });
+      Toast.show({ type: "info", text1: "Items reserved, please complete payment within 15 minutes" });
       const result = await dispatch(
         checkoutHold({ selected_product_ids, checkout_session_id: sessionId }),
       ).unwrap();
@@ -525,8 +525,8 @@ const checkout = useSelector((state) => state.checkout || {});
     } catch (err) {
       Toast.show({
         type: "error",
-        text1: "Thanh toán thất bại",
-        text2: err?.toString() || "Không thể tạo phiên thanh toán",
+        text1: "Payment failed",
+        text2: err?.toString() || "Unable to create a payment session.",
       });
     }
   };
@@ -569,7 +569,7 @@ const checkout = useSelector((state) => state.checkout || {});
           {isUnavailable && (
             <View style={styles.imageOverlay}>
               <Text style={styles.overlayText}>
-                {isOutOfStock ? "HẾT HÀNG" : "NGỪNG BÁN"}
+                {isOutOfStock ? "OUT OF STOCK" : "SOLD OUT"}
               </Text>
             </View>
           )}
@@ -590,12 +590,12 @@ const checkout = useSelector((state) => state.checkout || {});
               {/* Status badges */}
               {isOutOfStock && (
                 <View style={styles.statusBadge}>
-                  <Text style={styles.statusBadgeText}>Hết hàng</Text>
+                  <Text style={styles.statusBadgeText}>OUT OF STOCK</Text>
                 </View>
               )}
               {isDiscontinued && (
                 <View style={[styles.statusBadge, styles.discontinuedBadge]}>
-                  <Text style={styles.statusBadgeText}>Ngừng bán</Text>
+                  <Text style={styles.statusBadgeText}>SOLD OUT</Text>
                 </View>
               )}
             </View>
@@ -615,10 +615,10 @@ const checkout = useSelector((state) => state.checkout || {});
           <Text
             style={[styles.itemSpecs, isUnavailable && styles.unavailableText]}
           >
-            {item.size ? `Kích thước: ${item.size}` : ""}
+            {item.size ? `Size: ${item.size}` : ""}
             {item.size && item.in_stock !== undefined ? " | " : ""}
             {item.in_stock !== undefined
-              ? `Số lượng sản phẩm tồn kho: ${item.in_stock}`
+              ? `Số lượng sản phẩm tồn kho: ${item.in_stock} Kg`
               : ""}
           </Text>
 
@@ -701,8 +701,8 @@ const checkout = useSelector((state) => state.checkout || {});
           {itemIsUpdating && (
             <Text style={styles.updatingText}>
               {Object.keys(isUpdating).some((key) => key === item.id.toString())
-                ? "Đang Cập Nhật..."
-                : "Đang cập nhật..."}
+                ? "Updating..."
+                : "Updating..."}
             </Text>
           )}
 
@@ -710,8 +710,8 @@ const checkout = useSelector((state) => state.checkout || {});
           {isUnavailable && (
             <Text style={styles.unavailableWarning}>
               {isOutOfStock
-                ? "Sản phẩm này hiện đang hết hàng và không thể mua."
-                : "Sản phẩm này đã ngừng bán và không còn có sẵn."}
+                ? "This product is currently out of stock and unavailable for purchase."
+                : "This product has been discontinued and is no longer available."}
             </Text>
           )}
         </View>
@@ -747,7 +747,7 @@ const checkout = useSelector((state) => state.checkout || {});
           </SafeAreaView>
         </LinearGradient>
         <InlineLoading
-          text="Đang tải giỏ hàng..."
+          text="Loading shopping cart..."
           style={styles.loadingContainer}
         />
         {/* <BottomNavigation /> */}
@@ -784,12 +784,12 @@ const checkout = useSelector((state) => state.checkout || {});
           </SafeAreaView>
         </LinearGradient>
         <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>Lỗi khi tải giỏ hàng: {error}</Text>
+          <Text style={styles.errorText}>Error loading the shopping cart: {error}</Text>
           <TouchableOpacity
             style={styles.retryButton}
             onPress={() => dispatch(fetchCartByUser())}
           >
-            <Text style={styles.retryButtonText}>Thử lại</Text>
+            <Text style={styles.retryButtonText}>Retry</Text>
           </TouchableOpacity>
         </View>
         {/* <BottomNavigation /> */}
@@ -819,7 +819,7 @@ const checkout = useSelector((state) => state.checkout || {});
               <Icon name="arrow-back" size={24} color="#ffffff" />
             </TouchableOpacity>
             <Text style={styles.headerTitle}>
-              Giỏ hàng ({cart?.item_count || cartItems.length})
+              Shopping Cart ({cart?.item_count || cartItems.length})
             </Text>
             {/* Empty space for header balance - invisible */}
             <View style={styles.headerSpacer} />
@@ -841,7 +841,7 @@ const checkout = useSelector((state) => state.checkout || {});
                 {selectAll && <Icon name="check" size={16} color="#ffffff" />}
               </View>
               <Text style={styles.selectAllText}>
-                Chọn tất cả ({selectedItems.length}/{cartItems.length})
+                Select all ({selectedItems.length}/{cartItems.length})
               </Text>
             </TouchableOpacity>
           </View>
@@ -863,16 +863,16 @@ const checkout = useSelector((state) => state.checkout || {});
           <View style={styles.emptyCartContainer}>
             <Icon name="shopping-cart" size={64} color="#d1d5db" />
             <Text style={styles.emptyCartText}>
-              Giỏ hàng của bạn đang trống
+             Your shopping cart is empty.
             </Text>
             <Text style={styles.emptyCartSubtext}>
-              Thêm một số sản phẩm để bắt đầu
+              Add some more products to get started.
             </Text>
             <TouchableOpacity
               style={styles.continueShoppingButton}
               onPress={() => navigation.navigate("AllProducts")}
             >
-              <Text style={styles.continueShoppingText}>Tiếp tục mua sắm</Text>
+              <Text style={styles.continueShoppingText}>Continue shopping</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -992,7 +992,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
     paddingTop: 30,
-    paddingBottom: 180, // Space for checkout button + BottomNavigation
+    paddingBottom: 180, 
     paddingHorizontal: 16,
   },
   loadingContainer: {
@@ -1247,7 +1247,6 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: "#e5e7eb",
     padding: 16,
-    marginBottom: 80, // Space for BottomNavigation
     shadowColor: "#000",
     shadowOffset: { width: 0, height: -2 },
     shadowOpacity: 0.1,
@@ -1255,7 +1254,7 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   checkoutButton: {
-    backgroundColor: "#0d364c",
+    backgroundColor: "#22c55e",
     padding: 12,
     borderRadius: 8,
     alignItems: "center",
@@ -1268,9 +1267,9 @@ const styles = StyleSheet.create({
   // Select All Section Styles
   selectAllContainer: {
     backgroundColor: "#ffffff",
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
     paddingVertical: 12,
-    marginBottom: 16,
+    marginBottom: 3,
     borderRadius: 8,
     shadowColor: "#000",
     shadowOffset: {
@@ -1308,8 +1307,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#ffffff",
   },
   checkboxSelected: {
-    backgroundColor: "#0d364c",
-    borderColor: "#0d364c",
+    backgroundColor: "#22c55e",
+    borderColor: "#22c55e",
   },
   checkboxDisabled: {
     opacity: 0.5,

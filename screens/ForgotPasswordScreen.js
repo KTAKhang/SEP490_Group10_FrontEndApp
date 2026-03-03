@@ -123,7 +123,7 @@ const ForgotPasswordScreen = () => {
 
     return (
         <LinearGradient
-            colors={['#0D364C', '#13C2C2']}
+            colors={['#0D364C', '#22c55e']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.container}
@@ -155,13 +155,13 @@ const ForgotPasswordScreen = () => {
                         },
                     ]}
                 >
-                    <Text style={styles.title}>Quên Mật Khẩu</Text>
+                    <Text style={styles.title}>Forgot Password</Text>
                     <Text style={styles.subtitle}>
-                        Nhập địa chỉ email của bạn và chúng tôi sẽ gửi hướng dẫn đặt lại mật khẩu
+                        Enter your email and we will send password reset instructions
                     </Text>
 
                     <View style={styles.inputContainer}>
-                        <Mail color="#13C2C2" size={20} />
+                        <Mail color="#22c55e" size={20} />
                         <TextInput
                             style={styles.inputField}
                             placeholder="Nhập địa chỉ email"
@@ -182,14 +182,14 @@ const ForgotPasswordScreen = () => {
                         {isLoading ? (
                             <ActivityIndicator color="#fff" />
                         ) : (
-                            <Text style={styles.submitButtonText}>Gửi OTP</Text>
+                            <Text style={styles.submitButtonText}>Send OTP</Text>
                         )}
                     </TouchableOpacity>
 
                     <View style={styles.footer}>
-                        <Text style={styles.footerText}>Đã nhớ mật khẩu?</Text>
+                        <Text style={styles.footerText}>Remembered your password?</Text>
                         <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-                            <Text style={styles.footerLink}> Đăng nhập</Text>
+                            <Text style={styles.footerLink}> Login</Text>
                         </TouchableOpacity>
                     </View>
                 </Animated.View>
@@ -268,7 +268,7 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 28,
         fontWeight: 'bold',
-        color: '#0D364C',
+        color: '#22c55e',
         marginBottom: 15,
         textAlign: 'center',
     },
@@ -282,7 +282,7 @@ const styles = StyleSheet.create({
     inputContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        borderColor: '#13C2C2',
+        borderColor: '#22c55e',
         borderWidth: 1,
         borderRadius: 12,
         paddingHorizontal: 12,
@@ -299,7 +299,7 @@ const styles = StyleSheet.create({
         paddingVertical: 8,
     },
     submitButton: {
-        backgroundColor: '#13C2C2',
+        backgroundColor: '#22c55e',
         paddingVertical: 14,
         borderRadius: 12,
         alignItems: 'center',
@@ -320,7 +320,7 @@ const styles = StyleSheet.create({
         fontSize: 14,
     },
     footerLink: {
-        color: '#13C2C2',
+        color: '#22c55e',
         fontWeight: '600',
     },
     disabledButton: {

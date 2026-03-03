@@ -209,7 +209,7 @@ const ForgotPasswordOTPScreen = ({ route, navigation }) => {
 
     return (
         <LinearGradient
-            colors={['#0D364C', '#13C2C2']}
+            colors={['#0D364C', '#22c55e']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.container}
@@ -240,9 +240,9 @@ const ForgotPasswordOTPScreen = ({ route, navigation }) => {
                         },
                     ]}
                 >
-                    <Text style={styles.title}>Đặt Lại Mật Khẩu</Text>
+                    <Text style={styles.title}>Reset Password</Text>
                     <Text style={styles.subtitle}>
-                        Nhập mã OTP đã được gửi đến email của bạn và mật khẩu mới
+                        Enter the OTP sent to your email and the new password
                     </Text>
 
                     <View style={styles.otpContainer}>
@@ -266,13 +266,13 @@ const ForgotPasswordOTPScreen = ({ route, navigation }) => {
                     </View>
 
                     <TouchableOpacity style={styles.clearButton} onPress={clearOtp}>
-                        <Text style={styles.clearButtonText}>Xóa và nhập lại OTP</Text>
+                        <Text style={styles.clearButtonText}>Clear and re-enter OTP</Text>
                     </TouchableOpacity>
 
                     <View style={styles.inputContainer}>
                         <TextInput
                             style={styles.inputField}
-                            placeholder="Mật khẩu mới"
+                            placeholder="New password"
                             placeholderTextColor="#aaa"
                             value={newPassword}
                             onChangeText={setNewPassword}
@@ -285,9 +285,9 @@ const ForgotPasswordOTPScreen = ({ route, navigation }) => {
                             onPress={() => setShowPassword(!showPassword)}
                         >
                             {showPassword ? (
-                                <EyeOff color="#13C2C2" size={20} />
+                                <EyeOff color="#22c55e" size={20} />
                             ) : (
-                                <Eye color="#13C2C2" size={20} />
+                                <Eye color="#22c55e" size={20} />
                             )}
                         </TouchableOpacity>
                     </View>
@@ -295,7 +295,7 @@ const ForgotPasswordOTPScreen = ({ route, navigation }) => {
                     <View style={[styles.inputContainer, styles.confirmPasswordContainer]}>
                         <TextInput
                             style={styles.inputField}
-                            placeholder="Xác nhận mật khẩu"
+                            placeholder="Confirm password"
                             placeholderTextColor="#aaa"
                             value={confirmPassword}
                             onChangeText={setConfirmPassword}
@@ -308,9 +308,9 @@ const ForgotPasswordOTPScreen = ({ route, navigation }) => {
                             onPress={() => setShowPassword(!showPassword)}
                         >
                             {showPassword ? (
-                                <EyeOff color="#13C2C2" size={20} />
+                                <EyeOff color="#22c55e" size={20} />
                             ) : (
-                                <Eye color="#13C2C2" size={20} />
+                                <Eye color="#22c55e" size={20} />
                             )}
                         </TouchableOpacity>
                     </View>
@@ -323,7 +323,7 @@ const ForgotPasswordOTPScreen = ({ route, navigation }) => {
                         {isLoading ? (
                             <ActivityIndicator color="#fff" />
                         ) : (
-                            <Text style={styles.submitButtonText}>Đặt Lại Mật Khẩu</Text>
+                            <Text style={styles.submitButtonText}>Reset Password</Text>
                         )}
                     </TouchableOpacity>
                 </Animated.View>
@@ -402,7 +402,7 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 28,
         fontWeight: 'bold',
-        color: '#0D364C',
+        color: '#22c55e',
         marginBottom: 15,
         textAlign: 'center',
     },
@@ -439,14 +439,14 @@ const styles = StyleSheet.create({
         marginBottom: 20,
     },
     clearButtonText: {
-        color: '#13C2C2',
+        color: '#22c55e',
         fontSize: 14,
         textDecorationLine: 'underline',
     },
     inputContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        borderColor: '#13C2C2',
+        borderColor: '#22c55e',
         borderWidth: 1,
         borderRadius: 12,
         paddingHorizontal: 12,
@@ -468,7 +468,7 @@ const styles = StyleSheet.create({
         padding: 5,
     },
     submitButton: {
-        backgroundColor: '#13C2C2',
+        backgroundColor: '#22c55e',
         paddingVertical: 14,
         borderRadius: 12,
         alignItems: 'center',

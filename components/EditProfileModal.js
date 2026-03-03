@@ -450,7 +450,7 @@ const EditProfileModal = ({ visible, onClose, profile, onSave }) => {
                         />
                         {imageLoading && (
                           <View style={styles.imageLoadingOverlay}>
-                            <MinimalLoading size="small" color="#13C2C2" />
+                            <MinimalLoading size="small" color="#22c55e" />
                           </View>
                         )}
                       </>
@@ -748,7 +748,7 @@ const styles = StyleSheet.create({
     alignSelf: "flex-end",
     paddingHorizontal: 16,
     paddingVertical: 8,
-    backgroundColor: "#13C2C2",
+    backgroundColor: "#22c55e",
     borderRadius: 8,
   },
   dateConfirmText: {
@@ -778,7 +778,7 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    borderColor: "#13C2C2",
+    borderColor: "#22c55e",
     borderWidth: 3,
   },
   avatarPlaceholder: {
@@ -811,11 +811,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
-    borderColor: "#13C2C2",
+    borderColor: "#22c55e",
     borderWidth: 1,
   },
   changeAvatarText: {
-    color: "#13C2C2",
+    color: "#22c55e",
     fontSize: 14,
     fontWeight: "600",
   },
@@ -883,12 +883,12 @@ const styles = StyleSheet.create({
   },
   saveButton: {
     flex: 1,
-    backgroundColor: "#13C2C2",
+    backgroundColor: "#22c55e",
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 8,
     alignItems: "center",
-    shadowColor: "#13C2C2",
+    shadowColor: "#22c55e",
     shadowOffset: {
       width: 0,
       height: 2,

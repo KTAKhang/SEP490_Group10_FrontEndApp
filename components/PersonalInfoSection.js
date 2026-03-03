@@ -40,7 +40,7 @@ const PersonalInfoSection = ({ profile = {}, onChangePasswordPress }) => {
                 >
                     <View style={styles.infoItemLeft}>
                         <View style={styles.iconContainer}>
-                            <Ionicons name={icon} size={20} color="#13C2C2" />
+                            <Ionicons name={icon} size={20} color="#22c55e" />
                         </View>
                         <View style={styles.infoContent}>
                             <Text style={styles.infoLabel}>{label}</Text>
@@ -56,7 +56,7 @@ const PersonalInfoSection = ({ profile = {}, onChangePasswordPress }) => {
                 style={styles.changePasswordButton}
                 onPress={onChangePasswordPress}
             >
-                <Ionicons name="key-outline" size={20} color="#13C2C2" />
+                <Ionicons name="key-outline" size={20} color="#22c55e" />
                 <Text style={styles.changePasswordText}>Đổi mật khẩu</Text>
             </TouchableOpacity>
         </View>
@@ -123,12 +123,12 @@ const styles = StyleSheet.create({
         padding: 12,
         margin: 16,
         borderWidth: 1,
-        borderColor: '#13C2C2',
+        borderColor: '#22c55e',
         borderRadius: 10,
         backgroundColor: '#fff',
     },
     changePasswordText: {
-        color: '#13C2C2',
+        color: '#22c55e',
         fontWeight: '600',
         marginLeft: 8,
     },

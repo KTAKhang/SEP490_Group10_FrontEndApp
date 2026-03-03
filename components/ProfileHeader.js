@@ -14,7 +14,7 @@ const ProfileHeader = ({ profile, onEditPress }) => (
         <Text style={styles.profileName}>{profile.user_name}</Text>
         <Text style={styles.profileEmail}>{profile.email}</Text>
         <TouchableOpacity style={styles.editProfileButton} onPress={onEditPress}>
-            <Ionicons name="create-outline" size={16} color="#13C2C2" />
+            <Ionicons name="create-outline" size={16} color="#22c55e" />
             <Text style={styles.editProfileText}>Sửa hồ sơ</Text>
         </TouchableOpacity>
     </View>
@@ -23,11 +23,11 @@ const ProfileHeader = ({ profile, onEditPress }) => (
 const styles = StyleSheet.create({
     profileHeader: { alignItems: 'center', marginTop: 24, marginBottom: 32 },
     profileImageContainer: { position: 'relative' },
-    profileImage: { width: 96, height: 96, borderRadius: 48, borderWidth: 4, borderColor: '#13C2C2' },
+    profileImage: { width: 96, height: 96, borderRadius: 48, borderWidth: 4, borderColor: '#22c55e' },
     profileName: { fontSize: 18, fontWeight: '600', color: '#374151', marginTop: 12 },
     profileEmail: { fontSize: 14, color: '#6b7280', marginTop: 4 },
     editProfileButton: { flexDirection: 'row', alignItems: 'center', marginTop: 12 },
-    editProfileText: { color: '#13C2C2', fontWeight: '500', marginLeft: 4 },
+    editProfileText: { color: '#22c55e', fontWeight: '500', marginLeft: 4 },
 });
 
 export default ProfileHeader;

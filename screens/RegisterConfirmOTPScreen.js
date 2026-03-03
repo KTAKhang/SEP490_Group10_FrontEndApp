@@ -198,7 +198,7 @@ const RegisterConfirmOTPScreen = ({ navigation, route }) => {
 
     return (
         <LinearGradient
-            colors={['#0D364C', '#13C2C2']}
+            colors={['#0D364C', '#22c55e']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.container}
@@ -230,9 +230,9 @@ const RegisterConfirmOTPScreen = ({ navigation, route }) => {
                         },
                     ]}
                 >
-                    <Text style={styles.title}>Xác thực OTP</Text>
+                    <Text style={styles.title}>Verify OTP</Text>
                     <Text style={styles.subtitle}>
-                        Vui lòng nhập mã OTP đã được gửi đến email của bạn
+                        Please enter the OTP sent to your email
                     </Text>
 
                     <View style={styles.otpContainer}>
@@ -256,7 +256,7 @@ const RegisterConfirmOTPScreen = ({ navigation, route }) => {
                     </View>
 
                     <TouchableOpacity style={styles.clearButton} onPress={clearOtp}>
-                        <Text style={styles.clearButtonText}>Xóa và nhập lại</Text>
+                        <Text style={styles.clearButtonText}>Clear and re-enter</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity
@@ -267,7 +267,7 @@ const RegisterConfirmOTPScreen = ({ navigation, route }) => {
                         {isLoading ? (
                             <ActivityIndicator color="#fff" />
                         ) : (
-                            <Text style={styles.submitButtonText}>Xác nhận</Text>
+                            <Text style={styles.submitButtonText}>Confirm</Text>
                         )}
                     </TouchableOpacity>
                 </Animated.View>
@@ -348,7 +348,7 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 28,
         fontWeight: 'bold',
-        color: '#0D364C',
+        color: '#22c55e',
         marginBottom: 15,
         textAlign: 'center',
     },
@@ -369,7 +369,7 @@ const styles = StyleSheet.create({
         width: 45,
         height: 50,
         borderWidth: 2,
-        borderColor: '#13C2C2',
+        borderColor: '#22c55e',
         borderRadius: 8,
         fontSize: 18,
         fontWeight: 'bold',
@@ -385,12 +385,12 @@ const styles = StyleSheet.create({
         marginBottom: 20,
     },
     clearButtonText: {
-        color: '#13C2C2',
+        color: '#22c55e',
         fontSize: 14,
         textDecorationLine: 'underline',
     },
     submitButton: {
-        backgroundColor: '#13C2C2',
+        backgroundColor: '#22c55e',
         paddingVertical: 14,
         borderRadius: 12,
         alignItems: 'center',

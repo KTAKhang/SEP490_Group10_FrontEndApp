@@ -41,6 +41,7 @@ import PreOrderPaymentFail from "../screens/PreOrderPaymentFail";
 import ContactHistoryScreen from '../screens/ContactHistoryScreen';
 import ContactDetailScreen from '../screens/ContactDetailScreen';
 import * as Linking from 'expo-linking';
+import { navigationRef } from './RootNavigation';
 
 const Stack = createStackNavigator();
 
@@ -61,7 +62,6 @@ export default function AppNavigator() {
   const dispatch = useDispatch();
   const { isAuthenticated, user } = useSelector((state) => state.auth);
   const [isInitializing, setIsInitializing] = React.useState(true);
-  const navigationRef = React.useRef();
 
   useEffect(() => {
     const initializeAuth = async () => {
@@ -76,8 +76,8 @@ export default function AppNavigator() {
   useEffect(() => {
     const handleNavigation = async () => {
       const initialUrl = await Linking.getInitialURL();
-      if (isAuthenticated && navigationRef.current && user) {
-        navigateAfterLogin(navigationRef.current, user);
+      if (isAuthenticated && navigationRef.isReady() && user) {
+        navigateAfterLogin(navigationRef, user);
       }
     };
     handleNavigation();
@@ -92,14 +92,14 @@ export default function AppNavigator() {
 
   // Sau khi logout, đưa về HomePage để tránh kẹt màn Admin
   useEffect(() => {
-    if (!isInitializing && !isAuthenticated && navigationRef.current?.isReady()) {
-      navigationRef.current.reset({ index: 0, routes: [{ name: 'HomePage' }] });
+    if (!isInitializing && !isAuthenticated && navigationRef.isReady()) {
+      navigationRef.reset({ index: 0, routes: [{ name: 'HomePage' }] });
     }
   }, [isAuthenticated, isInitializing]);
 
   // Deep link: VNPay return sau thanh toán mở app với shopapp://payment/vnpay/return?vnp_ResponseCode=00&...
   const handlePaymentReturnUrl = (url) => {
-    if (!url || !navigationRef.current?.isReady()) return;
+    if (!url || !navigationRef.isReady()) return;
     try {
       if (!url.includes('payment/vnpay/return') && !url.includes('payment%2Fvnpay%2Freturn')) return;
       const queryStart = url.indexOf('?');
@@ -112,7 +112,7 @@ export default function AppNavigator() {
       const code = params.vnp_ResponseCode || params.vnp_TransactionStatus;
       if (code === '00') {
         Alert.alert('Thanh toán thành công', 'Đơn đặt trước của bạn đã được thanh toán đặt cọc. Bạn có thể xem tại "Đặt trước" > "Đơn của tôi".', [
-          { text: 'OK', onPress: () => navigationRef.current?.navigate('PreOrder', { remaining: 'success' }) },
+          { text: 'OK', onPress: () => navigationRef.navigate('PreOrder', { remaining: 'success' }) },
         ]);
       } else {
         Alert.alert('Thanh toán thất bại', 'Giao dịch chưa thành công. Vui lòng thử lại hoặc liên hệ hỗ trợ.', [{ text: 'OK' }]);

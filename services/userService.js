@@ -1,5 +1,8 @@
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as Linking from "expo-linking";
+import { resetAuth } from "../store/slices/authSlice";
+import { navigationRef, navigate, resetTo } from "../navigation/RootNavigation";
 import { API_BASE_URL } from "../config/apiConfig";
 
 /**
@@ -22,13 +25,99 @@ export async function getUserProfileApi() {
     }
     return data.data;
   } catch (error) {
+    // Bắt lỗi từ axios
+    const status = error.response?.status;
+    const message = error.response?.data?.message;
+
+    console.log("status", status);
+
+    /* =======================
+       401 – TOKEN EXPIRED / INVALID
+    ======================== */
+   if (status === 401) {
+  try {
+    const refreshToken = await AsyncStorage.getItem("refreshToken");
+
+    console.log("refreshToken:", refreshToken);
+
+    if (!refreshToken) {
+      throw new Error("Không có refresh token");
+    }
+
+    const refreshRes = await axios.post(
+      `${API_BASE_URL}/auth/refresh-token`,
+      { refresh_token: refreshToken }
+    );
+
+    console.log("refreshRes.data:", refreshRes.data);
+
+    const newAccessToken =
+      refreshRes.data?.token?.access_token ||
+      refreshRes.data?.access_token;
+
+    if (!newAccessToken) {
+      throw new Error("Không nhận được access token mới");
+    }
+
+    await AsyncStorage.setItem("token", newAccessToken);
+
+    // 🔁 Retry
+    const retryRes = await axios.get(
+      `${API_BASE_URL}/profile/user-info`,
+      {
+        headers: {
+          Authorization: `Bearer ${newAccessToken}`,
+        },
+      }
+    );
+
+    return retryRes.data.data;
+
+  } catch (refreshError) {
+    console.log("REFRESH ERROR:", refreshError.response?.data);
+    clearAuthAndRedirect()
     throw new Error(
-      error.response?.data?.message ||
-        error.message ||
-        "Lấy thông tin user thất bại",
+      refreshError.response?.data?.message || "Refresh failed"
     );
   }
 }
+
+    /* =======================
+       403 – ACCOUNT LOCKED
+    ======================== */
+    // if (status === 403 && message === "Account is locked") {
+    //   alert("🚫 Your account has been locked by the admin");
+    //   clearAuthAndRedirect();
+    //   return;
+    // }
+
+    /* =======================
+       403 – ACCESS DENIED
+    ======================== */
+    // if (status === 403 && message === "Access denied") {
+    //   alert("⛔ You do not have permission to access this function");
+    //   return;
+    // }
+
+    // throw error;
+  }
+}
+
+const clearAuthAndRedirect = async () => {
+  resetAuth()
+  AsyncStorage.removeItem("token");
+  AsyncStorage.removeItem("user");
+  // try {
+  //   if (navigationRef?.isReady()) {
+  //     navigationRef.reset({ index: 0, routes: [{ name: "Login" }] });
+  //     return;
+  //   }
+  // } catch (e) {
+  //   ignore
+  // }
+  // // fallback
+  // navigate('Login');
+};
 
 /**
  * Backend: PUT /profile/update-user
@@ -73,7 +162,7 @@ export async function updateUserProfileApi({
       },
     );
     const data = response.data;
-   
+
     if (data.status !== "OK") {
       throw new Error(data.message || "Cập nhật thất bại");
     }
