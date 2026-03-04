@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
     Modal,
     View,
@@ -12,6 +12,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { COLORS } from '../constants/colors';
 import { Ionicons } from '@expo/vector-icons';
+import PasswordRulesModal from './PasswordRulesModal';
 
 const ChangePasswordModal = ({
     visible,
@@ -25,91 +26,135 @@ const ChangePasswordModal = ({
     onSubmit,
     isLoading = false
 }) => {
+    const [rulesAccepted, setRulesAccepted] = useState(false);
+    const [showRules, setShowRules] = useState(false);
+    const handleMainVisible = visible && rulesAccepted;
+    const handleRulesVisible = visible && !rulesAccepted || showRules;
+
+    const handleRulesAccept = () => {
+        setRulesAccepted(true);
+        setShowRules(false);
+    };
+
+    const handleRulesDecline = () => {
+        setRulesAccepted(false);
+        setShowRules(false);
+        onClose();
+    };
+
+    const handleClose = () => {
+        setRulesAccepted(false);
+        onClose();
+    };
+
     return (
-        <Modal visible={visible} animationType="slide" transparent>
-            <StatusBar barStyle="light-content" backgroundColor={COLORS.secondary} />
-            <View style={styles.modalOverlay}>
-                <View style={styles.modalContainer}>
-                    {/* Gradient Header */}
-                    <LinearGradient
-                        colors={COLORS.gradient.primary}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 1 }}
-                        style={styles.headerGradient}
-                    >
-                        <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-                            <Ionicons name="close" size={24} color={COLORS.white} />
-                        </TouchableOpacity>
-                        <Text style={styles.title}>Change password</Text>
-                        <View style={styles.placeholder} />
-                    </LinearGradient>
+        <>
+            {/* Step 1: Password Rules Gate */}
+            <PasswordRulesModal
+                visible={visible && !rulesAccepted}
+                onAccept={handleRulesAccept}
+                onDecline={handleRulesDecline}
+            />
 
-                    {/* Content */}
-                    <View style={styles.content}>
-                        <View style={styles.inputContainer}>
-                            <Ionicons name="lock-closed-outline" size={20} color={COLORS.primary} style={styles.inputIcon} />
-                            <TextInput
-                                placeholder="Current password"
-                                placeholderTextColor={COLORS.text.light}
-                                secureTextEntry
-                                style={styles.input}
-                                value={currentPassword}
-                                onChangeText={setCurrentPassword}
-                                editable={!isLoading}
-                            />
-                        </View>
-
-                        <View style={styles.inputContainer}>
-                            <Ionicons name="key-outline" size={20} color={COLORS.primary} style={styles.inputIcon} />
-                            <TextInput
-                                placeholder="New password (8 characters, including at least one digit and one uppercase letter)"
-                                placeholderTextColor={COLORS.text.light}
-                                secureTextEntry
-                                style={styles.input}
-                                value={newPassword}
-                                onChangeText={setNewPassword}
-                                editable={!isLoading}
-                            />
-                        </View>
-
-                        <View style={styles.inputContainer}>
-                            <Ionicons name="checkmark-circle-outline" size={20} color={COLORS.primary} style={styles.inputIcon} />
-                            <TextInput
-                                placeholder="Confirm password"
-                                placeholderTextColor={COLORS.text.light}
-                                secureTextEntry
-                                style={styles.input}
-                                value={confirmPassword}
-                                onChangeText={setConfirmPassword}
-                                editable={!isLoading}
-                            />
-                        </View>
-
-                        <View style={styles.buttonRow}>
-                            <TouchableOpacity
-                                style={[styles.cancelButton, isLoading && styles.disabledButton]}
-                                onPress={onClose}
-                                disabled={isLoading}
-                            >
-                                <Text style={styles.cancelButtonText}>Cancel</Text>
+            {/* Step 2: Change Password Form */}
+            <Modal visible={handleMainVisible} animationType="slide" transparent>
+                <StatusBar barStyle="light-content" backgroundColor={COLORS.secondary} />
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContainer}>
+                        {/* Gradient Header */}
+                        <LinearGradient
+                            colors={COLORS.gradient.primary}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 1 }}
+                            style={styles.headerGradient}
+                        >
+                            <TouchableOpacity style={styles.closeButton} onPress={handleClose}>
+                                <Ionicons name="close" size={24} color={COLORS.white} />
                             </TouchableOpacity>
-
+                            <Text style={styles.title}>Change password</Text>
+                            {/* Info button to re-open rules */}
                             <TouchableOpacity
-                                style={[styles.submitButton, isLoading && styles.disabledButton]}
-                                onPress={onSubmit}
-                                disabled={isLoading}
+                                style={styles.infoButton}
+                                onPress={() => setShowRules(true)}
                             >
-                                {isLoading ? (
-                                    <ActivityIndicator size="small" color={COLORS.white} />
-                                ) : (
-                                    <Text style={styles.submitButtonText}>Confirm</Text>
-                                )}
+                                <Ionicons name="information-circle-outline" size={24} color={COLORS.white} />
                             </TouchableOpacity>
+                        </LinearGradient>
+
+                        {/* Content */}
+                        <View style={styles.content}>
+                            <View style={styles.inputContainer}>
+                                <Ionicons name="lock-closed-outline" size={20} color={COLORS.primary} style={styles.inputIcon} />
+                                <TextInput
+                                    placeholder="Current password"
+                                    placeholderTextColor={COLORS.text.light}
+                                    secureTextEntry
+                                    style={styles.input}
+                                    value={currentPassword}
+                                    onChangeText={setCurrentPassword}
+                                    editable={!isLoading}
+                                />
+                            </View>
+
+                            <View style={styles.inputContainer}>
+                                <Ionicons name="key-outline" size={20} color={COLORS.primary} style={styles.inputIcon} />
+                                <TextInput
+                                    placeholder="New password (8+ chars, uppercase, lowercase, number)"
+                                    placeholderTextColor={COLORS.text.light}
+                                    secureTextEntry
+                                    style={styles.input}
+                                    value={newPassword}
+                                    onChangeText={setNewPassword}
+                                    editable={!isLoading}
+                                />
+                            </View>
+
+                            <View style={styles.inputContainer}>
+                                <Ionicons name="checkmark-circle-outline" size={20} color={COLORS.primary} style={styles.inputIcon} />
+                                <TextInput
+                                    placeholder="Confirm password"
+                                    placeholderTextColor={COLORS.text.light}
+                                    secureTextEntry
+                                    style={styles.input}
+                                    value={confirmPassword}
+                                    onChangeText={setConfirmPassword}
+                                    editable={!isLoading}
+                                />
+                            </View>
+
+                            <View style={styles.buttonRow}>
+                                <TouchableOpacity
+                                    style={[styles.cancelButton, isLoading && styles.disabledButton]}
+                                    onPress={handleClose}
+                                    disabled={isLoading}
+                                >
+                                    <Text style={styles.cancelButtonText}>Cancel</Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity
+                                    style={[styles.submitButton, isLoading && styles.disabledButton]}
+                                    onPress={onSubmit}
+                                    disabled={isLoading}
+                                >
+                                    {isLoading ? (
+                                        <ActivityIndicator size="small" color={COLORS.white} />
+                                    ) : (
+                                        <Text style={styles.submitButtonText}>Confirm</Text>
+                                    )}
+                                </TouchableOpacity>
+                            </View>
                         </View>
                     </View>
                 </View>
-            </View>
-        </Modal>
+
+                {/* Rules modal khi user bấm icon info */}
+                <PasswordRulesModal
+                    visible={showRules}
+                    onAccept={() => setShowRules(false)}
+                    onDecline={() => setShowRules(false)}
+                />
+            </Modal>
+        </>
     );
 };
 
@@ -147,8 +192,13 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
-    placeholder: {
+    infoButton: {
         width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: 'rgba(255,255,255,0.2)',
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     title: {
         fontSize: 20,

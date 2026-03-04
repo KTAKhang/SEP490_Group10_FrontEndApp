@@ -134,7 +134,6 @@ export async function updateUserProfileApi({
   try {
     const token = await AsyncStorage.getItem("token");
     if (!token) throw new Error("Cần đăng nhập");
-
     const formData = new FormData();
     if (user_name != null) formData.append("user_name", user_name);
     if (phone != null) formData.append("phone", phone);
@@ -156,7 +155,7 @@ export async function updateUserProfileApi({
       {
         headers: {
           Authorization: `Bearer ${token}`,
-          "Content-Type": "multipart/form-data",
+     "Content-Type": "multipart/form-data",     
           Accept: "application/json",
         },
       },
@@ -168,7 +167,12 @@ export async function updateUserProfileApi({
     }
     return data.data ?? data;
   } catch (error) {
+    console.log("UPDATE PROFILE ERROR >>>", error);
+  console.log("error.response >>>", error.response);
+  console.log("error.response?.data >>>", error.response?.data);
+
     throw new Error(
+      
       error.response?.data?.message || error.message || "Cập nhật thất bại",
     );
   }
