@@ -76,7 +76,7 @@ export default function PaymentSuccess({ navigation, route }) {
         {
           icon: "cash-outline",
           label: "Total amount",
-          value: `${order.total_price?.toLocaleString()} đ`,
+          value: `${order.total_price?.toLocaleString()} VND`,
           highlight: true,
         },
         {

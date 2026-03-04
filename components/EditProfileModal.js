@@ -13,11 +13,13 @@ import {
   ScrollView,
   Animated,
 } from "react-native";
+import { useTranslation } from "react-i18next";
 import { useActionSheet } from "@expo/react-native-action-sheet";
 import * as ImagePicker from "expo-image-picker";
 import { MinimalLoading } from "./Loading";
 import DateTimePicker from "@react-native-community/datetimepicker";
 const EditProfileModal = ({ visible, onClose, profile, onSave }) => {
+  const { t } = useTranslation();
   const [name, setName] = useState("");
   const [avatar, setAvatar] = useState(null);
   const [phone, setPhone] = useState("");
@@ -151,11 +153,11 @@ const EditProfileModal = ({ visible, onClose, profile, onSave }) => {
     }
 
     if (!phone || !/^[0-9]{9,11}$/.test(phone)) {
-      newErrors.phone = "Invalid phone number";
+      newErrors.phone = t("profile.invalidPhone");
     }
 
     if (!address || address.trim().length < 5) {
-      newErrors.address = "Please enter the address";
+      newErrors.address = t("profile.enterAddress");
     }
 
     if (!cityCode || !icity) {
@@ -177,7 +179,7 @@ const EditProfileModal = ({ visible, onClose, profile, onSave }) => {
   const pickImageFromLibrary = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted") {
-      Alert.alert("Error", "You need to grant library access.");
+      Alert.alert(t("common.error"), t("profile.grantLibraryAccess"));
       return;
     }
 
@@ -201,7 +203,7 @@ const EditProfileModal = ({ visible, onClose, profile, onSave }) => {
   const takePhotoFromCamera = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== "granted") {
-      Alert.alert("Error", "You need to grant camera access.");
+      Alert.alert(t("common.error"), t("profile.grantCameraAccess"));
       return;
     }
 
@@ -228,11 +230,11 @@ const EditProfileModal = ({ visible, onClose, profile, onSave }) => {
     // Delay ngắn để đảm bảo modal đã ẩn
     setTimeout(() => {
       const options = [
-        "Choose from the library",
-        "Take new photos",
-        "Enter URL",
-        "Delete photo",
-        "Cancel",
+        t("profile.chooseFromLibrary"),
+        t("profile.takePhoto"),
+        t("profile.enterUrl"),
+        t("profile.deletePhoto"),
+        t("common.cancel"),
       ];
       const cancelButtonIndex = 4;
       const destructiveButtonIndex = 3;
@@ -272,7 +274,7 @@ const EditProfileModal = ({ visible, onClose, profile, onSave }) => {
 
   const showCityPicker = () => {
     if (!provinces || provinces.length === 0) return;
-    const options = provinces.map((p) => p.name).concat("Hủy");
+    const options = provinces.map((p) => p.name).concat(t('common.cancel'));
     const cancelButtonIndex = options.length - 1;
 
     setShowActionSheet(true); // ẩn modal trước
@@ -302,10 +304,10 @@ const EditProfileModal = ({ visible, onClose, profile, onSave }) => {
 
   const showWardPicker = () => {
     if (!wardsList || wardsList.length === 0) {
-      Alert.alert("Notification", "Please select the province/city first.");
+      Alert.alert(t("chat.notification"), t("profile.selectProvinceFirst"));
       return;
     }
-    const options = wardsList.map((w) => w.name).concat("Cancel");
+    const options = wardsList.map((w) => w.name).concat(t("common.cancel"));
     const cancelButtonIndex = options.length - 1;
 
     setShowActionSheet(true); // ẩn modal trước
@@ -322,29 +324,30 @@ const EditProfileModal = ({ visible, onClose, profile, onSave }) => {
   };
 
   const showGenderPicker = () => {
-    const options = ["male", "female", "other", "cancel"];
+    const codes = ["male", "female", "other"];
+    const options = [t("auth.genderMale"), t("auth.genderFemale"), t("auth.genderOther"), t("common.cancel")];
     const cancelButtonIndex = 3;
 
-    setShowActionSheet(true); // ẩn modal trước
+    setShowActionSheet(true);
     setTimeout(() => {
       showActionSheetWithOptions(
         { options, cancelButtonIndex },
         (buttonIndex) => {
-          setShowActionSheet(false); // hiện lại modal
+          setShowActionSheet(false);
           if (buttonIndex === cancelButtonIndex) return;
-          setGender(options[buttonIndex]);
+          setGender(codes[buttonIndex]);
         },
       );
     }, 100);
   };
   const showUrlInputDialog = () => {
     Alert.prompt(
-      "Enter image URL",
-      "Please enter the image link:",
+      t("profile.enterImageUrl"),
+      t("profile.enterImageUrlPrompt"),
       [
-        { text: "Cancel", style: "cancel" },
+        { text: t("common.cancel"), style: "cancel" },
         {
-          text: "OK",
+          text: t("common.ok"),
           onPress: (url) => {
             if (url && url.trim()) {
               setAvatar(url.trim());
@@ -377,7 +380,7 @@ const EditProfileModal = ({ visible, onClose, profile, onSave }) => {
       // if(isUpdateSuccess){}
       onClose();
     } catch (error) {
-      Alert.alert("Error", "Unable to update profile. Please try again.");
+      Alert.alert(t("common.error"), t("profile.unableToUpdateProfile"));
     } finally {
       setLoading(false);
     }
@@ -388,9 +391,9 @@ const EditProfileModal = ({ visible, onClose, profile, onSave }) => {
       name !== (profile?.user_name || "") || avatar !== (profile?.avatar || "");
 
     if (hasChanges) {
-      Alert.alert("Confirm", "Do you want to unsave any unsaved changes?", [
-        { text: "Continue editing", style: "cancel" },
-        { text: "Cancel changes", onPress: onClose, style: "destructive" },
+      Alert.alert(t("profile.unsaveChangesTitle"), t("profile.unsaveChangesMessage"), [
+        { text: t("profile.continueEditing"), style: "cancel" },
+        { text: t("profile.cancelChanges"), onPress: onClose, style: "destructive" },
       ]);
     } else {
       onClose();
@@ -476,7 +479,7 @@ const EditProfileModal = ({ visible, onClose, profile, onSave }) => {
                     <Text style={styles.label}>User name *</Text>
                     <TextInput
                       style={[styles.input, errors.name && styles.inputError]}
-                      placeholder="Enter your name"
+                      placeholder={t("profile.placeholderName")}
                       value={name}
                       onChangeText={(text) => {
                         setName(text);
@@ -515,7 +518,7 @@ const EditProfileModal = ({ visible, onClose, profile, onSave }) => {
                       onPress={showCityPicker}
                     >
                       <Text style={{ color: icity ? "#111" : "#9ca3af" }}>
-                        {icity || "Chọn tỉnh/thành"}
+                        {icity || t('auth.selectProvince')}
                       </Text>
                     </TouchableOpacity>
                     <ErrorText error={errors.city} />
@@ -528,7 +531,7 @@ const EditProfileModal = ({ visible, onClose, profile, onSave }) => {
                       onPress={showWardPicker}
                     >
                       <Text style={{ color: ward ? "#111" : "#9ca3af" }}>
-                        {ward || "Chọn phường/xã"}
+                        {ward || t('auth.selectWard')}
                       </Text>
                     </TouchableOpacity>
                     <ErrorText error={errors.ward} />
@@ -571,7 +574,7 @@ const EditProfileModal = ({ visible, onClose, profile, onSave }) => {
                           fontSize: 16,
                         }}
                       >
-                        {birthday || "Choose your birth date"}
+                        {birthday || t("profile.chooseBirthDate")}
                       </Text>
                     </TouchableOpacity>
                     <ErrorText error={errors.birthday} />
@@ -630,7 +633,7 @@ const EditProfileModal = ({ visible, onClose, profile, onSave }) => {
                       onPress={showGenderPicker}
                     >
                       <Text style={{ color: gender ? "#111" : "#9ca3af" }}>
-                        {gender ? gender.toUpperCase() : "Choose your gender"}
+                        {gender ? (gender === "male" ? t("auth.genderMale") : gender === "female" ? t("auth.genderFemale") : t("auth.genderOther")) : t("profile.chooseGender")}
                       </Text>
                     </TouchableOpacity>
                     <ErrorText error={errors.gender} />

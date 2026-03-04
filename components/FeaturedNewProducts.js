@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useDispatch } from 'react-redux';
@@ -8,6 +9,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { fetchProductReviewsByProductId } from '../store/slices/reviewSlice';
 
 const FeaturedNewProducts = ({ products, title }) => {
+    const { t } = useTranslation();
     const navigation = useNavigation();
     const dispatch = useDispatch();
 
@@ -26,7 +28,7 @@ const FeaturedNewProducts = ({ products, title }) => {
     }, [dispatch, activeProducts]);
 
     if (!activeProducts || activeProducts.length === 0) {
-        return <Text style={styles.errorText}>Không có sản phẩm nào.</Text>;
+        return <Text style={styles.errorText}>{t('home.noProducts')}</Text>;
     }
 
     return (
@@ -40,7 +42,7 @@ const FeaturedNewProducts = ({ products, title }) => {
                     style={styles.seeAllButton}
                     onPress={() => navigation.navigate('AllProducts')}
                 >
-                    <Text style={styles.seeAllText}>Xem tất cả</Text>
+                    <Text style={styles.seeAllText}>{t('common.viewAll')}</Text>
                     <MaterialIcons name="arrow-forward" size={20} color={COLORS.primary} />
                 </TouchableOpacity>
             </View>

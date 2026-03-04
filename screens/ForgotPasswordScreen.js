@@ -9,6 +9,7 @@ import {
     Dimensions,
     ActivityIndicator,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Mail, ArrowLeft } from 'lucide-react-native';
 import { useDispatch, useSelector } from 'react-redux';
@@ -19,6 +20,7 @@ import Toast from 'react-native-toast-message';
 const { height } = Dimensions.get('window');
 
 const ForgotPasswordScreen = () => {
+    const { t } = useTranslation();
     const [email, setEmail] = useState('');
     const navigation = useNavigation();
     const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -27,30 +29,14 @@ const ForgotPasswordScreen = () => {
     const dispatch = useDispatch();
     const { isLoading, forgotPasswordStatus, forgotPasswordMessage } = useSelector((state) => state.auth);
 
-    // Helper function để dịch lỗi sang tiếng Việt
     const getErrorMessage = (error) => {
-        if (!error) return 'Có lỗi xảy ra';
-
+        if (!error) return t('auth.defaultError');
         const lowerError = error.toLowerCase();
-
-        // Các lỗi phổ biến
-        if (lowerError.includes('email does not exist') || lowerError.includes('email not found')) {
-            return 'Email không tồn tại trong hệ thống';
-        }
-        if (lowerError.includes('invalid email')) {
-            return 'Email không hợp lệ';
-        }
-        if (lowerError.includes('user not found')) {
-            return 'Không tìm thấy người dùng với email này';
-        }
-        if (lowerError.includes('email already sent')) {
-            return 'Email đã được gửi, vui lòng kiểm tra hộp thư';
-        }
-        if (lowerError.includes('too many attempts')) {
-            return 'Bạn đã thử quá nhiều lần, vui lòng thử lại sau';
-        }
-
-        // Trả về message gốc nếu không match
+        if (lowerError.includes('email does not exist') || lowerError.includes('email not found')) return t('auth.emailNotFound');
+        if (lowerError.includes('invalid email')) return t('auth.invalidEmail');
+        if (lowerError.includes('user not found')) return t('auth.userNotFound');
+        if (lowerError.includes('email already sent')) return t('auth.emailAlreadySent');
+        if (lowerError.includes('too many attempts')) return t('auth.tooManyAttempts');
         return error;
     };
 
@@ -78,8 +64,8 @@ const ForgotPasswordScreen = () => {
         if (forgotPasswordStatus === 'success') {
             Toast.show({
                 type: 'success',
-                text1: 'Thành công',
-                text2: 'Mã OTP đã được gửi đến email của bạn',
+                text1: t('auth.success'),
+                text2: t('auth.otpSentToEmail'),
             });
             // Chuyển sang trang nhập OTP thay vì quay về Login 
             navigation.navigate('ForgotPasswordOTP', { email });
@@ -87,7 +73,7 @@ const ForgotPasswordScreen = () => {
             console.log('Forgot Password Error:', forgotPasswordMessage); // Debug log
             Toast.show({
                 type: 'error',
-                text1: 'Lỗi',
+                text1: t('common.error'),
                 text2: getErrorMessage(forgotPasswordMessage),
             });
             // Reset state sau khi hiển thị lỗi
@@ -101,19 +87,17 @@ const ForgotPasswordScreen = () => {
         if (!email.trim()) {
             Toast.show({
                 type: 'error',
-                text1: 'Lỗi',
-                text2: 'Vui lòng nhập địa chỉ email',
+                text1: t('common.error'),
+                text2: t('auth.enterEmail'),
             });
             return;
         }
-
-        // Kiểm tra định dạng email cơ bản
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(email)) {
             Toast.show({
                 type: 'error',
-                text1: 'Lỗi',
-                text2: 'Vui lòng nhập địa chỉ email hợp lệ',
+                text1: t('common.error'),
+                text2: t('auth.enterValidEmail'),
             });
             return;
         }
@@ -155,16 +139,16 @@ const ForgotPasswordScreen = () => {
                         },
                     ]}
                 >
-                    <Text style={styles.title}>Forgot Password</Text>
+                    <Text style={styles.title}>{t('auth.forgotPasswordTitle')}</Text>
                     <Text style={styles.subtitle}>
-                        Enter your email and we will send password reset instructions
+                        {t('auth.forgotPasswordDesc')}
                     </Text>
 
                     <View style={styles.inputContainer}>
                         <Mail color="#22c55e" size={20} />
                         <TextInput
                             style={styles.inputField}
-                            placeholder="Enter email address"
+                            placeholder={t('auth.email')}
                             placeholderTextColor="#aaa"
                             value={email}
                             onChangeText={setEmail}
@@ -182,14 +166,14 @@ const ForgotPasswordScreen = () => {
                         {isLoading ? (
                             <ActivityIndicator color="#fff" />
                         ) : (
-                            <Text style={styles.submitButtonText}>Send OTP</Text>
+                            <Text style={styles.submitButtonText}>{t('auth.sendOtp')}</Text>
                         )}
                     </TouchableOpacity>
 
                     <View style={styles.footer}>
-                        <Text style={styles.footerText}>Remembered your password?</Text>
+                        <Text style={styles.footerText}>{t('auth.rememberedPassword')}</Text>
                         <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-                            <Text style={styles.footerLink}> Login</Text>
+                            <Text style={styles.footerLink}> {t('auth.login')}</Text>
                         </TouchableOpacity>
                     </View>
                 </Animated.View>

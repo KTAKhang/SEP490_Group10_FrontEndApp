@@ -8,6 +8,7 @@ import {
     RefreshControl,
     Alert,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -20,17 +21,17 @@ import {
 import { COLORS } from '../constants/colors';
 import { InlineLoading } from '../components/Loading';
 
-const formatDate = (dateStr) => {
+const formatDate = (dateStr, t) => {
     const d = new Date(dateStr);
     const now = new Date();
     const diff = now - d;
-    if (diff < 60000) return 'Vừa xong';
-    if (diff < 3600000) return `${Math.floor(diff / 60000)} phút trước`;
-    if (diff < 86400000) return `${Math.floor(diff / 3600000)} giờ trước`;
-    return d.toLocaleDateString('vi-VN');
+    if (diff < 60000) return t('notifications.justNow');
+    if (diff < 3600000) return t('notifications.minutesAgo', { count: Math.floor(diff / 60000) });
+    if (diff < 86400000) return t('notifications.hoursAgo', { count: Math.floor(diff / 3600000) });
+    return d.toLocaleDateString();
 };
 
-const NotificationItem = ({ item, onPress }) => (
+const NotificationItem = ({ item, onPress, t }) => (
     <TouchableOpacity
         style={[styles.notiCard, !item.isRead && styles.notiCardUnread]}
         onPress={() => onPress(item)}
@@ -50,12 +51,13 @@ const NotificationItem = ({ item, onPress }) => (
             <Text style={styles.notiBodyText} numberOfLines={2}>
                 {item.body}
             </Text>
-            <Text style={styles.notiTime}>{formatDate(item.createdAt)}</Text>
+            <Text style={styles.notiTime}>{formatDate(item.createdAt, t)}</Text>
         </View>
     </TouchableOpacity>
 );
 
 export default function NotificationsScreen({ navigation }) {
+    const { t } = useTranslation();
     const [list, setList] = useState([]);
     const [unreadCount, setUnreadCount] = useState(0);
     const [loading, setLoading] = useState(true);
@@ -72,7 +74,7 @@ export default function NotificationsScreen({ navigation }) {
             setList(res.list);
             setUnreadCount(count);
         } catch (e) {
-            if (showRefresh) Alert.alert('Lỗi', e.message || 'Không tải được thông báo');
+            if (showRefresh) Alert.alert(t('notifications.error'), e.message || t('notifications.cannotLoad'));
             else setList([]);
         } finally {
             setLoading(false);
@@ -105,7 +107,7 @@ export default function NotificationsScreen({ navigation }) {
             setList((prev) => prev.map((n) => ({ ...n, isRead: true })));
             setUnreadCount(0);
         } catch (e) {
-            Alert.alert('Lỗi', e.message);
+            Alert.alert(t('notifications.error'), e.message);
         }
     };
 
@@ -120,28 +122,28 @@ export default function NotificationsScreen({ navigation }) {
                 <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
                     <MaterialIcons name="arrow-back" size={24} color="#fff" />
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>Thông báo</Text>
+                <Text style={styles.headerTitle}>{t('notifications.title')}</Text>
                 {unreadCount > 0 && (
                     <TouchableOpacity style={styles.readAllBtn} onPress={handleReadAll}>
-                        <Text style={styles.readAllText}>Đọc tất cả</Text>
+                        <Text style={styles.readAllText}>{t('notifications.readAll')}</Text>
                     </TouchableOpacity>
                 )}
             </LinearGradient>
 
             {loading ? (
-                <InlineLoading text="Đang tải..." style={styles.loadWrap} color={COLORS.primary} />
+                <InlineLoading text={t('notifications.loading')} style={styles.loadWrap} color={COLORS.primary} />
             ) : (
                 <FlatList
                     data={list}
                     keyExtractor={(item) => item._id}
                     renderItem={({ item }) => (
-                        <NotificationItem item={item} onPress={handleItemPress} />
+                        <NotificationItem item={item} onPress={handleItemPress} t={t} />
                     )}
                     contentContainerStyle={styles.listContent}
                     ListEmptyComponent={
                         <View style={styles.emptyWrap}>
                             <MaterialIcons name="notifications-off" size={64} color="#ccc" />
-                            <Text style={styles.emptyText}>Chưa có thông báo</Text>
+                            <Text style={styles.emptyText}>{t('notifications.empty')}</Text>
                         </View>
                     }
                     refreshControl={

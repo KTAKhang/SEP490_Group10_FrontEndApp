@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
     View,
@@ -20,6 +21,7 @@ import { formatCurrency } from '../utils/formatCurrency';
 import { getProductImageUrl } from '../utils/productImage';
 
 const BuyNowScreen = ({ navigation, route }) => {
+    const { t } = useTranslation();
     const dispatch = useDispatch();
     const { product, quantity } = route.params;
     const [selectedPayment, setSelectedPayment] = useState('cod');
@@ -36,7 +38,7 @@ const BuyNowScreen = ({ navigation, route }) => {
 
     const handlePlaceOrder = async () => {
         if (!receiverInfo.receiver_name || !receiverInfo.receiver_phone || !receiverInfo.receiver_address) {
-            Alert.alert('Error', 'Please fill in all delivery information');
+            Alert.alert(t('common.error'), t('buyNow.fillAllDelivery'));
             return;
         }
 
@@ -47,12 +49,12 @@ const BuyNowScreen = ({ navigation, route }) => {
             })).unwrap();
 
             Alert.alert(
-                'Success',
-                'Order placed successfully!',
-                [{ text: 'OK', onPress: () => navigation.navigate('Profile') }]
+                t('cart.success'),
+                t('buyNow.orderSuccess'),
+                [{ text: t('common.ok'), onPress: () => navigation.navigate('Profile') }]
             );
         } catch (error) {
-            Alert.alert('Error', error.message || 'Failed to place order');
+            Alert.alert(t('common.error'), error.message || t('buyNow.orderFailed'));
         }
     };
 
@@ -71,42 +73,42 @@ const BuyNowScreen = ({ navigation, route }) => {
                 >
                     <MaterialIcons name="arrow-back" size={24} color={COLORS.white} />
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>Buy Now</Text>
+                <Text style={styles.headerTitle}>{t('buyNow.title')}</Text>
                 <View style={styles.placeholder} />
             </LinearGradient>
 
             <ScrollView style={styles.content}>
                 {/* Product Summary */}
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Product Summary</Text>
+                    <Text style={styles.sectionTitle}>{t('buyNow.productSummary')}</Text>
                     <View style={styles.productCard}>
                         <Image source={{ uri: getProductImageUrl(product) }} style={styles.productImage} />
                         <View style={styles.productInfo}>
                             <Text style={styles.productName}>{product.name}</Text>
                             <Text style={styles.productPrice}>{formatCurrency(product.price)}</Text>
-                            <Text style={styles.quantity}>Quantity: {quantity}</Text>
+                            <Text style={styles.quantity}>{t('buyNow.quantity')}: {quantity}</Text>
                         </View>
                     </View>
                 </View>
 
                 {/* Order Summary */}
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Order Summary</Text>
+                    <Text style={styles.sectionTitle}>{t('buyNow.orderSummary')}</Text>
                     <View style={styles.summaryContainer}>
                         <View style={styles.summaryRow}>
-                            <Text style={styles.summaryLabel}>Subtotal</Text>
+                            <Text style={styles.summaryLabel}>{t('buyNow.subtotal')}</Text>
                             <Text style={styles.summaryValue}>{formatCurrency(subtotal)}</Text>
                         </View>
                         <View style={styles.summaryRow}>
-                            <Text style={styles.summaryLabel}>Shipping</Text>
+                            <Text style={styles.summaryLabel}>{t('buyNow.shipping')}</Text>
                             <Text style={styles.summaryValue}>{formatCurrency(shipping)}</Text>
                         </View>
                         <View style={styles.summaryRow}>
-                            <Text style={styles.summaryLabel}>Tax (10%)</Text>
+                            <Text style={styles.summaryLabel}>{t('buyNow.tax')}</Text>
                             <Text style={styles.summaryValue}>{formatCurrency(tax)}</Text>
                         </View>
                         <View style={[styles.summaryRow, styles.totalRow]}>
-                            <Text style={styles.totalLabel}>Total Amount</Text>
+                            <Text style={styles.totalLabel}>{t('buyNow.totalAmount')}</Text>
                             <Text style={styles.totalValue}>{formatCurrency(total)}</Text>
                         </View>
                     </View>
@@ -114,24 +116,24 @@ const BuyNowScreen = ({ navigation, route }) => {
 
                 {/* Delivery Information */}
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Delivery Information</Text>
+                    <Text style={styles.sectionTitle}>{t('buyNow.deliveryInfo')}</Text>
                     <View style={styles.formContainer}>
                         <TextInput
                             style={styles.input}
-                            placeholder="Full Name"
+                            placeholder={t('buyNow.fullName')}
                             value={receiverInfo.receiver_name}
                             onChangeText={(text) => setReceiverInfo(prev => ({ ...prev, receiver_name: text }))}
                         />
                         <TextInput
                             style={styles.input}
-                            placeholder="Phone Number"
+                            placeholder={t('buyNow.phoneNumber')}
                             keyboardType="phone-pad"
                             value={receiverInfo.receiver_phone}
                             onChangeText={(text) => setReceiverInfo(prev => ({ ...prev, receiver_phone: text }))}
                         />
                         <TextInput
                             style={styles.input}
-                            placeholder="Delivery Address"
+                            placeholder={t('buyNow.deliveryAddress')}
                             multiline
                             value={receiverInfo.receiver_address}
                             onChangeText={(text) => setReceiverInfo(prev => ({ ...prev, receiver_address: text }))}
@@ -141,7 +143,7 @@ const BuyNowScreen = ({ navigation, route }) => {
 
                 {/* Payment Method */}
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Payment Method</Text>
+                    <Text style={styles.sectionTitle}>{t('buyNow.paymentMethod')}</Text>
                     <View style={styles.sectionContent}>
                         <TouchableOpacity
                             style={[
@@ -155,8 +157,8 @@ const BuyNowScreen = ({ navigation, route }) => {
                                     {selectedPayment === 'cod' && <View style={styles.radioSelected} />}
                                 </View>
                                 <View style={styles.paymentInfo}>
-                                    <Text style={styles.paymentTitle}>Cash on Delivery</Text>
-                                    <Text style={styles.paymentSubtitle}>Pay when you receive your order</Text>
+                                    <Text style={styles.paymentTitle}>{t('payment.cod')}</Text>
+                                    <Text style={styles.paymentSubtitle}>{t('payment.payOnReceive')}</Text>
                                 </View>
                             </View>
                             <MaterialIcons name="payments" size={24} color={COLORS.primary} />
@@ -166,7 +168,7 @@ const BuyNowScreen = ({ navigation, route }) => {
             </ScrollView>
 
             <TouchableOpacity style={styles.placeOrderButton} onPress={handlePlaceOrder}>
-                <Text style={styles.placeOrderText}>Place Order</Text>
+                <Text style={styles.placeOrderText}>{t('buyNow.placeOrder')}</Text>
             </TouchableOpacity>
         </SafeAreaView>
     );

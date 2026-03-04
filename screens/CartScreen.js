@@ -11,6 +11,7 @@ import {
   Alert,
   StatusBar,
 } from "react-native";
+import { useTranslation } from "react-i18next";
 import { MaterialIcons as Icon } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useDispatch, useSelector } from "react-redux";
@@ -30,6 +31,7 @@ import { v4 as uuidv4 } from "uuid";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 const CartScreen = () => {
+  const { t } = useTranslation();
   const dispatch = useDispatch();
   const navigation = useNavigation();
   const { cart, isLoading, error, items } = useSelector((state) => state.cart);
@@ -131,8 +133,8 @@ const checkout = useSelector((state) => state.checkout || {});
         // Nếu lỗi liên quan kho hàng, show toast
         Toast.show({
           type: "error",
-          text1: "Unable to update",
-          text2: error?.toString() || "An error occurred while updating the quantity.",
+          text1: t("cart.updateError"),
+          text2: error?.toString() || t("cart.updateErrorDetail"),
           position: "top",
           visibilityTime: 2500,
         });
@@ -182,11 +184,11 @@ const checkout = useSelector((state) => state.checkout || {});
     // Kiểm tra quantity hợp lệ (1-1000)
     if (isNaN(newQuantity) || newQuantity < 1) {
       Alert.alert(
-        "Delete product",
-        "The quantity cannot be zero. Do you want to remove this product from your shopping cart?",
+        t("cart.deleteProduct"),
+        t("cart.quantityZeroConfirm"),
         [
           {
-            text: "Cancel",
+            text: t("cart.cancel"),
             style: "cancel",
             onPress: () => {
               // Reset về giá trị cũ
@@ -198,7 +200,7 @@ const checkout = useSelector((state) => state.checkout || {});
             },
           },
           {
-            text: "Delete",
+            text: t("cart.delete"),
             style: "destructive",
             onPress: () => {
               setEditingQuantity((prev) => {
@@ -215,9 +217,9 @@ const checkout = useSelector((state) => state.checkout || {});
     }
 
     if (newQuantity > 1000) {
-      Alert.alert("Invalid quantity", "The maximum number allowed is 1000.", [
+      Alert.alert(t("cart.invalidQuantity"), t("cart.maxQuantity"), [
         {
-          text: "OK",
+          text: t("cart.ok"),
           onPress: () => {
             // Reset về giá trị hợp lệ (1000)
             setEditingQuantity((prev) => ({
@@ -294,15 +296,15 @@ const checkout = useSelector((state) => state.checkout || {});
   const showRemoveConfirmation = (product_id) => {
     const item = cartItems.find((item) => item.id === product_id);
     Alert.alert(
-      "Delete product",
-      `Are you sure you want to delete"${item?.name}" from your shopping cart?`,
+      t("cart.deleteProduct"),
+      t("cart.deleteProductConfirm", { name: item?.name || "" }),
       [
         {
-          text: "Cancel",
+          text: t("cart.cancel"),
           style: "cancel",
         },
         {
-          text: "Delete",
+          text: t("cart.delete"),
           style: "destructive",
           onPress: () => removeItem(product_id),
         },
@@ -326,17 +328,17 @@ const checkout = useSelector((state) => state.checkout || {});
 
       // Show success message
       Alert.alert(
-        "Success",
-        "The product has been successfully removed from the shopping cart.",
-        [{ text: "OK" }],
+        t("cart.success"),
+        t("cart.removedFromCart"),
+        [{ text: t("cart.ok") }],
         { cancelable: true },
       );
     } catch (error) {
       console.error("Remove failed:", error);
       Alert.alert(
-        "Delete failure",
-        error || "Unable to remove product from cart",
-        [{ text: "OK" }],
+        t("cart.deleteFailure"),
+        error || t("cart.removeError"),
+        [{ text: t("cart.ok") }],
       );
     } finally {
       setIsUpdating((prev) => {
@@ -372,15 +374,15 @@ const checkout = useSelector((state) => state.checkout || {});
         setSelectAll(false);
 
         Alert.alert(
-          "Success",
-          "Products have been successfully removed from the shopping cart.",
-          [{ text: "OK" }],
+          t("cart.success"),
+          t("cart.removedMultiple"),
+          [{ text: t("cart.ok") }],
         );
       } catch (error) {
         Alert.alert(
-          "Delete failure",
-          error || "Unable to remove some products from the shopping cart.",
-          [{ text: "OK" }],
+          t("cart.deleteFailure"),
+          error || t("cart.removeMultipleError"),
+          [{ text: t("cart.ok") }],
         );
       } finally {
         // Clear updating state for all items
@@ -400,12 +402,12 @@ const checkout = useSelector((state) => state.checkout || {});
     }
 
     Alert.alert(
-      "Delete product",
-      `Are you sure you want to remove ${productIds.length} products from your shopping cart?`,
+      t("cart.deleteProduct"),
+      t("cart.deleteAllConfirm", { count: productIds.length }),
       [
-        { text: "Cancel", style: "cancel" },
+        { text: t("cart.cancel"), style: "cancel" },
         {
-          text: "Delete all",
+          text: t("cart.deleteAllBtn"),
           style: "destructive",
           onPress: performRemove,
         },
@@ -418,12 +420,12 @@ const checkout = useSelector((state) => state.checkout || {});
     if (cartItems.length === 0) return;
 
     Alert.alert(
-      "Clear the entire shopping cart",
-      "Are you sure you want to remove all products from your shopping cart?",
+      t("cart.clearCartTitle"),
+      t("cart.clearCartConfirm"),
       [
-        { text: "Cancel", style: "cancel" },
+        { text: t("cart.cancel"), style: "cancel" },
         {
-          text: "Delete all",
+          text: t("cart.deleteAllBtn"),
           style: "destructive",
           onPress: () => {
             const allProductIds = cartItems.map((item) => item.id);
@@ -482,8 +484,8 @@ const checkout = useSelector((state) => state.checkout || {});
   const handleCheckout = async () => {
     if (!selectedItems?.length) {
       Alert.alert(
-        "No products selected yet.",
-        "Please select at least one available product to proceed with checkout.",
+        t("cart.noProductsSelected"),
+        t("cart.selectOneToCheckout"),
       );
       return;
     }
@@ -498,8 +500,8 @@ const checkout = useSelector((state) => state.checkout || {});
 
     if (unavailableSelectedItems.length) {
       Alert.alert(
-        "The product is unavailable.",
-        "Some of the selected products are out of stock or discontinued. Please deselect them.",
+        t("cart.productUnavailable"),
+        t("cart.someUnavailable"),
       );
       return;
     }
@@ -508,7 +510,7 @@ const checkout = useSelector((state) => state.checkout || {});
     const sessionId = `cs_${uuidv4()}`;
 
     try {
-      Toast.show({ type: "info", text1: "Items reserved, please complete payment within 15 minutes" });
+      Toast.show({ type: "info", text1: t("cart.itemsReserved") });
       const result = await dispatch(
         checkoutHold({ selected_product_ids, checkout_session_id: sessionId }),
       ).unwrap();
@@ -525,8 +527,8 @@ const checkout = useSelector((state) => state.checkout || {});
     } catch (err) {
       Toast.show({
         type: "error",
-        text1: "Payment failed",
-        text2: err?.toString() || "Unable to create a payment session.",
+        text1: t("cart.paymentFailed"),
+        text2: err?.toString() || t("cart.unableCreateSession"),
       });
     }
   };
@@ -569,7 +571,7 @@ const checkout = useSelector((state) => state.checkout || {});
           {isUnavailable && (
             <View style={styles.imageOverlay}>
               <Text style={styles.overlayText}>
-                {isOutOfStock ? "OUT OF STOCK" : "SOLD OUT"}
+                {isOutOfStock ? t("cart.outOfStock") : t("cart.soldOut")}
               </Text>
             </View>
           )}
@@ -590,12 +592,12 @@ const checkout = useSelector((state) => state.checkout || {});
               {/* Status badges */}
               {isOutOfStock && (
                 <View style={styles.statusBadge}>
-                  <Text style={styles.statusBadgeText}>OUT OF STOCK</Text>
+                  <Text style={styles.statusBadgeText}>{t("cart.outOfStock")}</Text>
                 </View>
               )}
               {isDiscontinued && (
                 <View style={[styles.statusBadge, styles.discontinuedBadge]}>
-                  <Text style={styles.statusBadgeText}>SOLD OUT</Text>
+                  <Text style={styles.statusBadgeText}>{t("cart.soldOut")}</Text>
                 </View>
               )}
             </View>
@@ -617,8 +619,8 @@ const checkout = useSelector((state) => state.checkout || {});
           >
             {item.size ? `Size: ${item.size}` : ""}
             {item.size && item.in_stock !== undefined ? " | " : ""}
-            {item.in_stock !== undefined
-              ? `Số lượng sản phẩm tồn kho: ${item.in_stock} Kg`
+              {item.in_stock !== undefined
+              ? t("cart.stockQuantity", { count: item.in_stock })
               : ""}
           </Text>
 
@@ -700,18 +702,15 @@ const checkout = useSelector((state) => state.checkout || {});
 
           {itemIsUpdating && (
             <Text style={styles.updatingText}>
-              {Object.keys(isUpdating).some((key) => key === item.id.toString())
-                ? "Updating..."
-                : "Updating..."}
+              {t("cart.updating")}
             </Text>
           )}
 
-          {/* Warning message cho sản phẩm không khả dụng */}
           {isUnavailable && (
             <Text style={styles.unavailableWarning}>
               {isOutOfStock
-                ? "This product is currently out of stock and unavailable for purchase."
-                : "This product has been discontinued and is no longer available."}
+                ? t("cart.outOfStockWarning")
+                : t("cart.discontinuedWarning")}
             </Text>
           )}
         </View>
@@ -741,13 +740,13 @@ const checkout = useSelector((state) => state.checkout || {});
               >
                 <Icon name="arrow-back" size={24} color="#ffffff" />
               </TouchableOpacity>
-              <Text style={styles.headerTitle}>Shopping Cart</Text>
+              <Text style={styles.headerTitle}>{t("cart.shoppingCart")}</Text>
               <View style={styles.headerSpacer} />
             </View>
           </SafeAreaView>
         </LinearGradient>
         <InlineLoading
-          text="Loading shopping cart..."
+          text={t("cart.loadingCart")}
           style={styles.loadingContainer}
         />
         {/* <BottomNavigation /> */}
@@ -778,18 +777,18 @@ const checkout = useSelector((state) => state.checkout || {});
               >
                 <Icon name="arrow-back" size={24} color="#ffffff" />
               </TouchableOpacity>
-              <Text style={styles.headerTitle}>Shopping Cart</Text>
+              <Text style={styles.headerTitle}>{t("cart.shoppingCart")}</Text>
               <View style={styles.headerSpacer} />
             </View>
           </SafeAreaView>
         </LinearGradient>
         <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>Error loading the shopping cart: {error}</Text>
+          <Text style={styles.errorText}>{t("cart.errorLoading", { error })}</Text>
           <TouchableOpacity
             style={styles.retryButton}
             onPress={() => dispatch(fetchCartByUser())}
           >
-            <Text style={styles.retryButtonText}>Retry</Text>
+            <Text style={styles.retryButtonText}>{t("cart.retry")}</Text>
           </TouchableOpacity>
         </View>
         {/* <BottomNavigation /> */}
@@ -819,7 +818,7 @@ const checkout = useSelector((state) => state.checkout || {});
               <Icon name="arrow-back" size={24} color="#ffffff" />
             </TouchableOpacity>
             <Text style={styles.headerTitle}>
-              Shopping Cart ({cart?.item_count || cartItems.length})
+              {t("cart.shoppingCart")} ({cart?.item_count || cartItems.length})
             </Text>
             {/* Empty space for header balance - invisible */}
             <View style={styles.headerSpacer} />
@@ -841,7 +840,7 @@ const checkout = useSelector((state) => state.checkout || {});
                 {selectAll && <Icon name="check" size={16} color="#ffffff" />}
               </View>
               <Text style={styles.selectAllText}>
-                Select all ({selectedItems.length}/{cartItems.length})
+                {t("cart.selectAll", { selected: selectedItems.length, total: cartItems.length })}
               </Text>
             </TouchableOpacity>
           </View>
@@ -863,16 +862,16 @@ const checkout = useSelector((state) => state.checkout || {});
           <View style={styles.emptyCartContainer}>
             <Icon name="shopping-cart" size={64} color="#d1d5db" />
             <Text style={styles.emptyCartText}>
-             Your shopping cart is empty.
+              {t("cart.empty")}
             </Text>
             <Text style={styles.emptyCartSubtext}>
-              Add some more products to get started.
+              {t("cart.emptySubtext")}
             </Text>
             <TouchableOpacity
               style={styles.continueShoppingButton}
               onPress={() => navigation.navigate("AllProducts")}
             >
-              <Text style={styles.continueShoppingText}>Continue shopping</Text>
+              <Text style={styles.continueShoppingText}>{t("cart.continueShopping")}</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -882,7 +881,7 @@ const checkout = useSelector((state) => state.checkout || {});
           <View style={styles.summaryContainer}>
             <View style={styles.summaryHeader}>
               <Text style={styles.summaryTitle}>
-                Order summary ({selectedItems.length} products)
+                {t("cart.orderSummary", { count: selectedItems.length })}
               </Text>
               {cartItems.length > 1 && (
                 <TouchableOpacity
@@ -890,20 +889,20 @@ const checkout = useSelector((state) => state.checkout || {});
                   disabled={isLoading}
                   style={styles.clearAllButton}
                 >
-                  <Text style={styles.clearAllText}>Delete all</Text>
+                  <Text style={styles.clearAllText}>{t("cart.deleteAll")}</Text>
                 </TouchableOpacity>
               )}
             </View>
             <View style={styles.summaryContent}>
               <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>Estimate</Text>
+                <Text style={styles.summaryLabel}>{t("cart.estimate")}</Text>
                 <Text style={styles.summaryValue}>
                   {formatCurrency(subtotal)}
                 </Text>
               </View>
               <View style={styles.totalDivider} />
               <View style={[styles.summaryRow, styles.totalRow]}>
-                <Text style={styles.totalLabel}>Total</Text>
+                <Text style={styles.totalLabel}>{t("cart.total")}</Text>
                 <Text style={styles.totalValue}>{formatCurrency(total)}</Text>
               </View>
             </View>
@@ -925,10 +924,10 @@ const checkout = useSelector((state) => state.checkout || {});
           >
             <Text style={styles.checkoutButtonText}>
               {isLoading
-                ? "Updating..."
+                ? t("cart.updating")
                 : selectedItems.length === 0
-                  ? "Select products to pay for"
-                  : `Proceed with payment (${selectedItems.length} products)`}
+                  ? t("cart.selectProductsToPay")
+                  : t("cart.proceedPayment", { count: selectedItems.length })}
             </Text>
           </TouchableOpacity>
         </View>

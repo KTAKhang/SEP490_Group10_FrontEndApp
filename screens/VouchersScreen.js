@@ -10,6 +10,7 @@ import {
     Platform,
     Modal,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import * as Clipboard from 'expo-clipboard';
 import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -24,8 +25,12 @@ const formatDate = (d) => {
     return date.toLocaleDateString('vi-VN');
 };
 
+/** Green 600 cho thẻ voucher (Tailwind green-600 #16a34a) */
+const VOUCHER_CARD_GREEN = '#16a34a';
+const VOUCHER_CARD_GREEN_DARK = '#15803d'; // green-700 cho gradient
+
 /** Vé voucher — thiết kế dạng thẻ vé (ticket) + nút copy mã + nút xem chi tiết */
-const VoucherCard = ({ voucher, onCopy, onPressDetail }) => {
+const VoucherCard = ({ voucher, onCopy, onPressDetail, t }) => {
     const minOrder = voucher.minOrderValue ?? 0;
     const percent = voucher.discountPercent ?? 0;
     const maxAmount = voucher.maxDiscountAmount ?? null;
@@ -35,7 +40,7 @@ const VoucherCard = ({ voucher, onCopy, onPressDetail }) => {
             await Clipboard.setStringAsync(voucher.code || '');
             if (onCopy) onCopy();
             if (Platform.OS === 'web') {
-                alert('Đã copy mã: ' + (voucher.code || ''));
+                alert(t('vouchers.copied') + ': ' + (voucher.code || ''));
             }
         } catch (e) {
             if (onCopy) onCopy(false);
@@ -47,15 +52,15 @@ const VoucherCard = ({ voucher, onCopy, onPressDetail }) => {
             <View style={styles.ticketLeft}>
                 <View style={styles.ticketNotch} />
                 <LinearGradient
-                    colors={['#13C2C2', '#0D364C']}
+                    colors={[VOUCHER_CARD_GREEN, VOUCHER_CARD_GREEN_DARK]}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
                     style={styles.ticketGradient}
                 >
                     <Text style={styles.ticketPercent}>{percent}%</Text>
-                    <Text style={styles.ticketOff}>GIẢM</Text>
+                    <Text style={styles.ticketOff}>{t('vouchers.off')}</Text>
                     {maxAmount != null && (
-                        <Text style={styles.ticketMax}>Tối đa {formatCurrency(maxAmount)}</Text>
+                        <Text style={styles.ticketMax}>{t('vouchers.maxDiscount', { amount: formatCurrency(maxAmount) })}</Text>
                     )}
                 </LinearGradient>
             </View>
@@ -67,23 +72,24 @@ const VoucherCard = ({ voucher, onCopy, onPressDetail }) => {
                         onPress={handleCopy}
                         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                     >
-                        <MaterialIcons name="content-copy" size={18} color={COLORS.primary} />
-                        <Text style={styles.copyBtnText}>Sao chép</Text>
+                        <MaterialIcons name="content-copy" size={18} color={VOUCHER_CARD_GREEN} />
+                        <Text style={[styles.copyBtnText, { color: VOUCHER_CARD_GREEN }]}>{t('vouchers.copy')}</Text>
                     </TouchableOpacity>
                 </View>
                 <Text style={styles.ticketDesc} numberOfLines={2}>
-                    {voucher.description || `Đơn tối thiểu ${formatCurrency(minOrder)}`}
+                    {voucher.description || t('vouchers.minOrder', { amount: formatCurrency(minOrder) })}
                 </Text>
                 <Text style={styles.ticketDate}>
-                    HSĐ: {formatDate(voucher.startDate)} - {formatDate(voucher.endDate)}
+                    {t('vouchers.validPeriod', { start: formatDate(voucher.startDate), end: formatDate(voucher.endDate) })}
                 </Text>
                 <TouchableOpacity
                     style={styles.detailBtnBlock}
                     onPress={() => onPressDetail?.(voucher)}
                     activeOpacity={0.7}
+                    style={[styles.detailBtnBlock, { borderColor: VOUCHER_CARD_GREEN }]}
                 >
-                    <MaterialIcons name="info-outline" size={18} color={COLORS.primary} />
-                    <Text style={styles.detailBtnBlockText}>Xem chi tiết</Text>
+                    <MaterialIcons name="info-outline" size={18} color={VOUCHER_CARD_GREEN} />
+                    <Text style={[styles.detailBtnBlockText, { color: VOUCHER_CARD_GREEN }]}>{t('vouchers.viewDetail')}</Text>
                 </TouchableOpacity>
             </View>
         </View>
@@ -91,6 +97,7 @@ const VoucherCard = ({ voucher, onCopy, onPressDetail }) => {
 };
 
 export default function VouchersScreen({ navigation }) {
+    const { t } = useTranslation();
     const [list, setList] = useState([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -103,7 +110,7 @@ export default function VouchersScreen({ navigation }) {
             const data = await getValidVouchers();
             setList(Array.isArray(data) ? data : []);
         } catch (e) {
-            Alert.alert('Lỗi', e.message || 'Không tải được voucher');
+            Alert.alert(t('common.error'), e.message || t('vouchers.cannotLoad'));
             setList([]);
         } finally {
             setLoading(false);
@@ -113,7 +120,7 @@ export default function VouchersScreen({ navigation }) {
 
     const handleCopySuccess = useCallback(() => {
         if (Platform.OS !== 'web') {
-            Alert.alert('Đã copy', 'Mã voucher đã được sao chép vào clipboard.');
+            Alert.alert(t('vouchers.copied'), t('vouchers.codeCopied'));
         }
     }, []);
 
@@ -121,7 +128,7 @@ export default function VouchersScreen({ navigation }) {
         if (!detailVoucher?.code) return;
         try {
             await Clipboard.setStringAsync(detailVoucher.code);
-            if (Platform.OS !== 'web') Alert.alert('Đã copy', 'Mã đã được sao chép.');
+            if (Platform.OS !== 'web') Alert.alert(t('vouchers.copied'), t('vouchers.codeCopied'));
         } catch (e) {}
     }, [detailVoucher]);
 
@@ -153,7 +160,7 @@ export default function VouchersScreen({ navigation }) {
                         onPress={(e) => e.stopPropagation()}
                     >
                         <View style={styles.detailModalHeader}>
-                            <Text style={styles.detailModalTitle}>Chi tiết voucher</Text>
+                            <Text style={styles.detailModalTitle}>{t('vouchers.detailTitle')}</Text>
                             <TouchableOpacity
                                 hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
                                 onPress={() => setDetailVoucher(null)}
@@ -163,31 +170,31 @@ export default function VouchersScreen({ navigation }) {
                         </View>
                         <View style={styles.detailModalBody}>
                             <View style={styles.detailRowCompact}>
-                                <Text style={styles.detailLabelCompact}>Mã giảm giá</Text>
+                                <Text style={styles.detailLabelCompact}>{t('vouchers.codeLabel')}</Text>
                                 <Text style={styles.detailCodeCompact}>{v.code}</Text>
                             </View>
                             {(v.description || '').trim() ? (
                                 <View style={styles.detailRowCompact}>
-                                    <Text style={styles.detailLabelCompact}>Mô tả</Text>
+                                    <Text style={styles.detailLabelCompact}>{t('vouchers.description')}</Text>
                                     <Text style={styles.detailValueCompact}>{v.description}</Text>
                                 </View>
                             ) : null}
                             <View style={styles.detailRowCompact}>
-                                <Text style={styles.detailLabelCompact}>Giảm giá</Text>
-                                <Text style={styles.detailValueCompact}>{percent}% đơn hàng</Text>
+                                <Text style={styles.detailLabelCompact}>{t('vouchers.discount')}</Text>
+                                <Text style={styles.detailValueCompact}>{t('vouchers.percentOrder', { percent })}</Text>
                             </View>
                             <View style={styles.detailRowCompact}>
-                                <Text style={styles.detailLabelCompact}>Đơn tối thiểu</Text>
+                                <Text style={styles.detailLabelCompact}>{t('vouchers.minOrderLabel')}</Text>
                                 <Text style={styles.detailValueCompact}>{formatCurrency(minOrder)}</Text>
                             </View>
                             {maxAmount != null && (
                                 <View style={styles.detailRowCompact}>
-                                    <Text style={styles.detailLabelCompact}>Giảm tối đa</Text>
+                                    <Text style={styles.detailLabelCompact}>{t('vouchers.maxDiscountLabel')}</Text>
                                     <Text style={styles.detailValueCompact}>{formatCurrency(maxAmount)}</Text>
                                 </View>
                             )}
                             <View style={styles.detailRowCompact}>
-                                <Text style={styles.detailLabelCompact}>Hiệu lực</Text>
+                                <Text style={styles.detailLabelCompact}>{t('vouchers.validity')}</Text>
                                 <Text style={styles.detailValueCompact}>
                                     {formatDate(v.startDate)} – {formatDate(v.endDate)}
                                 </Text>
@@ -195,13 +202,13 @@ export default function VouchersScreen({ navigation }) {
                         </View>
                         <TouchableOpacity style={styles.detailModalCopyBtn} onPress={handleCopyInModal}>
                             <MaterialIcons name="content-copy" size={18} color="#fff" />
-                            <Text style={styles.detailModalCopyBtnText}>Sao chép mã</Text>
+                            <Text style={styles.detailModalCopyBtnText}>{t('vouchers.copyCode')}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={styles.detailModalCloseBtn}
                             onPress={() => setDetailVoucher(null)}
                         >
-                            <Text style={styles.detailModalCloseBtnText}>Đóng</Text>
+                            <Text style={styles.detailModalCloseBtnText}>{t('common.close')}</Text>
                         </TouchableOpacity>
                     </TouchableOpacity>
                 </TouchableOpacity>
@@ -220,11 +227,11 @@ export default function VouchersScreen({ navigation }) {
                 <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
                     <MaterialIcons name="arrow-back" size={24} color="#fff" />
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>Voucher của tôi</Text>
+                <Text style={styles.headerTitle}>{t('vouchers.title')}</Text>
             </LinearGradient>
 
             {loading ? (
-                <InlineLoading text="Đang tải voucher..." style={styles.loadWrap} color={COLORS.primary} />
+                <InlineLoading text={t('vouchers.loading')} style={styles.loadWrap} color={COLORS.primary} />
             ) : (
                 <ScrollView
                     style={styles.scroll}
@@ -236,7 +243,7 @@ export default function VouchersScreen({ navigation }) {
                     {list.length === 0 ? (
                         <View style={styles.emptyWrap}>
                             <MaterialIcons name="confirmation-number" size={64} color="#ccc" />
-                            <Text style={styles.emptyText}>Chưa có voucher nào</Text>
+                            <Text style={styles.emptyText}>{t('vouchers.empty')}</Text>
                         </View>
                     ) : (
                         list.map((v) => (
@@ -245,6 +252,7 @@ export default function VouchersScreen({ navigation }) {
                                 voucher={v}
                                 onCopy={handleCopySuccess}
                                 onPressDetail={setDetailVoucher}
+                                t={t}
                             />
                         ))
                     )}
@@ -325,10 +333,9 @@ const styles = StyleSheet.create({
         paddingHorizontal: 12,
         borderRadius: 8,
         borderWidth: 1,
-        borderColor: COLORS.primary,
-        backgroundColor: '#f0fdfa',
+        backgroundColor: '#f0fdf4', // green-50 (phù hợp green-600)
     },
-    detailBtnBlockText: { fontSize: 14, color: COLORS.primary, fontWeight: '600' },
+    detailBtnBlockText: { fontSize: 14, fontWeight: '600' },
     emptyWrap: { alignItems: 'center', paddingVertical: 48 },
     emptyText: { marginTop: 12, fontSize: 15, color: COLORS.text.light },
     // Cửa sổ nhỏ chi tiết voucher (dialog)

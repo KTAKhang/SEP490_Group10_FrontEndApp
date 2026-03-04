@@ -9,6 +9,7 @@ import {
     StyleSheet,
     StatusBar,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
@@ -18,6 +19,7 @@ import { fetchMyContacts } from '../store/slices/contactSlice';
 import { COLORS } from '../constants/colors';
 
 export default function ContactHistoryScreen({ navigation }) {
+    const { t } = useTranslation();
     const dispatch = useDispatch();
 
     const { contacts, contactsLoading, contactsError } = useSelector(
@@ -35,9 +37,9 @@ export default function ContactHistoryScreen({ navigation }) {
     );
 
     const getStatusText = (status) => {
-        if (!status) return 'Đang xử lý';
-        if (status === 'resolved') return 'Đã phản hồi';
-        if (status === 'pending') return 'Chờ xử lý';
+        if (!status) return t('contact.statusProcessing');
+        if (status === 'resolved') return t('contact.statusResolved');
+        if (status === 'pending') return t('contact.statusPending');
         return status;
     };
 
@@ -49,8 +51,8 @@ export default function ContactHistoryScreen({ navigation }) {
 
     const renderItem = ({ item }) => {
         const id = item._id || item.id;
-        const subject = item.subject || 'Không có tiêu đề';
-        const category = item.category || 'Khác';
+        const subject = item.subject || t('contact.noSubject');
+        const category = item.category || t('contact.categoryOther');
         const statusColor = getStatusColor(item.status);
 
         const createdAt = item.createdAt
@@ -109,7 +111,7 @@ export default function ContactHistoryScreen({ navigation }) {
                             <Ionicons name="arrow-back" size={22} color="#fff" />
                         </TouchableOpacity>
 
-                        <Text style={styles.headerTitle}>Lịch sử liên hệ</Text>
+                        <Text style={styles.headerTitle}>{t('contact.history')}</Text>
 
                         <View style={{ width: 42 }} />
                     </View>
@@ -121,7 +123,7 @@ export default function ContactHistoryScreen({ navigation }) {
                     <View style={styles.center}>
                         <ActivityIndicator size="large" color={COLORS.primary} />
                         <Text style={styles.loadingText}>
-                            Đang tải lịch sử liên hệ...
+                            {t('contact.loadingHistory')}
                         </Text>
                     </View>
                 ) : contactsError ? (
@@ -136,14 +138,14 @@ export default function ContactHistoryScreen({ navigation }) {
                             color="#CBD5E1"
                         />
                         <Text style={styles.emptyTitle}>
-                            Bạn chưa có liên hệ nào
+                            {t('contact.emptyHistory')}
                         </Text>
                         <TouchableOpacity
                             style={styles.createButton}
                             onPress={() => navigation.navigate('ContactForm')}
                         >
                             <Text style={styles.createButtonText}>
-                                Tạo liên hệ mới
+                                {t('contact.createNewContact')}
                             </Text>
                         </TouchableOpacity>
                     </View>

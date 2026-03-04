@@ -8,6 +8,7 @@ import {
   ScrollView,
   StatusBar,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
@@ -16,6 +17,7 @@ import Toast from 'react-native-toast-message';
 import * as DocumentPicker from 'expo-document-picker';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { COLORS } from '../constants/colors';
+import BottomNavigation from '../components/BottomNavigation';
 import {
   fetchContactCategories,
   createContact,
@@ -53,6 +55,7 @@ function formatFileSize(bytes) {
 }
 
 export default function ContactFormScreen() {
+  const { t } = useTranslation();
   const navigation = useNavigation();
   const dispatch = useDispatch();
 
@@ -73,11 +76,11 @@ export default function ContactFormScreen() {
   const [errors, setErrors] = useState({});
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
   const fallbackCategories = [
-    'Sản phẩm',
-    'Bảo hành',
-    'Chính sách',
-    'Dịch vụ',
-    'Khác',
+    t('contact.categoryProduct'),
+    t('contact.categoryWarranty'),
+    t('contact.categoryPolicy'),
+    t('contact.categoryService'),
+    t('contact.categoryOtherLabel'),
   ];
   
   const finalCategories =
@@ -96,7 +99,7 @@ export default function ContactFormScreen() {
       if (createContactMessage) {
         Toast.show({
           type: 'success',
-          text1: 'Thành công',
+          text1: t('contact.submitSuccess'),
           text2: createContactMessage,
         });
       }
@@ -113,12 +116,12 @@ export default function ContactFormScreen() {
     if (createContactError) {
       Toast.show({
         type: 'error',
-        text1: 'Lỗi',
+        text1: t('contact.error'),
         text2: createContactError,
       });
       dispatch(contactClearMessages());
     }
-  }, [createContactError, dispatch]);
+  }, [createContactError, dispatch, t]);
 
   const canSubmit = useMemo(() => {
     const s = subject.trim();
@@ -137,18 +140,18 @@ export default function ContactFormScreen() {
     const s = subject.trim();
     const m = message.trim();
 
-    if (!s) newErrors.subject = 'Vui lòng nhập tiêu đề.';
-    else if (s.length < 5) newErrors.subject = 'Tiêu đề phải có ít nhất 5 ký tự.';
+    if (!s) newErrors.subject = t('contact.subjectRequired');
+    else if (s.length < 5) newErrors.subject = t('contact.subjectMinLength');
     else if (s.length > 200)
-      newErrors.subject = 'Tiêu đề không được vượt quá 200 ký tự.';
+      newErrors.subject = t('contact.subjectMaxLength');
 
-    if (!category) newErrors.category = 'Vui lòng chọn danh mục.';
+    if (!category) newErrors.category = t('contact.categoryRequired');
 
-    if (!m) newErrors.message = 'Vui lòng nhập nội dung.';
-    else if (m.length < 10) newErrors.message = 'Nội dung phải có ít nhất 10 ký tự.';
+    if (!m) newErrors.message = t('contact.messageRequired');
+    else if (m.length < 10) newErrors.message = t('contact.messageMinLength');
 
     if (files.length > MAX_FILES) {
-      newErrors.files = `Chỉ được đính kèm tối đa ${MAX_FILES} file.`;
+      newErrors.files = t('contact.filesMaxError', { max: MAX_FILES });
     }
 
     setErrors(newErrors);
@@ -161,8 +164,8 @@ export default function ContactFormScreen() {
       if (remaining <= 0) {
         Toast.show({
           type: 'info',
-          text1: 'Giới hạn file',
-          text2: `Bạn chỉ có thể chọn tối đa ${MAX_FILES} file.`,
+          text1: t('contact.fileLimit'),
+          text2: t('contact.fileLimitMax', { max: MAX_FILES }),
         });
         return;
       }
@@ -205,17 +208,16 @@ export default function ContactFormScreen() {
       if (invalidFiles.length) {
         Toast.show({
           type: 'error',
-          text1: 'File không hợp lệ',
-          text2:
-            'Chỉ cho phép các loại: hình ảnh, PDF, DOC/DOCX, TXT.',
+          text1: t('contact.invalidFile'),
+          text2: t('contact.allowedFileTypes'),
         });
       }
 
       if (tooBigFiles.length) {
         Toast.show({
           type: 'error',
-          text1: 'File quá lớn',
-          text2: `Mỗi file tối đa ${formatFileSize(MAX_FILE_SIZE_BYTES)}.`,
+          text1: t('contact.fileTooLarge'),
+          text2: t('contact.fileMaxSize', { size: formatFileSize(MAX_FILE_SIZE_BYTES) }),
         });
       }
 
@@ -223,8 +225,8 @@ export default function ContactFormScreen() {
     } catch (error) {
       Toast.show({
         type: 'error',
-        text1: 'Lỗi',
-        text2: 'Không thể chọn file. Vui lòng thử lại.',
+        text1: t('contact.error'),
+        text2: t('contact.cannotPickFile'),
       });
     }
   };
@@ -284,7 +286,7 @@ export default function ContactFormScreen() {
             onPress={() => setShowCategoryPicker(false)}
           >
             <Text style={{ color: COLORS.primary, fontWeight: '600' }}>
-              Đóng
+              {t('contact.close')}
             </Text>
           </TouchableOpacity>
         </View>
@@ -292,7 +294,7 @@ export default function ContactFormScreen() {
     );
   };
 
-  const headerTitle = 'Liên hệ hỗ trợ';
+  const headerTitle = t('contact.supportTitle');
 
   const selectedCategoryLabel = useMemo(() => {
     if (!category) return '';
@@ -329,9 +331,10 @@ export default function ContactFormScreen() {
         </LinearGradient>
         <View style={[styles.content, { alignItems: 'center', justifyContent: 'center' }]}>
           <Text style={{ color: COLORS.text.secondary, textAlign: 'center', paddingHorizontal: 24 }}>
-            Chức năng liên hệ khách hàng chỉ dành cho tài khoản Customer.
+            {t('contact.adminOnlyMessage')}
           </Text>
         </View>
+        <BottomNavigation />
       </View>
     );
   }
@@ -358,7 +361,7 @@ export default function ContactFormScreen() {
               style={styles.headerLinkButton}
               onPress={() => navigation.navigate('ContactHistory')}
             >
-              <Text style={styles.headerLinkText}>Lịch sử</Text>
+              <Text style={styles.headerLinkText}>{t('contact.historyLink')}</Text>
             </TouchableOpacity>
           </View>
         </SafeAreaView>
@@ -369,21 +372,21 @@ export default function ContactFormScreen() {
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
       >
-        <Text style={styles.sectionTitle}>Gửi liên hệ mới</Text>
+        <Text style={styles.sectionTitle}>{t('contact.sectionTitle')}</Text>
         <Text style={styles.sectionHint}>
-          Vui lòng mô tả chi tiết vấn đề hoặc góp ý của bạn. Đội ngũ hỗ trợ sẽ phản hồi trong thời gian sớm nhất.
+          {t('contact.sectionHint')}
         </Text>
 
         <View style={styles.fieldContainer}>
           <Text style={styles.label}>
-            Tiêu đề <Text style={styles.required}>*</Text>
+            {t('contact.subjectLabel')} <Text style={styles.required}>*</Text>
           </Text>
           <TextInput
             style={[
               styles.input,
               errors.subject && styles.inputError,
             ]}
-            placeholder="Nhập tiêu đề liên hệ (tối thiểu 5 ký tự)"
+            placeholder={t('contact.subjectPlaceholder')}
             placeholderTextColor={COLORS.text.light}
             value={subject}
             onChangeText={(text) => {
@@ -402,7 +405,7 @@ export default function ContactFormScreen() {
 
         <View style={styles.fieldContainer}>
           <Text style={styles.label}>
-            Danh mục <Text style={styles.required}>*</Text>
+            {t('contact.categoryLabel')} <Text style={styles.required}>*</Text>
           </Text>
           <TouchableOpacity
             style={[
@@ -421,10 +424,10 @@ export default function ContactFormScreen() {
               }
             >
               {category
-                ? selectedCategoryLabel || 'Đã chọn danh mục'
+                ? selectedCategoryLabel || t('contact.categorySelected')
                 : categoriesLoading
-                ? 'Đang tải danh mục...'
-                : 'Chọn danh mục liên hệ'}
+                ? t('contact.loadingCategories')
+                : t('contact.categoryPlaceholder')}
             </Text>
             <MaterialIcons
               name="keyboard-arrow-down"
@@ -437,14 +440,14 @@ export default function ContactFormScreen() {
 
         <View style={styles.fieldContainer}>
           <Text style={styles.label}>
-            Nội dung <Text style={styles.required}>*</Text>
+            {t('contact.contentLabel')} <Text style={styles.required}>*</Text>
           </Text>
           <TextInput
             style={[
               styles.textarea,
               errors.message && styles.inputError,
             ]}
-            placeholder="Mô tả chi tiết vấn đề, góp ý hoặc yêu cầu hỗ trợ..."
+            placeholder={t('contact.messagePlaceholder')}
             placeholderTextColor={COLORS.text.light}
             value={message}
             onChangeText={(text) => {
@@ -461,25 +464,24 @@ export default function ContactFormScreen() {
             <Text style={styles.helperText}>
               {message.trim().length >= 10
                 ? ''
-                : `Cần thêm ${Math.max(0, 10 - message.trim().length)} ký tự nữa để đạt tối thiểu.`}
+                : t('contact.charsNeeded', { count: Math.max(0, 10 - message.trim().length) })}
             </Text>
           </View>
           {errors.message ? <Text style={styles.errorText}>{errors.message}</Text> : null}
         </View>
 
         <View style={styles.fieldContainer}>
-          <Text style={styles.label}>File đính kèm (tùy chọn)</Text>
+          <Text style={styles.label}>{t('contact.attachLabel')}</Text>
           <TouchableOpacity
             style={styles.attachButton}
             onPress={handlePickFiles}
             activeOpacity={0.9}
           >
             <MaterialIcons name="attach-file" size={20} color={COLORS.primary} />
-            <Text style={styles.attachButtonText}>Chọn file</Text>
+            <Text style={styles.attachButtonText}>{t('contact.selectFile')}</Text>
           </TouchableOpacity>
           <Text style={styles.helperText}>
-            Tối đa {MAX_FILES} file, mỗi file ≤ {formatFileSize(MAX_FILE_SIZE_BYTES)}.
-            Cho phép: hình ảnh, PDF, DOC/DOCX, TXT.
+            {t('contact.attachHint', { max: MAX_FILES, size: formatFileSize(MAX_FILE_SIZE_BYTES) })}
           </Text>
           {files.length > 0 && (
             <View style={styles.fileList}>
@@ -526,15 +528,16 @@ export default function ContactFormScreen() {
         >
           {createContactLoading ? (
             <Text style={styles.submitButtonText}>
-              {files.length > 0 ? 'Đang tải file lên...' : 'Đang gửi liên hệ...'}
+              {files.length > 0 ? t('contact.uploadingFiles') : t('contact.sendingContact')}
             </Text>
           ) : (
-            <Text style={styles.submitButtonText}>Gửi liên hệ</Text>
+            <Text style={styles.submitButtonText}>{t('contact.sendContact')}</Text>
           )}
         </TouchableOpacity>
       </ScrollView>
 
       <CategoryPicker />
+      <BottomNavigation />
     </View>
   );
 }

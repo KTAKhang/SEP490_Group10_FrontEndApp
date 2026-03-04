@@ -4,12 +4,11 @@
     "slug": "my-shop-apps",
     "owner": "thachkien",
     "version": "1.0.0",
-    "scheme": "shopapp",
+    "scheme": "myshopapps",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
-    "scheme": "myshopapps",
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
@@ -17,9 +16,9 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier":"com.ktakhang.myshopapps",
-      "infoPlist":{
-        "ITSAppUsesNonExemptEncryption":false
+      "bundleIdentifier": "com.ktakhang.myshopapps",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -42,7 +41,8 @@
     "plugins": [
       [
         "@react-native-google-signin/google-signin"
-      ]
+      ],
+      "expo-localization"
     ]
   }
 }

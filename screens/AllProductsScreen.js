@@ -13,12 +13,12 @@ import {
     ScrollView,
     Platform,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchProductsAsync, fetchProductsByCategoryAsync, resetAllProducts } from '../store/slices/productSlice';
 import ProductCard from '../components/ProductCard';
 import CategorySection from '../components/CategorySection';
 import { InlineLoading } from '../components/Loading';
-import Icon from 'react-native-vector-icons/MaterialIcons';
 import { MaterialIcons } from '@expo/vector-icons';
 import { COLORS } from '../constants/colors';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -27,6 +27,7 @@ const ITEMS_PER_PAGE = 6;
 const MAX_PAGE_BUTTONS = 5;
 
 const AllProductsScreen = ({ navigation, route }) => {
+    const { t } = useTranslation();
     const dispatch = useDispatch();
     const { allProducts, isLoading, pagination } = useSelector((state) => state.product);
     const { categories } = useSelector((state) => state.category);
@@ -182,14 +183,14 @@ const AllProductsScreen = ({ navigation, route }) => {
                         >
                             <MaterialIcons name="arrow-back" size={24} color="#0D364C" />
                         </TouchableOpacity>
-                        <Text style={styles.searchTitle}>Tìm kiếm sản phẩm</Text>
+                        <Text style={styles.searchTitle}>{t('allProducts.searchProduct')}</Text>
                     </View>
 
                     <View style={styles.searchInputContainer}>
                         <MaterialIcons name="search" size={20} color="#13C2C2" style={styles.searchIcon} />
                         <TextInput
                             style={styles.searchInput}
-                            placeholder="Tìm kiếm theo tên sản phẩm..."
+                            placeholder={t('allProducts.searchPlaceholder')}
                             placeholderTextColor="#A0A0A0"
                             value={searchText}
                             onChangeText={setSearchText}
@@ -199,7 +200,7 @@ const AllProductsScreen = ({ navigation, route }) => {
                         />
                         {searchText.length > 0 && (
                             <TouchableOpacity onPress={clearSearch} style={styles.clearButton} activeOpacity={0.7}>
-                                <Icon name="close" size={20} color="#A0A0A0" />
+                                <MaterialIcons name="close" size={20} color="#A0A0A0" />
                             </TouchableOpacity>
                         )}
                     </View>
@@ -214,7 +215,7 @@ const AllProductsScreen = ({ navigation, route }) => {
                             disabled={searchText.trim() === ''}
                         >
                             <MaterialIcons name="search" size={20} color="#fff" />
-                            <Text style={styles.searchActionButtonText}>Tìm kiếm</Text>
+                            <Text style={styles.searchActionButtonText}>{t('allProducts.searchBtn')}</Text>
                         </TouchableOpacity>
 
                         {currentSearch ? (
@@ -226,8 +227,8 @@ const AllProductsScreen = ({ navigation, route }) => {
                                 }}
                                 activeOpacity={0.7}
                             >
-                                <Icon name="delete-sweep" size={20} color="#6b7280" />
-                                <Text style={styles.clearAllButtonText}>Xóa tất cả</Text>
+                                <MaterialIcons name="delete-sweep" size={20} color="#6b7280" />
+                                <Text style={styles.clearAllButtonText}>{t('allProducts.clearAll')}</Text>
                             </TouchableOpacity>
                         ) : null}
                     </View>
@@ -235,10 +236,10 @@ const AllProductsScreen = ({ navigation, route }) => {
                     {currentSearch ? (
                         <View style={styles.searchResultsContainer}>
                             <Text style={styles.searchResultsText}>
-                                Tìm kiếm: &quot;{currentSearch}&quot;
+                                {t('allProducts.searchFor', { query: currentSearch })}
                             </Text>
                             <Text style={styles.searchResultsSubText}>
-                                Trang {pagination.currentPage}/{pagination.totalPages || 1} • Tổng {(pagination.total ?? allProducts.length)} sản phẩm
+                                {t('allProducts.pageTotal', { current: pagination.currentPage, total: pagination.totalPages || 1, count: pagination.total ?? allProducts.length })}
                             </Text>
                         </View>
                     ) : null}
@@ -250,7 +251,7 @@ const AllProductsScreen = ({ navigation, route }) => {
     const renderHeader = () => (
         <View style={styles.headerContainer}>
             <LinearGradient
-                colors={['#13C2C2', '#0D364C', '#13C2C2']}
+                colors={COLORS.gradient.primary}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.header}
@@ -268,10 +269,10 @@ const AllProductsScreen = ({ navigation, route }) => {
 
                     <View style={styles.headerTitleContainer}>
                         <Text style={styles.headerTitle}>
-                            {currentSearch ? 'Kết quả tìm kiếm' : (categoryName || 'Tất cả sản phẩm')}
+                            {currentSearch ? t('allProducts.searchResults') : (categoryName || t('allProducts.allProductsLabel'))}
                         </Text>
                         <Text style={styles.headerSubtitle}>
-                            Trang {pagination.currentPage}/{pagination.totalPages || 1}
+                            {t('allProducts.pageOf', { current: pagination.currentPage, total: pagination.totalPages || 1 })}
                             {currentSearch ? ` • "${currentSearch}"` : ''}
                         </Text>
                     </View>
@@ -289,10 +290,10 @@ const AllProductsScreen = ({ navigation, route }) => {
 
                 {/* Thanh search luôn hiển thị */}
                 <View style={styles.inlineSearchContainer}>
-                    <Icon name="search" size={20} color="#13C2C2" style={styles.inlineSearchIcon} />
+                    <MaterialIcons name="search" size={20} color="#FFFFFF" style={styles.inlineSearchIcon} />
                     <TextInput
                         style={styles.inlineSearchInput}
-                        placeholder="Tìm theo tên sản phẩm..."
+                        placeholder={t('allProducts.searchPlaceholder')}
                         placeholderTextColor="rgba(255,255,255,0.6)"
                         value={searchText}
                         onChangeText={setSearchText}
@@ -302,7 +303,7 @@ const AllProductsScreen = ({ navigation, route }) => {
                     />
                     {searchText.length > 0 ? (
                         <TouchableOpacity onPress={clearSearch} style={styles.inlineClearBtn} activeOpacity={0.7}>
-                            <Icon name="close" size={18} color="#FFFFFF" />
+                            <MaterialIcons name="close" size={18} color="#FFFFFF" />
                         </TouchableOpacity>
                     ) : null}
                     <TouchableOpacity
@@ -311,7 +312,7 @@ const AllProductsScreen = ({ navigation, route }) => {
                         disabled={!searchText.trim() || isLoading}
                         activeOpacity={0.8}
                     >
-                        <Text style={styles.inlineSearchBtnText}>Tìm</Text>
+                        <Text style={styles.inlineSearchBtnText}>{t('common.search')}</Text>
                     </TouchableOpacity>
                 </View>
 
@@ -368,7 +369,7 @@ const AllProductsScreen = ({ navigation, route }) => {
                     disabled={currentPage <= 1 || isLoading}
                     activeOpacity={0.7}
                 >
-                    <Icon name="chevron-left" size={22} color={currentPage <= 1 ? '#ccc' : '#0D364C'} />
+                    <MaterialIcons name="chevron-left" size={22} color={currentPage <= 1 ? '#ccc' : COLORS.secondary} />
                 </TouchableOpacity>
                 <View style={styles.pageNumbersRow}>
                     {pages.map((p) => (
@@ -389,7 +390,7 @@ const AllProductsScreen = ({ navigation, route }) => {
                     disabled={currentPage >= totalPages || isLoading}
                     activeOpacity={0.7}
                 >
-                    <Icon name="chevron-right" size={22} color={currentPage >= totalPages ? '#ccc' : '#0D364C'} />
+                    <MaterialIcons name="chevron-right" size={22} color={currentPage >= totalPages ? '#ccc' : COLORS.secondary} />
                 </TouchableOpacity>
             </View>
         );
@@ -399,12 +400,12 @@ const AllProductsScreen = ({ navigation, route }) => {
 
     return (
         <SafeAreaView style={styles.container}>
-            <StatusBar barStyle="light-content" backgroundColor="#0D364C" />
+            <StatusBar barStyle="light-content" backgroundColor={COLORS.secondary} />
             {renderHeader()}
 
             <View style={styles.content}>
                 {isInitialLoading ? (
-                    <InlineLoading text="Đang tải sản phẩm..." style={styles.loadingContainer} />
+                    <InlineLoading text={t('allProducts.loadingProducts')} style={styles.loadingContainer} />
                 ) : (
                     <FlatList
                         data={allProducts}
@@ -419,22 +420,19 @@ const AllProductsScreen = ({ navigation, route }) => {
                         showsVerticalScrollIndicator={false}
                         ListEmptyComponent={
                             <View style={styles.emptyContainer}>
-                                <LinearGradient
-                                    colors={['#f8f9ff', '#e8ecff']}
-                                    style={styles.emptyGradient}
-                                >
+                                <View style={styles.emptyCard}>
                                     <View style={styles.emptyIconContainer}>
-                                        <Icon name={currentSearch ? 'search' : 'category'} size={80} color="#c7d2fe" />
+                                        <MaterialIcons name={currentSearch ? 'search' : 'category'} size={80} color={COLORS.primary} />
                                     </View>
                                     <Text style={styles.emptyTitle}>
-                                        {currentSearch ? 'Không có kết quả tìm kiếm' : 'Không tìm thấy sản phẩm'}
+                                        {currentSearch ? t('allProducts.noSearchResults') : t('allProducts.noProducts')}
                                     </Text>
                                     <Text style={styles.emptyText}>
                                         {currentSearch
-                                            ? `Không tìm thấy sản phẩm nào phù hợp với "${currentSearch}"`
+                                            ? t('allProducts.noProductsMatchSearch', { search: currentSearch })
                                             : categoryName
-                                                ? `Không có sản phẩm nào trong danh mục ${categoryName}`
-                                                : 'Hiện tại không có sản phẩm nào'
+                                                ? t('allProducts.noProductsInCategory', { name: categoryName })
+                                                : t('allProducts.noProductsHint')
                                         }
                                     </Text>
                                     <TouchableOpacity
@@ -458,9 +456,9 @@ const AllProductsScreen = ({ navigation, route }) => {
                                             }
                                         }}
                                     >
-                                        <Text style={styles.retryButtonText}>Thử lại</Text>
+                                        <Text style={styles.retryButtonText}>{t('common.retry')}</Text>
                                     </TouchableOpacity>
-                                </LinearGradient>
+                                </View>
                             </View>
                         }
                     />
@@ -475,7 +473,7 @@ const AllProductsScreen = ({ navigation, route }) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f0feff',
+        backgroundColor: COLORS.background,
     },
     headerContainer: {
         position: 'relative',
@@ -616,9 +614,9 @@ const styles = StyleSheet.create({
         width: 40,
         height: 40,
         borderRadius: 20,
-        backgroundColor: '#f0feff',
+        backgroundColor: COLORS.background,
         borderWidth: 1,
-        borderColor: '#13C2C2',
+        borderColor: COLORS.primary,
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -635,15 +633,15 @@ const styles = StyleSheet.create({
         minWidth: 38,
         height: 38,
         borderRadius: 10,
-        backgroundColor: '#f0feff',
+        backgroundColor: COLORS.background,
         borderWidth: 1,
-        borderColor: '#d1f4f5',
+        borderColor: COLORS.border.light,
         alignItems: 'center',
         justifyContent: 'center',
     },
     pageNumberButtonActive: {
-        backgroundColor: '#13C2C2',
-        borderColor: '#0D364C',
+        backgroundColor: COLORS.primary,
+        borderColor: COLORS.secondary,
     },
     pageNumberText: {
         fontSize: 15,
@@ -655,7 +653,7 @@ const styles = StyleSheet.create({
     },
     content: {
         flex: 1,
-        backgroundColor: '#f0feff',
+        backgroundColor: COLORS.background,
         marginTop: -25,
         borderTopLeftRadius: 25,
         borderTopRightRadius: 25,
@@ -676,8 +674,8 @@ const styles = StyleSheet.create({
     },
     productCardWrapper: {
         borderRadius: 16,
-        backgroundColor: '#FFFFFF',
-        shadowColor: '#13C2C2',
+        backgroundColor: COLORS.white,
+        shadowColor: COLORS.primary,
         shadowOffset: {
             width: 0,
             height: 4,
@@ -691,19 +689,19 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: '#f0feff',
+        backgroundColor: COLORS.background,
     },
     // Cleaned up - using unified loading component
     noMoreFooter: {
         paddingVertical: 20,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: '#f8f9fa',
+        backgroundColor: COLORS.background,
         marginHorizontal: 20,
         marginTop: 10,
         borderRadius: 16,
         borderWidth: 1,
-        borderColor: '#e9ecef',
+        borderColor: COLORS.border.light,
     },
     noMoreText: {
         fontSize: 14,
@@ -720,31 +718,35 @@ const styles = StyleSheet.create({
         flex: 1,
         marginTop: 60,
         marginHorizontal: 20,
+        backgroundColor: COLORS.background,
     },
-    emptyGradient: {
+    emptyCard: {
         alignItems: 'center',
         justifyContent: 'center',
         paddingVertical: 60,
         paddingHorizontal: 30,
         borderRadius: 24,
         borderWidth: 1,
-        borderColor: '#d1f4f5',
+        borderColor: COLORS.border.light,
+        backgroundColor: COLORS.white,
+        elevation: 2,
+        shadowColor: COLORS.shadow.dark,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
     },
     emptyIconContainer: {
         width: 120,
         height: 120,
         borderRadius: 60,
-        backgroundColor: '#FFFFFF',
+        backgroundColor: COLORS.background,
         alignItems: 'center',
         justifyContent: 'center',
         marginBottom: 24,
         borderWidth: 2,
-        borderColor: '#13C2C2',
-        shadowColor: '#13C2C2',
-        shadowOffset: {
-            width: 0,
-            height: 4,
-        },
+        borderColor: COLORS.primary,
+        shadowColor: COLORS.primary,
+        shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.1,
         shadowRadius: 8,
         elevation: 3,
@@ -752,28 +754,25 @@ const styles = StyleSheet.create({
     emptyTitle: {
         fontSize: 20,
         fontWeight: '700',
-        color: '#0D364C',
+        color: COLORS.text.primary,
         textAlign: 'center',
         marginBottom: 8,
     },
     emptyText: {
         fontSize: 15,
-        color: '#13C2C2',
+        color: COLORS.text.secondary,
         textAlign: 'center',
         lineHeight: 22,
         marginBottom: 24,
     },
     retryButton: {
-        backgroundColor: '#13C2C2',
+        backgroundColor: COLORS.primary,
         paddingHorizontal: 24,
         paddingVertical: 12,
         borderRadius: 16,
-        shadowColor: '#13C2C2',
-        shadowOffset: {
-            width: 0,
-            height: 4,
-        },
-        shadowOpacity: 0.3,
+        shadowColor: COLORS.primary,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
         shadowRadius: 8,
         elevation: 4,
     },
