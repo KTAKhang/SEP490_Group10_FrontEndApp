@@ -12,9 +12,10 @@ import {
     ActivityIndicator,
     Platform,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { COLORS } from '../constants/colors';
 import { LinearGradient } from 'expo-linear-gradient';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import { MaterialIcons } from '@expo/vector-icons';
 import { useRoute, useFocusEffect } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
 import {
@@ -39,7 +40,18 @@ function getItemImage(item) {
     return (uri && typeof uri === 'string') ? uri : DEFAULT_PRODUCT_IMAGE;
 }
 
+const STATUS_TO_KEY = {
+    'PENDING': 'filterPending',
+    'PAID': 'statusPaid',
+    'READY-TO-SHIP': 'filterConfirmed',
+    'SHIPPING': 'filterShipping',
+    'COMPLETED': 'filterDelivered',
+    'CANCELLED': 'filterCancelled',
+    'REFUND': 'filterRefunded',
+};
+
 const OrderDetailsScreen = ({ navigation }) => {
+    const { t } = useTranslation();
     const route = useRoute();
     const { orderId: paramOrderId, orderData: paramOrderData, orderDataColor, orderDataBg } = route.params || {};
     const dispatch = useDispatch();
@@ -64,18 +76,10 @@ const OrderDetailsScreen = ({ navigation }) => {
 
     const alertShownRef = useRef(false);
 
-    const statusMapping = {
-        'PENDING': 'Chờ xử lý',
-        'PAID': 'Đã thanh toán',
-        'READY-TO-SHIP': 'Đã xác nhận',
-        'SHIPPING': 'Đang giao',
-        'COMPLETED': 'Đã giao',
-        'CANCELLED': 'Đã hủy',
-        'REFUND': 'Đã trả'
-    };
     const statusName = (orderData?.order_status?.name ?? orderData?.order_status_id?.name ?? '')
         .toString().trim().toUpperCase().replace(/\s+/g, '-');
-    const resolvedStatusLabel = statusMapping[statusName] || statusMapping[orderData?.order_status?.name] || 'Chờ xử lý';
+    const statusKey = STATUS_TO_KEY[statusName] || STATUS_TO_KEY[orderData?.order_status?.name] || 'filterPending';
+    const resolvedStatusLabel = t('order.' + statusKey);
 
     const [orderStatus, setOrderStatus] = useState(resolvedStatusLabel);
     const [isRefetchingReviews, setIsRefetchingReviews] = useState(false);
@@ -107,9 +111,10 @@ const OrderDetailsScreen = ({ navigation }) => {
 
     useEffect(() => {
         if (orderData && statusName) {
-            setOrderStatus(statusMapping[statusName] || statusMapping[orderData?.order_status?.name] || 'Chờ xử lý');
+            const key = STATUS_TO_KEY[statusName] || STATUS_TO_KEY[orderData?.order_status?.name] || 'filterPending';
+            setOrderStatus(t('order.' + key));
         }
-    }, [orderData, statusName]);
+    }, [orderData, statusName, t]);
 
     useEffect(() => {
         if (!orderId) return;
@@ -160,10 +165,10 @@ const OrderDetailsScreen = ({ navigation }) => {
         if (successMessage && !isLoading && !reviewError && !alertShownRef.current) {
             alertShownRef.current = true;
             Alert.alert(
-                'Thành công',
-                'Đánh giá đã được gửi thành công!',
+                t('reviews.success'),
+                t('reviews.reviewSubmitted'),
                 [{
-                    text: 'OK',
+                    text: t('common.ok'),
                     onPress: async () => {
                         dispatch(clearReviewState());
                         alertShownRef.current = false;
@@ -179,8 +184,8 @@ const OrderDetailsScreen = ({ navigation }) => {
         }
         if (reviewError && !isLoading && !alertShownRef.current) {
             alertShownRef.current = true;
-            Alert.alert('Lỗi', reviewError, [{
-                text: 'OK',
+            Alert.alert(t('common.error'), reviewError, [{
+                text: t('common.ok'),
                 onPress: () => {
                     dispatch(clearReviewState());
                     alertShownRef.current = false;
@@ -194,8 +199,8 @@ const OrderDetailsScreen = ({ navigation }) => {
 
     useEffect(() => {
         if (orderError) {
-            Alert.alert('Lỗi', orderError, [{
-                text: 'OK',
+            Alert.alert(t('common.error'), orderError, [{
+                text: t('common.ok'),
                 onPress: () => dispatch(clearOrderState())
             }]);
         }
@@ -213,7 +218,7 @@ const OrderDetailsScreen = ({ navigation }) => {
     };
 
     const renderRatingSection = (productId) => {
-        if (orderStatus !== 'Đã giao') return null;
+        if (orderStatus !== t('order.delivered')) return null;
 
         const hasReviewed = submittedReviews[productId];
         const existingRev = existingReviews[productId];
@@ -225,7 +230,7 @@ const OrderDetailsScreen = ({ navigation }) => {
                 <View style={styles.ratingSection}>
                     <View style={styles.loadingContainer}>
                         <ActivityIndicator size="small" color={accentColor} />
-                        <Text style={styles.loadingText}>Đang tải đánh giá...</Text>
+                        <Text style={styles.loadingText}>{t('order.loadingReviews')}</Text>
                     </View>
                 </View>
             );
@@ -240,13 +245,13 @@ const OrderDetailsScreen = ({ navigation }) => {
                             style={[styles.retryReviewBtn, { borderColor: accentColor }]}
                             onPress={() => dispatch(getReviewsByOrderId(orderData._id ?? orderData.order_id))}
                         >
-                            <Icon name="refresh" size={16} color={accentColor} />
-                            <Text style={[styles.retryReviewBtnText, { color: accentColor }]}>Thử lại</Text>
+                            <MaterialIcons name="refresh" size={16} color={accentColor} />
+                            <Text style={[styles.retryReviewBtnText, { color: accentColor }]}>{t('common.retry')}</Text>
                         </TouchableOpacity>
                     </View>
                 ) : null}
                 <Text style={styles.ratingTitle}>
-                    {hasReviewed ? 'Đánh giá của bạn' : 'Đánh giá sản phẩm này'}
+                    {hasReviewed ? t('order.yourReview') : t('order.reviewThisProduct')}
                 </Text>
 
                 {hasReviewed ? (
@@ -256,8 +261,8 @@ const OrderDetailsScreen = ({ navigation }) => {
                         </View>
                         <View style={styles.reviewActions}>
                             <View style={styles.submittedIndicator}>
-                                <Icon name="check-circle" size={16} color="#22C55E" />
-                                <Text style={styles.submittedText}>Đã đánh giá</Text>
+                                <MaterialIcons name="check-circle" size={16} color="#22C55E" />
+                                <Text style={styles.submittedText}>{t('order.reviewed')}</Text>
                             </View>
                             {showEditButton ? (
                                 <TouchableOpacity
@@ -280,15 +285,15 @@ const OrderDetailsScreen = ({ navigation }) => {
                                     }}
                                     disabled={isRefetchingReviews}
                                 >
-                                    <Icon name="edit" size={16} color={accentColor} />
-                                    <Text style={[styles.editButtonText, { color: accentColor }]}>Chỉnh sửa</Text>
+                                    <MaterialIcons name="edit" size={16} color={accentColor} />
+                                    <Text style={[styles.editButtonText, { color: accentColor }]}>{t('order.edit')}</Text>
                                 </TouchableOpacity>
                             ) : (
                                 hasReviewed && existingRev && (
                                     <Text style={styles.editExpiredText}>
                                         {((existingRev.editedCount ?? existingRev.edited_count) >= 1)
-                                            ? 'Đã hết lượt chỉnh sửa'
-                                            : 'Đã hết hạn chỉnh sửa (3 ngày)'}
+                                            ? t('order.editLimitReached')
+                                            : t('order.editExpired3Days')}
                                     </Text>
                                 )
                             )}
@@ -302,13 +307,13 @@ const OrderDetailsScreen = ({ navigation }) => {
                             navigation.navigate('CreateReview', {
                                 orderId: orderData._id ?? orderData.order_id,
                                 productId,
-                                productName: item?.product_name ?? item?.name ?? 'Sản phẩm',
+                                productName: item?.product_name ?? item?.name ?? t('order.productLabel'),
                             });
                         }}
                     >
-                        <Icon name="add-a-photo" size={18} color={accentColor} />
+                        <MaterialIcons name="add-a-photo" size={18} color={accentColor} />
                         <Text style={[styles.openReviewScreenBtnText, { color: accentColor }]}>
-                            Mở màn hình đánh giá (có thể đính kèm ảnh)
+                            {t('order.openReviewScreen')}
                         </Text>
                     </TouchableOpacity>
                 )}
@@ -342,9 +347,9 @@ const OrderDetailsScreen = ({ navigation }) => {
                 <SafeAreaView>
                     <View style={styles.header}>
                         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-                            <Icon name="arrow-back" size={24} color="#ffffff" />
+                            <MaterialIcons name="arrow-back" size={24} color="#ffffff" />
                         </TouchableOpacity>
-                        <Text style={styles.headerTitle}>Chi tiết đơn hàng</Text>
+                        <Text style={styles.headerTitle}>{t('order.orderDetailTitle')}</Text>
                         <View style={styles.headerSpacer} />
                     </View>
                 </SafeAreaView>
@@ -356,7 +361,7 @@ const OrderDetailsScreen = ({ navigation }) => {
                     <View style={styles.globalLoadingContainer}>
                         <ActivityIndicator size="large" color={accentColor} />
                         <Text style={styles.globalLoadingText}>
-                            {detailLoading ? 'Đang tải chi tiết đơn hàng...' : 'Đang cập nhật đánh giá...'}
+                            {detailLoading ? t('order.loadingOrderDetail') : t('order.updatingReview')}
                         </Text>
                     </View>
                 </View>
@@ -369,8 +374,8 @@ const OrderDetailsScreen = ({ navigation }) => {
                         style={styles.retryDetailButton}
                         onPress={() => orderId && dispatch(fetchOrderDetailByUser(orderId))}
                     >
-                        <Icon name="refresh" size={20} color="#fff" />
-                        <Text style={styles.retryDetailButtonText}>Thử lại</Text>
+                        <MaterialIcons name="refresh" size={20} color="#fff" />
+                        <Text style={styles.retryDetailButtonText}>{t('common.retry')}</Text>
                     </TouchableOpacity>
                 </View>
             ) : !detailLoading ? (
@@ -383,12 +388,12 @@ const OrderDetailsScreen = ({ navigation }) => {
                             </View>
                             <View style={[
                                 styles.statusBadge,
-                                orderStatus === 'Đã giao' && styles.deliveredBadge,
+                                orderStatus === t('order.delivered') && styles.deliveredBadge,
                                 { backgroundColor: orderDataBg || 'rgba(255, 184, 0, 0.1)' }
                             ]}>
                                 <Text style={[
                                     styles.statusText,
-                                    orderStatus === 'Đã giao' && styles.deliveredText,
+                                    orderStatus === t('order.delivered') && styles.deliveredText,
                                     { color: orderDataColor || '#FFB800' }
                                 ]}>
                                     {orderStatus}
@@ -397,26 +402,26 @@ const OrderDetailsScreen = ({ navigation }) => {
                         </View>
 
                         <View style={styles.addressContainer}>
-                            <Text style={styles.addressTitle}>Địa chỉ giao hàng</Text>
+                            <Text style={styles.addressTitle}>{t('order.deliveryAddress')}</Text>
                             <Text style={styles.customerName}>{orderData?.receiver_name}</Text>
                             <Text style={styles.address}>
                                 {orderData?.receiver_address}{'\n'}
-                                Điện thoại: {orderData?.receiver_phone}
+                                {t('order.phoneLabel')}: {orderData?.receiver_phone}
                             </Text>
                         </View>
 
                         <View style={styles.productsContainer}>
-                            <Text style={styles.productsSectionTitle}>Sản phẩm</Text>
+                            <Text style={styles.productsSectionTitle}>{t('order.products')}</Text>
                             {orderItems.length === 0 && orderData ? (
                                 <View style={styles.emptyProductsContainer}>
-                                    <Icon name="inventory-2" size={48} color="#9CA3AF" />
-                                    <Text style={styles.emptyProductsText}>Chưa tải được danh sách sản phẩm</Text>
+                                    <MaterialIcons name="inventory-2" size={48} color="#9CA3AF" />
+                                    <Text style={styles.emptyProductsText}>{t('order.couldNotLoadProducts')}</Text>
                                     <TouchableOpacity
                                         style={[styles.retryDetailButton, { alignSelf: 'center', marginTop: 12 }]}
                                         onPress={() => orderId && dispatch(fetchOrderDetailByUser(orderId))}
                                     >
-                                        <Icon name="refresh" size={20} color="#fff" />
-                                        <Text style={styles.retryDetailButtonText}>Thử lại</Text>
+                                        <MaterialIcons name="refresh" size={20} color="#fff" />
+                                        <Text style={styles.retryDetailButtonText}>{t('common.retry')}</Text>
                                     </TouchableOpacity>
                                 </View>
                             ) : (
@@ -428,7 +433,7 @@ const OrderDetailsScreen = ({ navigation }) => {
                                             <View style={styles.productInfo}>
                                                 <Image source={{ uri: getItemImage(item) }} style={styles.productImage} />
                                                 <View style={styles.productDetails}>
-                                                    <Text style={styles.productName} numberOfLines={2}>{item.product_name ?? item.name ?? 'Sản phẩm'}</Text>
+                                                    <Text style={styles.productName} numberOfLines={2}>{item.product_name ?? item.name ?? t('order.productLabel')}</Text>
                                                     {(item.product_category_name ?? item.product_category) && (
                                                         <Text style={styles.productVariant}>{item.product_category_name ?? item.product_category}</Text>
                                                     )}
@@ -439,7 +444,7 @@ const OrderDetailsScreen = ({ navigation }) => {
                                                                 <>
                                                                     <Text style={styles.originalPrice} numberOfLines={1}>{formatCurrency(item.original_price)} </Text>
                                                                     <View style={styles.discountBadge}>
-                                                                        <Text style={styles.discountBadgeText}>Giảm giá</Text>
+                                                                        <Text style={styles.discountBadgeText}>{t('order.discount')}</Text>
                                                                     </View>
                                                                 </>
                                                             )}
@@ -450,7 +455,7 @@ const OrderDetailsScreen = ({ navigation }) => {
                                                         <Text style={styles.quantity}>× {item.quantity ?? 0}</Text>
                                                     </View>
                                                     <Text style={[styles.subtotal, { color: orderDataColor || '#22C55E' }]}>
-                                                        Tạm tính: {formatCurrency(item.subtotal ?? (item.price * (item.quantity || 0)))}
+                                                        {t('order.subtotalItem')}: {formatCurrency(item.subtotal ?? (item.price * (item.quantity || 0)))}
                                                     </Text>
                                                 </View>
                                             </View>
@@ -463,11 +468,11 @@ const OrderDetailsScreen = ({ navigation }) => {
 
                         {(orderData?.discount_code || (orderData?.discount_amount != null && Number(orderData.discount_amount) > 0)) && (
                             <View style={styles.voucherContainer}>
-                                <Icon name="local-offer" size={20} color={COLORS.primary} />
+                                <MaterialIcons name="local-offer" size={20} color={COLORS.primary} />
                                 <View style={styles.voucherTextWrap}>
-                                    <Text style={styles.voucherLabel}>Đã dùng voucher</Text>
+                                    <Text style={styles.voucherLabel}>{t('order.voucherUsed')}</Text>
                                     <Text style={styles.voucherValue}>
-                                        {orderData.discount_code ? `${orderData.discount_code}, giảm ${formatCurrency(orderData.discount_amount ?? 0)} ` : `Giảm ${formatCurrency(orderData.discount_amount ?? 0)} `}
+                                        {orderData.discount_code ? t('order.voucherUsedWithCode', { code: orderData.discount_code }) + ` ${formatCurrency(orderData.discount_amount ?? 0)} ` : t('order.voucherDiscount') + ` ${formatCurrency(orderData.discount_amount ?? 0)} `}
                                     </Text>
                                 </View>
                             </View>
@@ -475,27 +480,27 @@ const OrderDetailsScreen = ({ navigation }) => {
 
                         <View style={styles.summaryContainer}>
                             <View style={styles.summaryRow}>
-                                <Text style={styles.summaryLabel}>Tạm tính (sản phẩm)</Text>
+                                <Text style={styles.summaryLabel}>{t('order.subtotalProducts')}</Text>
                                 <Text style={styles.summaryValue}>{formatCurrency(calculateSubtotal())} </Text>
                             </View>
                             <View style={styles.summaryRow}>
-                                <Text style={styles.summaryLabel}>Phí vận chuyển</Text>
+                                <Text style={styles.summaryLabel}>{t('order.shippingFee')}</Text>
                                 <Text style={styles.summaryValue}>{formatCurrency(orderData?.shipping_fee ?? 0)} </Text>
                             </View>
                             {(orderData?.discount_code || (orderData?.discount_amount != null && Number(orderData.discount_amount) > 0)) && (
                                 <>
                                     <View style={styles.summaryRow}>
-                                        <Text style={styles.summaryLabel}>Tổng trước voucher</Text>
+                                        <Text style={styles.summaryLabel}>{t('order.totalBeforeVoucher')}</Text>
                                         <Text style={styles.summaryValue}>{formatCurrency((orderData?.total_price ?? 0) + (orderData?.discount_amount ?? 0))} </Text>
                                     </View>
                                     <View style={styles.summaryRow}>
-                                        <Text style={styles.summaryLabel}>Đã dùng voucher{orderData.discount_code ? `: ${orderData.discount_code}, giảm` : ', giảm'}</Text>
+                                        <Text style={styles.summaryLabel}>{orderData.discount_code ? t('order.voucherUsedWithCode', { code: orderData.discount_code }) : t('order.voucherUsedCommaDiscount')}</Text>
                                         <Text style={styles.discountValue}>-{formatCurrency(orderData.discount_amount ?? 0)} </Text>
                                     </View>
                                 </>
                             )}
                             <View style={[styles.summaryRow, styles.totalRow]}>
-                                <Text style={styles.totalLabel}>Tổng cộng</Text>
+                                <Text style={styles.totalLabel}>{t('order.total')}</Text>
                                 <Text style={styles.totalValue}>{formatCurrency(orderData?.total_price ?? 0)} </Text>
                             </View>
                         </View>

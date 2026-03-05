@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { API_BASE_URL } from '../config/api';
+import { removeVietnameseTone } from '../utils/searchUtils';
 
 /**
  * Chuẩn hóa product từ backend cho UI: quantity, image, category_name
@@ -40,7 +41,7 @@ export async function getProducts({
       sortOrder: String(sortOrder),
     });
     if (search && search.trim() !== '') {
-      params.append('search', search.trim());
+      params.append('search', removeVietnameseTone(search.trim()));
     }
     if (category) {
       params.append('category', String(category));

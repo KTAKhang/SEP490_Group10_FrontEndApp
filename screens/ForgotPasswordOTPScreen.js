@@ -9,6 +9,7 @@ import {
     Dimensions,
     ActivityIndicator,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ArrowLeft, Eye, EyeOff } from 'lucide-react-native';
 import { useDispatch, useSelector } from 'react-redux';
@@ -17,8 +18,8 @@ import Toast from 'react-native-toast-message';
 
 const { height } = Dimensions.get('window');
 
-
 const ForgotPasswordOTPScreen = ({ route, navigation }) => {
+    const { t } = useTranslation();
     const { email } = route.params;
     const [otp, setOtp] = useState(['', '', '', '', '', '']);
     const [newPassword, setNewPassword] = useState('');
@@ -43,8 +44,8 @@ const ForgotPasswordOTPScreen = ({ route, navigation }) => {
         if (resetPasswordStatus === 'success') {
             Toast.show({
                 type: 'success',
-                text1: 'Success',
-                text2: 'Password has been successfully reset.',
+                text1: t('auth.success'),
+                text2: t('auth.passwordResetSuccess'),
             });
             setTimeout(() => {
                 navigation.navigate('Login');
@@ -52,7 +53,7 @@ const ForgotPasswordOTPScreen = ({ route, navigation }) => {
         } else if (resetPasswordStatus === 'error') {
             Toast.show({
                 type: 'error',
-                text1: 'Error',
+                text1: t('common.error'),
                 text2: getErrorMessage(resetPasswordMessage),
             });
             setTimeout(() => {
@@ -77,44 +78,21 @@ const ForgotPasswordOTPScreen = ({ route, navigation }) => {
     }, []);
 
     const getErrorMessage = (error) => {
-        if (!error) return 'Password reset failed';
-
+        if (!error) return t('auth.passwordResetFailed');
         const lowerError = error.toLowerCase();
-
-        if (lowerError.includes('invalid') || lowerError.includes('incorrect')) {
-            return 'Invalid OTP code';
-        }
-        if (lowerError.includes('expired')) {
-            return 'The OTP code has expired.';
-        }
-        if (lowerError.includes('too many attempts')) {
-            return 'You have tried too many times, please try again later.';
-        }
-        if (lowerError.includes('password must contain at least 8 characters') ||
-            lowerError.includes('8 characters') ||
-            lowerError.includes('uppercase') ||
-            lowerError.includes('number')) {
-            return 'The password must be at least 8 characters long, including one uppercase letter and one digit.';
-        }
-
+        if (lowerError.includes('invalid') || lowerError.includes('incorrect')) return t('auth.invalidOtpCode');
+        if (lowerError.includes('expired')) return t('auth.otpExpiredMsg');
+        if (lowerError.includes('too many attempts')) return t('auth.tooManyAttempts');
+        if (lowerError.includes('password must contain at least 8 characters') || lowerError.includes('8 characters') || lowerError.includes('uppercase') || lowerError.includes('number'))
+            return t('auth.passwordRequirements');
         return error;
     };
 
     const validatePassword = (password) => {
         const errors = [];
-
-        if (password.length < 8) {
-            errors.push('at least 8 characters');
-        }
-
-        if (!/[A-Z]/.test(password)) {
-            errors.push('at least one uppercase character');
-        }
-
-        if (!/[0-9]/.test(password)) {
-            errors.push('at least 1 digit');
-        }
-
+        if (password.length < 8) errors.push(t('auth.passwordReq8'));
+        if (!/[A-Z]/.test(password)) errors.push(t('auth.passwordReqUpper'));
+        if (!/[0-9]/.test(password)) errors.push(t('auth.passwordReqDigit'));
         return errors;
     };
 
@@ -142,19 +120,18 @@ const ForgotPasswordOTPScreen = ({ route, navigation }) => {
         if (!otpString.trim()) {
             Toast.show({
                 type: 'error',
-                text1: 'Error',
-                text2: 'Vui lòng nhập Please enter the OTP code.mã OTP',
+                text1: t('common.error'),
+                text2: t('auth.enterOtpCode'),
             });
             return;
         }
 
 
         if (otpString.length < 6) {
-
             Toast.show({
                 type: 'error',
-                text1: 'Error',
-                text2: `The OTP code must have 6 digits (currently: ${otpString.length} number)`,
+                text1: t('common.error'),
+                text2: t('auth.otpMustBe6Current', { count: otpString.length }),
             });
             return;
         }
@@ -162,8 +139,8 @@ const ForgotPasswordOTPScreen = ({ route, navigation }) => {
         if (!/^[0-9]*$/.test(otpString)) {
             Toast.show({
                 type: 'error',
-                text1: 'Error',
-                text2: 'The OTP code must only contain numbers.',
+                text1: t('common.error'),
+                text2: t('auth.otpDigitsOnly'),
             });
             return;
         }
@@ -171,30 +148,27 @@ const ForgotPasswordOTPScreen = ({ route, navigation }) => {
         if (!newPassword) {
             Toast.show({
                 type: 'error',
-                text1: 'Error',
-                text2: 'Please enter your new password.',
+                text1: t('common.error'),
+                text2: t('auth.enterNewPassword'),
             });
             return;
         }
 
-        // Kiểm tra tính hợp lệ của mật khẩu
         const passwordErrors = validatePassword(newPassword);
         if (passwordErrors.length > 0) {
             Toast.show({
                 type: 'error',
-                text1: 'Error',
-                text2: `Password required ${passwordErrors.join(', ')}`,
+                text1: t('common.error'),
+                text2: t('auth.passwordRequired', { requirements: passwordErrors.join(', ') }),
             });
             return;
         }
 
-
         if (newPassword !== confirmPassword) {
-
             Toast.show({
                 type: 'error',
-                text1: 'Error',
-                text2: 'The verification password does not match.',
+                text1: t('common.error'),
+                text2: t('auth.passwordMismatch'),
             });
             return;
         }
@@ -240,9 +214,9 @@ const ForgotPasswordOTPScreen = ({ route, navigation }) => {
                         },
                     ]}
                 >
-                    <Text style={styles.title}>Reset Password</Text>
+                    <Text style={styles.title}>{t('auth.resetPassword')}</Text>
                     <Text style={styles.subtitle}>
-                        Enter the OTP sent to your email and the new password
+                        {t('auth.resetPasswordSubtitle')}
                     </Text>
 
                     <View style={styles.otpContainer}>
@@ -266,13 +240,13 @@ const ForgotPasswordOTPScreen = ({ route, navigation }) => {
                     </View>
 
                     <TouchableOpacity style={styles.clearButton} onPress={clearOtp}>
-                        <Text style={styles.clearButtonText}>Clear and re-enter OTP</Text>
+                        <Text style={styles.clearButtonText}>{t('auth.clearAndReenterOtp')}</Text>
                     </TouchableOpacity>
 
                     <View style={styles.inputContainer}>
                         <TextInput
                             style={styles.inputField}
-                            placeholder="New password"
+                            placeholder={t('auth.newPassword')}
                             placeholderTextColor="#aaa"
                             value={newPassword}
                             onChangeText={setNewPassword}
@@ -295,7 +269,7 @@ const ForgotPasswordOTPScreen = ({ route, navigation }) => {
                     <View style={[styles.inputContainer, styles.confirmPasswordContainer]}>
                         <TextInput
                             style={styles.inputField}
-                            placeholder="Confirm password"
+                            placeholder={t('auth.confirmPassword')}
                             placeholderTextColor="#aaa"
                             value={confirmPassword}
                             onChangeText={setConfirmPassword}
@@ -323,7 +297,7 @@ const ForgotPasswordOTPScreen = ({ route, navigation }) => {
                         {isLoading ? (
                             <ActivityIndicator color="#fff" />
                         ) : (
-                            <Text style={styles.submitButtonText}>Reset Password</Text>
+                            <Text style={styles.submitButtonText}>{t('auth.resetPassword')}</Text>
                         )}
                     </TouchableOpacity>
                 </Animated.View>

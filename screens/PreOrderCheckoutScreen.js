@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
     View,
     Text,
@@ -23,13 +24,10 @@ import { formatCurrency } from '../utils/formatCurrency';
 import { MinimalLoading } from '../components/Loading';
 
 const API_BASE = 'https://provinces.open-api.vn/api/v2';
-const PREORDER_CONFIRM_TITLE = 'Xác nhận đặt trước';
-const PREORDER_CONFIRM_MESSAGE =
-    'Đặt trước không thể hủy. Bạn có chắc chắn muốn tiếp tục thanh toán đặt cọc 50%?';
-
 const PHONE_REGEX = /^0\d{9}$/;
 
 export default function PreOrderCheckoutScreen({ navigation, route }) {
+    const { t } = useTranslation();
     const { fruitType, quantityKg } = route?.params || {};
     const [formData, setFormData] = useState({
         receiver_name: '',
@@ -90,32 +88,32 @@ export default function PreOrderCheckoutScreen({ navigation, route }) {
 
     const validate = () => {
         const e = {};
-        if (!formData.receiver_name?.trim()) e.receiver_name = 'Vui lòng nhập họ tên';
-        if (!formData.receiver_phone?.trim()) e.receiver_phone = 'Vui lòng nhập số điện thoại';
+        if (!formData.receiver_name?.trim()) e.receiver_name = t('preOrder.errReceiverName');
+        if (!formData.receiver_phone?.trim()) e.receiver_phone = t('preOrder.errPhone');
         else if (!PHONE_REGEX.test(formData.receiver_phone.trim())) {
-            e.receiver_phone = 'Số điện thoại phải bắt đầu bằng 0 và đủ 10 số';
+            e.receiver_phone = t('preOrder.errPhoneFormat');
         }
-        if (!formData.address?.trim()) e.address = 'Vui lòng nhập địa chỉ (số nhà, đường)';
-        if (!formData.city) e.city = 'Vui lòng chọn Tỉnh/Thành phố';
-        if (!formData.ward) e.ward = 'Vui lòng chọn Phường/Xã';
+        if (!formData.address?.trim()) e.address = t('preOrder.errAddress');
+        if (!formData.city) e.city = t('preOrder.errCity');
+        if (!formData.ward) e.ward = t('preOrder.errWard');
         setErrors(e);
         return Object.keys(e).length === 0;
     };
 
     const handleCheckout = () => {
         if (!fruitType?._id || !quantityKg) {
-            Alert.alert('Lỗi', 'Thiếu thông tin đơn đặt trước.');
+            Alert.alert(t('common.error'), t('preOrder.missingInfo'));
             return;
         }
         if (!validate()) return;
 
         Alert.alert(
-            PREORDER_CONFIRM_TITLE,
-            PREORDER_CONFIRM_MESSAGE,
+            t('preOrder.confirmTitle'),
+            t('preOrder.confirmMessage'),
             [
-                { text: 'Hủy', style: 'cancel' },
+                { text: t('common.cancel'), style: 'cancel' },
                 {
-                    text: 'Xác nhận',
+                    text: t('common.confirm'),
                     onPress: async () => {
                         setLoading(true);
                         try {
@@ -134,10 +132,10 @@ export default function PreOrderCheckoutScreen({ navigation, route }) {
                                 navigation.goBack();
                                 navigation.goBack();
                             } else {
-                                Alert.alert('Lỗi', 'Không nhận được link thanh toán.');
+                                Alert.alert(t('common.error'), t('preOrder.noPaymentLink'));
                             }
                         } catch (err) {
-                            Alert.alert('Lỗi', err.message || 'Thanh toán thất bại');
+                            Alert.alert(t('common.error'), err.message || t('preOrder.paymentFailed'));
                         } finally {
                             setLoading(false);
                         }
@@ -150,9 +148,9 @@ export default function PreOrderCheckoutScreen({ navigation, route }) {
     if (!fruitType) {
         return (
             <View style={styles.container}>
-                <Text style={styles.errorText}>Thiếu thông tin sản phẩm.</Text>
+                <Text style={styles.errorText}>{t('preOrder.missingProductInfo')}</Text>
                 <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backLink}>
-                    <Text style={styles.backLinkText}>Quay lại</Text>
+                    <Text style={styles.backLinkText}>{t('common.back')}</Text>
                 </TouchableOpacity>
             </View>
         );
@@ -187,7 +185,7 @@ export default function PreOrderCheckoutScreen({ navigation, route }) {
                     <View style={styles.pickerModalBox}>
                         <View style={styles.pickerHeader}>
                             <Text style={styles.pickerTitle}>
-                                {isProvince ? 'Chọn Tỉnh/Thành phố' : 'Chọn Phường/Xã'}
+                                {isProvince ? t('preOrder.selectProvince') : t('preOrder.selectWard')}
                             </Text>
                             <TouchableOpacity onPress={() => setPickModal(null)}>
                                 <MaterialIcons name="close" size={24} color={COLORS.text.primary} />
@@ -222,7 +220,7 @@ export default function PreOrderCheckoutScreen({ navigation, route }) {
                 <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
                     <MaterialIcons name="arrow-back" size={24} color="#fff" />
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>Thanh toán đặt trước</Text>
+                <Text style={styles.headerTitle}>{t('preOrder.checkoutTitle')}</Text>
             </LinearGradient>
 
             {loading && <MinimalLoading />}
@@ -240,31 +238,31 @@ export default function PreOrderCheckoutScreen({ navigation, route }) {
                     <View style={styles.summaryCard}>
                         <Text style={styles.summaryTitle}>{fruitType.name}</Text>
                         <Text style={styles.summaryRow}>
-                            Số lượng: {quantityKg} kg • Đặt cọc 50%: {formatCurrency(depositEst)}
+                            {t('preOrder.quantityKg', { kg: quantityKg, deposit: formatCurrency(depositEst) })}
                         </Text>
                     </View>
 
-                    <Text style={styles.sectionTitle}>Thông tin nhận hàng</Text>
+                    <Text style={styles.sectionTitle}>{t('preOrder.deliveryInfoSection')}</Text>
 
                     <View style={styles.field}>
-                        <Text style={styles.label}>Họ tên *</Text>
+                        <Text style={styles.label}>{t('preOrder.fullNameLabel')}</Text>
                         <TextInput
                             style={[styles.input, errors.receiver_name && styles.inputError]}
                             value={formData.receiver_name}
                             onChangeText={(v) => update('receiver_name', v)}
-                            placeholder="Họ tên người nhận"
+                            placeholder={t('preOrder.placeholderReceiver')}
                         />
                         {errors.receiver_name ? (
                             <Text style={styles.errMsg}>{errors.receiver_name}</Text>
                         ) : null}
                     </View>
                     <View style={styles.field}>
-                        <Text style={styles.label}>Số điện thoại *</Text>
+                        <Text style={styles.label}>{t('preOrder.phoneLabel')}</Text>
                         <TextInput
                             style={[styles.input, errors.receiver_phone && styles.inputError]}
                             value={formData.receiver_phone}
                             onChangeText={(v) => update('receiver_phone', v)}
-                            placeholder="0xxxxxxxxx (10 số)"
+                            placeholder={t('preOrder.placeholderPhone')}
                             keyboardType="phone-pad"
                         />
                         {errors.receiver_phone ? (
@@ -272,37 +270,37 @@ export default function PreOrderCheckoutScreen({ navigation, route }) {
                         ) : null}
                     </View>
                     <View style={styles.field}>
-                        <Text style={styles.label}>Email</Text>
+                        <Text style={styles.label}>{t('preOrder.emailLabel')}</Text>
                         <TextInput
                             style={styles.input}
                             value={formData.email}
                             onChangeText={(v) => update('email', v)}
-                            placeholder="Email (tùy chọn)"
+                            placeholder={t('preOrder.placeholderEmail')}
                             keyboardType="email-address"
                         />
                     </View>
                     <View style={styles.field}>
-                        <Text style={styles.label}>Địa chỉ (số nhà, đường) *</Text>
+                        <Text style={styles.label}>{t('preOrder.addressLabel')}</Text>
                         <TextInput
                             style={[styles.input, errors.address && styles.inputError]}
                             value={formData.address}
                             onChangeText={(v) => update('address', v)}
-                            placeholder="Số nhà, tên đường"
+                            placeholder={t('preOrder.placeholderAddress')}
                         />
                         {errors.address ? (
                             <Text style={styles.errMsg}>{errors.address}</Text>
                         ) : null}
                     </View>
                     <View style={styles.field}>
-                        <Text style={styles.label}>Tỉnh/Thành phố *</Text>
+                        <Text style={styles.label}>{t('preOrder.provinceLabel')}</Text>
                         <TouchableOpacity
                             style={[styles.selectTouch, errors.city && styles.inputError]}
                             onPress={() => setPickModal('province')}
                         >
                             <Text style={[styles.selectText, !formData.city && styles.selectPlaceholder]}>
                                 {formData.city
-                                    ? (provinces.find((p) => String(p.code) === formData.city)?.name) || 'Chọn'
-                                    : 'Chọn Tỉnh/Thành phố'}
+                                    ? (provinces.find((p) => String(p.code) === formData.city)?.name) || t('common.select')
+                                    : t('preOrder.selectProvincePlaceholder')}
                             </Text>
                             <MaterialIcons name="arrow-drop-down" size={24} color={COLORS.text.secondary} />
                         </TouchableOpacity>
@@ -311,14 +309,14 @@ export default function PreOrderCheckoutScreen({ navigation, route }) {
                         ) : null}
                     </View>
                     <View style={styles.field}>
-                        <Text style={styles.label}>Phường/Xã *</Text>
+                        <Text style={styles.label}>{t('preOrder.wardLabel')}</Text>
                         <TouchableOpacity
                             style={[styles.selectTouch, errors.ward && styles.inputError]}
                             onPress={() => setPickModal('ward')}
                             disabled={!formData.city}
                         >
                             <Text style={[styles.selectText, !formData.ward && styles.selectPlaceholder]}>
-                                {formData.ward || 'Chọn Phường/Xã'}
+                                {formData.ward || t('preOrder.selectWardPlaceholder')}
                             </Text>
                             <MaterialIcons name="arrow-drop-down" size={24} color={COLORS.text.secondary} />
                         </TouchableOpacity>
@@ -327,12 +325,12 @@ export default function PreOrderCheckoutScreen({ navigation, route }) {
                         ) : null}
                     </View>
                     <View style={styles.field}>
-                        <Text style={styles.label}>Ghi chú</Text>
+                        <Text style={styles.label}>{t('preOrder.noteLabel')}</Text>
                         <TextInput
                             style={[styles.input, styles.inputArea]}
                             value={formData.note}
                             onChangeText={(v) => update('note', v)}
-                            placeholder="Ghi chú (tùy chọn)"
+                            placeholder={t('preOrder.placeholderNote')}
                             multiline
                         />
                     </View>
@@ -343,10 +341,10 @@ export default function PreOrderCheckoutScreen({ navigation, route }) {
                         disabled={loading}
                     >
                         <MaterialIcons name="payment" size={22} color="#fff" />
-                        <Text style={styles.checkoutBtnText}>Thanh toán đặt cọc 50%</Text>
+                        <Text style={styles.checkoutBtnText}>{t('preOrder.payDeposit50')}</Text>
                     </TouchableOpacity>
                     <Text style={styles.hint}>
-                        Bấm "Thanh toán" sẽ hiện xác nhận: đặt trước không thể hủy. Chỉ sau khi bạn xác nhận, hệ thống mới chuyển đến cổng thanh toán.
+                        {t('preOrder.hintConfirm')}
                     </Text>
                 </ScrollView>
             </KeyboardAvoidingView>

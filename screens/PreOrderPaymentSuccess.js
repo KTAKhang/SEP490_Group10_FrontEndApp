@@ -1,13 +1,11 @@
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { useTranslation } from "react-i18next";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 
-/**
- * Màn hình thành công thanh toán Pre-order (đặt cọc hoặc thanh toán còn lại).
- * Dùng riêng cho tính năng pre-order; order thường dùng PaymentSuccess.
- */
 export default function PreOrderPaymentSuccess({ navigation, route }) {
+  const { t } = useTranslation();
   const isRemaining = route.params?.remaining === "success" || route.params?.type === "remaining";
 
   return (
@@ -21,25 +19,23 @@ export default function PreOrderPaymentSuccess({ navigation, route }) {
         </View>
       </View>
 
-      <Text style={styles.title}>Thanh toán đặt trước thành công!</Text>
+      <Text style={styles.title}>{t('payment.preOrderSuccessTitle')}</Text>
       <Text style={styles.subtitle}>
-        {isRemaining
-          ? "Bạn đã thanh toán phần còn lại cho đơn đặt trước thành công."
-          : "Bạn đã đặt cọc đơn đặt trước thành công. Vui lòng chờ phân bổ và thông báo thanh toán phần còn lại."}
+        {isRemaining ? t('preOrder.remainingSuccess') : t('preOrder.depositSuccess')}
       </Text>
 
       <TouchableOpacity
         style={styles.primaryBtn}
-        onPress={() => navigation.navigate("PreOrder", { remaining: isRemaining ? "success" : undefined })}
+        onPress={() => navigation.navigate("PreOrderHistory", { remaining: isRemaining ? "success" : undefined })}
       >
-        <Text style={styles.primaryText}>Xem đơn đặt trước</Text>
+        <Text style={styles.primaryText}>{t('payment.viewPreOrders')}</Text>
       </TouchableOpacity>
 
       <TouchableOpacity
         style={styles.secondaryBtn}
         onPress={() => navigation.navigate("HomePage")}
       >
-        <Text style={styles.secondaryText}>Về trang chủ</Text>
+        <Text style={styles.secondaryText}>{t('payment.backHome')}</Text>
       </TouchableOpacity>
     </LinearGradient>
   );

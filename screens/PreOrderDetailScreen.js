@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
     View,
     Text,
@@ -36,6 +37,7 @@ function getImagesArray(item) {
 }
 
 export default function PreOrderDetailScreen({ navigation, route }) {
+    const { t } = useTranslation();
     const { fruitType: initialFruitType } = route?.params || {};
     const [item, setItem] = useState(initialFruitType);
     const [loading, setLoading] = useState(!!initialFruitType?._id);
@@ -67,7 +69,7 @@ export default function PreOrderDetailScreen({ navigation, route }) {
         const qtyNum = parseFloat(quantity?.replace(',', '.'), 10);
         if (isNaN(qtyNum) || qtyNum < item.minOrderKg || qtyNum > item.maxOrderKg) {
             setErr(
-                `Số kg phải từ ${item.minOrderKg} đến ${item.maxOrderKg}`
+                t('preOrder.kgMustBeBetween', { min: item.minOrderKg, max: item.maxOrderKg })
             );
             return;
         }
@@ -100,12 +102,12 @@ export default function PreOrderDetailScreen({ navigation, route }) {
                     <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
                         <MaterialIcons name="arrow-back" size={24} color="#fff" />
                     </TouchableOpacity>
-                    <Text style={styles.headerTitle}>Đặt trước</Text>
+                    <Text style={styles.headerTitle}>{t('nav.preOrder')}</Text>
                 </LinearGradient>
                 <View style={styles.errorState}>
                     <Text style={styles.errorStateText}>{err}</Text>
                     <TouchableOpacity style={styles.backToPreOrderBtn} onPress={() => navigation.goBack()}>
-                        <Text style={styles.backToPreOrderBtnText}>Quay lại Đặt trước</Text>
+                        <Text style={styles.backToPreOrderBtnText}>{t('preOrder.backToPreOrder')}</Text>
                     </TouchableOpacity>
                 </View>
             </View>
@@ -139,7 +141,7 @@ export default function PreOrderDetailScreen({ navigation, route }) {
             {/* Breadcrumb */}
             <TouchableOpacity style={styles.breadcrumb} onPress={() => navigation.goBack()}>
                 <MaterialIcons name="chevron-left" size={20} color={COLORS.text.secondary} />
-                <Text style={styles.breadcrumbText}>Quay lại Đặt trước</Text>
+                <Text style={styles.breadcrumbText}>{t('preOrder.backToPreOrder')}</Text>
             </TouchableOpacity>
 
             <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
@@ -173,17 +175,17 @@ export default function PreOrderDetailScreen({ navigation, route }) {
 
                 {/* Info card - same structure as web */}
                 <View style={styles.card}>
-                    <Row label="Tên:" value={item.name} valueBold />
-                    <Row label="Giá:" value={`${formatCurrency(item.estimatedPrice)}/kg`} valueGreen />
-                    <Row label="Khoảng đặt:" value={`${item.minOrderKg} – ${item.maxOrderKg} kg`} />
+                    <Row label={`${t('preOrder.name')}:`} value={item.name} valueBold />
+                    <Row label={`${t('preOrder.pricePerKg')}:`} value={`${formatCurrency(item.estimatedPrice)}/kg`} valueGreen />
+                    <Row label={`${t('preOrder.orderRange')}:`} value={`${item.minOrderKg} – ${item.maxOrderKg} kg`} />
                     {item.estimatedHarvestDate ? (
-                        <Row label="Thu hoạch dự kiến:" value={formatDate(item.estimatedHarvestDate)} />
+                        <Row label={`${t('preOrder.estimatedHarvest')}:`} value={formatDate(item.estimatedHarvestDate)} />
                     ) : null}
                     {item.description ? (
-                        <Row label="Mô tả:" value={item.description} multiline />
+                        <Row label={`${t('preOrder.descriptionLabel')}:`} value={item.description} multiline />
                     ) : null}
                     <View style={styles.row}>
-                        <Text style={styles.rowLabel}>Số kg:</Text>
+                        <Text style={styles.rowLabel}>{t('preOrder.quantityKgLabel')}:</Text>
                         <View style={styles.quantityWrap}>
                             <TextInput
                                 style={styles.input}
@@ -194,7 +196,7 @@ export default function PreOrderDetailScreen({ navigation, route }) {
                             />
                             {validQty && (
                                 <Text style={styles.estTotal}>
-                                    Tạm tính: {formatCurrency(estimatedTotal)}
+                                    {t('preOrder.subtotalLabel')}: {formatCurrency(estimatedTotal)}
                                 </Text>
                             )}
                         </View>
@@ -214,7 +216,7 @@ export default function PreOrderDetailScreen({ navigation, route }) {
                 >
                     <MaterialIcons name="shopping-cart" size={22} color="#fff" />
                     <Text style={styles.proceedBtnText}>
-                        {validQty ? 'Tiến tới đặt trước' : 'Nhập số kg'}
+                        {validQty ? t('preOrder.proceedToPreOrder') : t('preOrder.enterKg')}
                     </Text>
                 </TouchableOpacity>
             </ScrollView>

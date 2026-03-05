@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, Image, StyleSheet, ScrollView } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useNavigation } from '@react-navigation/native';
 import { COLORS } from '../constants/colors';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -10,17 +11,17 @@ const truncateText = (text, maxLength) => {
 };
 
 const CategorySection = ({ categories }) => {
+    const { t } = useTranslation();
     const navigation = useNavigation();
 
     if (!categories || categories.length === 0) {
-        return <Text style={styles.errorText}>No categories available.</Text>;
+        return <Text style={styles.errorText}>{t('category.noCategories')}</Text>;
     }
 
-    // Component level filtering: Chỉ hiển thị active categories (status = true)
     const activeCategories = categories.filter(category => category.status === true);
 
     if (activeCategories.length === 0) {
-        return <Text style={styles.errorText}>No active categories available.</Text>;
+        return <Text style={styles.errorText}>{t('category.noActiveCategories')}</Text>;
     }
 
     const handleCategoryPress = (category) => {
@@ -35,7 +36,7 @@ const CategorySection = ({ categories }) => {
 
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>Categories</Text>
+            <Text style={styles.title}>{t('category.categoriesTitle')}</Text>
             <ScrollView
                 horizontal={true}
                 showsHorizontalScrollIndicator={false}

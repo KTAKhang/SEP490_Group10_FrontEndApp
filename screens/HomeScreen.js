@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
 import { ScrollView, StyleSheet, View, StatusBar, TouchableOpacity, Text, Alert } from "react-native";
+import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigation } from "@react-navigation/native";
 import { MaterialIcons } from "@expo/vector-icons";
@@ -18,6 +19,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Platform } from "react-native";
 
 const HomeScreen = () => {
+  const { t } = useTranslation();
   const dispatch = useDispatch();
   const navigation = useNavigation();
   const { isAuthenticated } = useSelector((state) => state.auth);
@@ -61,7 +63,7 @@ const HomeScreen = () => {
         <View style={styles.content}>
           {isLoading ? (
             <InlineLoading
-              text="Đang tải dữ liệu..."
+              text={t('home.loadingData')}
               style={styles.loadingContainer}
               color={COLORS.primary}
             />
@@ -70,7 +72,7 @@ const HomeScreen = () => {
               {apiError ? (
                 <View style={styles.apiErrorBanner}>
                   <Text style={styles.apiErrorText}>
-                    Không thể tải dữ liệu. Kiểm tra kết nối hoặc backend ({API_BASE_URL}).
+                    {t('home.apiError')} ({API_BASE_URL})
                   </Text>
                 </View>
               ) : null}
@@ -80,35 +82,35 @@ const HomeScreen = () => {
                   style={styles.quickActionBtn}
                   onPress={() => {
                     if (isAuthenticated) navigation.navigate("Vouchers");
-                    else Alert.alert("Đăng nhập", "Bạn cần đăng nhập để xem voucher.", [
-                      { text: "Hủy", style: "cancel" },
-                      { text: "Đăng nhập", onPress: () => navigation.navigate("Login") },
+                    else Alert.alert(t('common.loginRequired'), t('home.loginToViewVoucher'), [
+                      { text: t('common.cancel'), style: "cancel" },
+                      { text: t('common.login'), onPress: () => navigation.navigate("Login") },
                     ]);
                   }}
                 >
                   <View style={[styles.quickActionIcon, { backgroundColor: COLORS.primary + "22" }]}>
                     <MaterialIcons name="confirmation-number" size={28} color={COLORS.primary} />
                   </View>
-                  <Text style={styles.quickActionLabel}>Voucher</Text>
+                  <Text style={styles.quickActionLabel}>{t('home.voucher')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.quickActionBtn}
                   onPress={() => {
                     if (isAuthenticated) navigation.navigate("PreOrder");
-                    else Alert.alert("Đăng nhập", "Bạn cần đăng nhập để đặt trước.", [
-                      { text: "Hủy", style: "cancel" },
-                      { text: "Đăng nhập", onPress: () => navigation.navigate("Login") },
+                    else Alert.alert(t('common.loginRequired'), t('home.loginToPreOrder'), [
+                      { text: t('common.cancel'), style: "cancel" },
+                      { text: t('common.login'), onPress: () => navigation.navigate("Login") },
                     ]);
                   }}
                 >
                   <View style={[styles.quickActionIcon, { backgroundColor: COLORS.secondary + "22" }]}>
                     <MaterialIcons name="eco" size={28} color={COLORS.secondary} />
                   </View>
-                  <Text style={styles.quickActionLabel}>Đặt trước</Text>
+                  <Text style={styles.quickActionLabel}>{t('home.preOrder')}</Text>
                 </TouchableOpacity>
               </View>
-              <FeaturedNewProducts products={products} title="Sản phẩm mới" />
-              <FeaturedTopProducts title="Bán chạy nhất" />
+              <FeaturedNewProducts products={products} title={t('home.newProducts')} />
+              <FeaturedTopProducts title={t('home.topSelling')} />
             </>
           )}
         </View>
@@ -126,8 +128,8 @@ const styles = StyleSheet.create({
   },
   headerGradient: {
     paddingTop:
-      Platform.OS === "android" ? (StatusBar.currentHeight || 0) + 10 : 10,
-    paddingBottom: 20,
+      Platform.OS === "android" ? (StatusBar.currentHeight || 0) + 4 : 6,
+    paddingBottom: 16,
     borderBottomLeftRadius: 30,
     borderBottomRightRadius: 30,
     elevation: 5,
@@ -148,7 +150,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
-    paddingTop: 20,
+    paddingTop: 12,
     marginHorizontal: 0,
   },
   apiErrorBanner: {

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import {
   View,
   Text,
@@ -34,6 +35,7 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import { COLORS } from "../constants/colors";
 const PaymentScreen = ({ navigation, route }) => {
+  const { t } = useTranslation();
   const dispatch = useDispatch();
   const [selectedPayment, setSelectedPayment] = useState("COD");
   const [showEditModal, setShowEditModal] = useState(false);
@@ -136,15 +138,15 @@ const PaymentScreen = ({ navigation, route }) => {
   const paymentMethods = [
     {
       id: "COD",
-      title: "Payment upon delivery",
-      subtitle: "Payment upon receipt of your order.",
+      title: t("payment.paymentUponDelivery"),
+      subtitle: t("payment.paymentUponReceive"),
       icon: "cash-outline",
       available: true,
     },
     {
       id: "VNPAY",
-      title: "VNPAY e-wallet",
-      subtitle: "Pay via VNPAY (redirect to payment gateway)",
+      title: t("payment.vnpayTitle"),
+      subtitle: t("payment.vnpaySubtitle"),
       icon: "card-outline",
       available: true,
     },
@@ -180,9 +182,9 @@ const PaymentScreen = ({ navigation, route }) => {
   // Handle order creation error
   useEffect(() => {
     if (error) {
-      Alert.alert("Order failed", error, [
+      Alert.alert(t("payment.orderFailed"), error, [
         {
-          text: "Retry",
+          text: t("common.retry"),
           onPress: () => dispatch(clearOrderState()),
         },
       ]);
@@ -253,14 +255,14 @@ const PaymentScreen = ({ navigation, route }) => {
         checkoutSessionId ||
         (await AsyncStorage.getItem("checkout_session_id"));
       if (!sessionId) {
-        Alert.alert("No payment session to cancel");
+        Alert.alert(t("common.error"), t("payment.noSession"));
         return;
       }
 
-      Alert.alert("Confirm", "Are you sure you want to cancel this payment?", [
-        { text: "No", style: "cancel" },
+      Alert.alert(t("common.confirm"), t("payment.confirmCancel"), [
+        { text: t("payment.no"), style: "cancel" },
         {
-          text: "Yes",
+          text: t("payment.yes"),
           onPress: async () => {
             try {
               // Remove local session immediately to avoid race where Cart reads it and redirects
@@ -273,17 +275,17 @@ const PaymentScreen = ({ navigation, route }) => {
               if (result && result.error) {
                 Toast.show({
                   type: "error",
-                  text1: "Payment cancellation failed.",
+                  text1: t("payment.cancelFailed"),
                   text2: result.error.message || result.error,
                 });
               } else {
-                Toast.show({ type: "success", text1: "Payment cancelled" });
+                Toast.show({ type: "success", text1: t("payment.cancelled") });
                 // Navigate back to cart after a short delay to allow UI updates
                 setTimeout(() => navigation.navigate("Cart"), 300);
               }
             } catch (err) {
               console.error("Cancel checkout error", err);
-              Toast.show({ type: "error", text1: "Payment cancellation failed." });
+              Toast.show({ type: "error", text1: t("payment.cancelFailed") });
             }
           },
         },
@@ -313,10 +315,10 @@ const PaymentScreen = ({ navigation, route }) => {
     const nameRegex =
       /^[a-zA-ZÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚÝàáâãèéêìíòóôõùúýĂăĐđĨĩŨũƠơƯưẠ-ỹ\s]+$/;
     if (!name.trim()) {
-      return "Please enter the recipient's name.";
+      return t("payment.enterName");
     }
     if (!nameRegex.test(name.trim())) {
-      return "Names must not contain numbers or special characters.";
+      return t("payment.nameNoNumbers");
     }
     return null;
   };
@@ -324,10 +326,10 @@ const PaymentScreen = ({ navigation, route }) => {
   const validatePhone = (phone) => {
     const phoneRegex = /^0[0-9]{9}$/;
     if (!phone.trim()) {
-      return "Please enter the recipient's phone number.";
+      return t("payment.enterPhone");
     }
     if (!phoneRegex.test(phone.trim())) {
-      return "Phone numbers must have 10 digits, start with the number 0, and not contain any special characters.";
+      return t("payment.phoneFormat");
     }
     return null;
   };
@@ -336,10 +338,10 @@ const PaymentScreen = ({ navigation, route }) => {
     const addressRegex =
       /^[a-zA-Z0-9ÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚÝàáâãèéêìíòóôõùúýĂăĐđĨĩŨũƠơƯưẠ-ỹ\s,./\-]+$/;
     if (!address.trim()) {
-      return "Please enter the delivery address.";
+      return t("payment.enterAddress");
     }
     if (!addressRegex.test(address.trim())) {
-      return "Addresses must not contain special characters (except commas, periods, and hyphens).";
+      return t("payment.addressNoSpecial");
     }
     return null;
   };
@@ -348,19 +350,19 @@ const PaymentScreen = ({ navigation, route }) => {
     // Validate all fields
     const nameError = validateName(tempReceiverInfo.receiver_name);
     if (nameError) {
-      Alert.alert("Error", nameError);
+      Alert.alert(t("common.error"), nameError);
       return;
     }
 
     const phoneError = validatePhone(tempReceiverInfo.receiver_phone);
     if (phoneError) {
-      Alert.alert("Error", phoneError);
+      Alert.alert(t("common.error"), phoneError);
       return;
     }
 
     const addressError = validateAddress(tempReceiverInfo.receiver_address);
     if (addressError) {
-      Alert.alert("Error", addressError);
+      Alert.alert(t("common.error"), addressError);
       return;
     }
 
@@ -387,9 +389,9 @@ const PaymentScreen = ({ navigation, route }) => {
   const handlePlaceOrder = () => {
     if (!selectedPayment) {
       Alert.alert(
-        "You need to choose a payment method.",
-        "Please select a payment method to continue.",
-        [{ text: "OK" }],
+        t("payment.selectMethod"),
+        t("payment.selectMethodSub"),
+        [{ text: t("common.ok") }],
       );
       return;
     }
@@ -407,9 +409,9 @@ const PaymentScreen = ({ navigation, route }) => {
 
     if (!selectedIds || selectedIds.length === 0) {
       Alert.alert(
-        "No products selected yet.",
-        "Please select your products before placing your order.",
-        [{ text: "OK" }],
+        t("payment.noProductsSelected"),
+        t("payment.selectProductsFirst"),
+        [{ text: t("common.ok") }],
       );
       return;
     }
@@ -418,8 +420,8 @@ const PaymentScreen = ({ navigation, route }) => {
     const nameError = validateName(receiverInfo.receiver_name);
     if (nameError) {
       Alert.alert(
-        "Delivery information error",
-        nameError + "\n\nPlease correct the shipping information.",
+        t("payment.deliveryError"),
+        nameError + "\n\n" + t("payment.correctShipping"),
       );
       return;
     }
@@ -427,8 +429,8 @@ const PaymentScreen = ({ navigation, route }) => {
     const phoneError = validatePhone(receiverInfo.receiver_phone);
     if (phoneError) {
       Alert.alert(
-        "Delivery information error",
-        phoneError + "\n\nPlease correct the shipping information.",
+        t("payment.deliveryError"),
+        phoneError + "\n\n" + t("payment.correctShipping"),
       );
       return;
     }
@@ -436,22 +438,29 @@ const PaymentScreen = ({ navigation, route }) => {
     const addressError = validateAddress(receiverInfo.receiver_address);
     if (addressError) {
       Alert.alert(
-        "Delivery information error",
-        addressError + "\n\nPlease correct the shipping information.",
+        t("payment.deliveryError"),
+        addressError + "\n\n" + t("payment.correctShipping"),
       );
       return;
     }
 
+    const methodTitle = paymentMethods.find((m) => m.id === selectedPayment)?.title || selectedPayment;
+    const totalStr = formatCurrency(finalAmount) + (discountAmount > 0 ? ` (${t("payment.decreasedBy")} ${formatCurrency(discountAmount)})` : "");
+    const confirmMsg = t("payment.confirmOrdersMessage", {
+      method: methodTitle,
+      total: totalStr,
+      address: receiverInfo.receiver_address,
+    });
     Alert.alert(
-      "Confirm orders",
-      `Place your order with ${paymentMethods.find((m) => m.id === selectedPayment)?.title}?\n\nTotal: ${formatCurrency(finalAmount)}${discountAmount > 0 ? ` (has decreased ${formatCurrency(discountAmount)})` : ""}\nDelivered: ${receiverInfo.receiver_address}`,
+      t("payment.confirmOrders"),
+      confirmMsg,
       [
         {
-          text: "Cancel",
+          text: t("common.cancel"),
           style: "cancel",
         },
         {
-          text: "Confirm",
+          text: t("common.confirm"),
           style: "default",
           onPress: () => {
             dispatch(
@@ -1045,7 +1054,7 @@ const PaymentScreen = ({ navigation, route }) => {
               })}
               {selectedItems.length > 3 && (
                 <Text style={styles.moreItemsText}>
-                  and {selectedItems.length - 3} sản phẩm khác...
+                  {t('payment.moreProducts', { count: selectedItems.length - 3 })}
                 </Text>
               )}
             </View>

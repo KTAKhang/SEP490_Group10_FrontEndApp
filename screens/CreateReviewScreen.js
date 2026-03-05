@@ -14,6 +14,7 @@ import {
     KeyboardAvoidingView,
     Platform,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { LinearGradient } from 'expo-linear-gradient';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useRoute, useNavigation } from '@react-navigation/native';
@@ -26,6 +27,7 @@ const MAX_IMAGES = 3;
 const MAX_COMMENT_LENGTH = 1000;
 
 export default function CreateReviewScreen() {
+    const { t } = useTranslation();
     const route = useRoute();
     const navigation = useNavigation();
     const dispatch = useDispatch();
@@ -45,15 +47,15 @@ export default function CreateReviewScreen() {
     useEffect(() => {
         if (successMessage) {
             dispatch(clearReviewState());
-            Alert.alert('Thành công', 'Đánh giá đã được gửi.', [
-                { text: 'OK', onPress: () => navigation.goBack() },
+            Alert.alert(t('reviews.success'), t('reviews.reviewSubmitted'), [
+                { text: t('common.ok'), onPress: () => navigation.goBack() },
             ]);
         }
     }, [successMessage, dispatch, navigation]);
 
     useEffect(() => {
         if (error) {
-            Alert.alert('Lỗi', error);
+            Alert.alert(t('common.error'), error);
             dispatch(clearReviewState());
         }
     }, [error, dispatch]);
@@ -66,7 +68,7 @@ export default function CreateReviewScreen() {
         if (imageUris.length >= MAX_IMAGES) return;
         const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
         if (status !== 'granted') {
-            Alert.alert('Cần quyền', 'Vui lòng cho phép truy cập thư viện ảnh.');
+            Alert.alert(t('reviews.permissionRequired'), t('reviews.allowPhotoLibrary'));
             return;
         }
         const result = await ImagePicker.launchImageLibraryAsync({
@@ -90,11 +92,11 @@ export default function CreateReviewScreen() {
 
     const handleSubmit = async () => {
         if (!orderId || !productId) {
-            setSubmitError('Thiếu thông tin đơn hàng hoặc sản phẩm.');
+            setSubmitError(t('reviews.missingOrderOrProduct'));
             return;
         }
         if (rating < 1 || rating > 5) {
-            setSubmitError('Vui lòng chọn từ 1 đến 5 sao.');
+            setSubmitError(t('reviews.selectStars'));
             return;
         }
         setSubmitError(null);
@@ -123,7 +125,7 @@ export default function CreateReviewScreen() {
                 })).unwrap();
             }
         } catch (err) {
-            setSubmitError(err?.message || String(err) || 'Gửi đánh giá thất bại.');
+            setSubmitError(err?.message || String(err) || t('reviews.submitFailed'));
         }
     };
 
@@ -134,10 +136,10 @@ export default function CreateReviewScreen() {
                     <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
                         <Icon name="arrow-back" size={24} color="#fff" />
                     </TouchableOpacity>
-                    <Text style={styles.headerTitle}>Đánh giá sản phẩm</Text>
+                    <Text style={styles.headerTitle}>{t('product.reviews')}</Text>
                 </LinearGradient>
                 <View style={styles.errorBox}>
-                    <Text style={styles.errorText}>Thiếu thông tin đơn hàng hoặc sản phẩm.</Text>
+                    <Text style={styles.errorText}>{t('reviews.missingOrderOrProduct')}</Text>
                 </View>
             </SafeAreaView>
         );
@@ -150,7 +152,7 @@ export default function CreateReviewScreen() {
                 <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
                     <Icon name="arrow-back" size={24} color="#fff" />
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>Đánh giá sản phẩm</Text>
+                <Text style={styles.headerTitle}>{t('product.reviews')}</Text>
                 {productName ? (
                     <Text style={styles.headerSubtitle} numberOfLines={1}>{productName}</Text>
                 ) : null}
@@ -166,9 +168,9 @@ export default function CreateReviewScreen() {
                     contentContainerStyle={styles.scrollContent}
                     keyboardShouldPersistTaps="handled"
                 >
-                    <Text style={styles.hint}>Chỉ đơn hàng đã giao mới được đánh giá.</Text>
+                    <Text style={styles.hint}>{t('reviews.onlyDeliveredHint')}</Text>
 
-                    <Text style={styles.label}>Đánh giá sao</Text>
+                    <Text style={styles.label}>{t('reviews.ratingStars')}</Text>
                     <View style={styles.starsRow}>
                         {[1, 2, 3, 4, 5].map((value) => (
                             <TouchableOpacity
@@ -186,10 +188,10 @@ export default function CreateReviewScreen() {
                         <Text style={styles.ratingText}>{rating}/5</Text>
                     </View>
 
-                    <Text style={styles.label}>Nhận xét (tối đa {MAX_COMMENT_LENGTH} ký tự)</Text>
+                    <Text style={styles.label}>{t('reviews.commentLabel', { max: MAX_COMMENT_LENGTH })}</Text>
                     <TextInput
                         style={styles.input}
-                        placeholder="Chia sẻ trải nghiệm của bạn..."
+                        placeholder={t('reviews.placeholder')}
                         placeholderTextColor="#9CA3AF"
                         value={comment}
                         onChangeText={setComment}
@@ -199,7 +201,7 @@ export default function CreateReviewScreen() {
                     />
                     <Text style={styles.charCount}>{comment.length}/{MAX_COMMENT_LENGTH}</Text>
 
-                    <Text style={styles.label}>Ảnh đánh giá (tối đa {MAX_IMAGES} ảnh)</Text>
+                    <Text style={styles.label}>{t('reviews.imagesLabel', { max: MAX_IMAGES })}</Text>
                     <View style={styles.imageRow}>
                         {imageUris.map((img, index) => (
                             <View key={index} style={styles.imageWrap}>
@@ -215,14 +217,14 @@ export default function CreateReviewScreen() {
                         {imageUris.length < MAX_IMAGES && (
                             <TouchableOpacity style={styles.addImageBtn} onPress={pickImage}>
                                 <Icon name="add-a-photo" size={32} color={COLORS.primary} />
-                                <Text style={styles.addImageText}>Thêm ảnh</Text>
+                                <Text style={styles.addImageText}>{t('reviews.addImage')}</Text>
                             </TouchableOpacity>
                         )}
                     </View>
-                    <Text style={styles.imageCount}>{imageUris.length}/{MAX_IMAGES} ảnh</Text>
+                    <Text style={styles.imageCount}>{t('reviews.imagesCount', { current: imageUris.length, max: MAX_IMAGES })}</Text>
 
                     {!hasValidRating && hasValidParams && (
-                        <Text style={styles.validationError}>Vui lòng chọn từ 1 đến 5 sao.</Text>
+                        <Text style={styles.validationError}>{t('reviews.selectStarsRequired')}</Text>
                     )}
                     {submitError ? (
                         <Text style={styles.validationError}>{submitError}</Text>
@@ -236,7 +238,7 @@ export default function CreateReviewScreen() {
                         {isLoading ? (
                             <ActivityIndicator color="#fff" />
                         ) : (
-                            <Text style={styles.submitBtnText}>Gửi đánh giá</Text>
+                            <Text style={styles.submitBtnText}>{t('reviews.submit')}</Text>
                         )}
                     </TouchableOpacity>
                 </ScrollView>

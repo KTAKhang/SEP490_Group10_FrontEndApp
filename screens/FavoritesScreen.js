@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   RefreshControl,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useDispatch, useSelector } from 'react-redux';
 import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -18,6 +19,7 @@ import { InlineLoading } from '../components/Loading';
 import Toast from 'react-native-toast-message';
 
 const FavoritesScreen = ({ navigation }) => {
+  const { t } = useTranslation();
   const dispatch = useDispatch();
   const { items, pagination, isLoadingList, error } = useSelector((state) => state.favorite);
   const { isAuthenticated } = useSelector((state) => state.auth);
@@ -55,9 +57,9 @@ const FavoritesScreen = ({ navigation }) => {
           </View>
         </TouchableOpacity>
         <View style={styles.headerTitleContainer}>
-          <Text style={styles.headerTitle}>Sản phẩm yêu thích</Text>
+          <Text style={styles.headerTitle}>{t('favorites.title')}</Text>
           <Text style={styles.headerSubtitle}>
-            {pagination?.total || items.length} sản phẩm
+            {t('favorites.productCount', { count: pagination?.total || items.length })}
           </Text>
         </View>
         <View style={{ width: 44 }} />
@@ -73,15 +75,15 @@ const FavoritesScreen = ({ navigation }) => {
         await dispatch(fetchFavorites({ page: 1, limit: 12 }));
         Toast.show({
           type: 'success',
-          text1: 'Đã bỏ khỏi danh sách yêu thích',
+          text1: t('favorites.removed'),
           position: 'top',
           visibilityTime: 2000,
         });
       } catch (error) {
         Toast.show({
           type: 'error',
-          text1: 'Không thể bỏ yêu thích',
-          text2: error?.toString() || 'Vui lòng thử lại sau',
+          text1: t('favorites.cannotRemove'),
+          text2: error?.toString() || t('favorites.tryAgain'),
           position: 'top',
           visibilityTime: 2500,
         });
@@ -107,15 +109,15 @@ const FavoritesScreen = ({ navigation }) => {
         {renderHeader()}
         <View style={styles.notAuthContent}>
           <MaterialIcons name="favorite-border" size={64} color={COLORS.primary} />
-          <Text style={styles.notAuthTitle}>Đăng nhập để xem sản phẩm yêu thích</Text>
+          <Text style={styles.notAuthTitle}>{t('favorites.loginToView')}</Text>
           <Text style={styles.notAuthText}>
-            Danh sách yêu thích được lưu theo tài khoản của bạn.
+            {t('favorites.loginHint')}
           </Text>
           <TouchableOpacity
             style={styles.loginButton}
             onPress={() => navigation.navigate('Login')}
           >
-            <Text style={styles.loginButtonText}>Đăng nhập ngay</Text>
+            <Text style={styles.loginButtonText}>{t('favorites.loginNow')}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -126,7 +128,7 @@ const FavoritesScreen = ({ navigation }) => {
     return (
       <View style={styles.container}>
         {renderHeader()}
-        <InlineLoading text="Đang tải danh sách yêu thích..." style={styles.loadingContainer} />
+        <InlineLoading text={t('favorites.loading')} style={styles.loadingContainer} />
       </View>
     );
   }
@@ -156,9 +158,9 @@ const FavoritesScreen = ({ navigation }) => {
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <MaterialIcons name="favorite-border" size={72} color="#cbd5f5" />
-              <Text style={styles.emptyTitle}>Chưa có sản phẩm yêu thích</Text>
+              <Text style={styles.emptyTitle}>{t('favorites.emptyTitle')}</Text>
               <Text style={styles.emptyText}>
-                Hãy thêm sản phẩm vào danh sách yêu thích từ trang chi tiết sản phẩm.
+                {t('favorites.emptyHint')}
               </Text>
             </View>
           }

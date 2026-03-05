@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
@@ -10,6 +11,7 @@ import { fetchTopSoldProductsAsync } from '../store/slices/productSlice';
 import { MinimalLoading } from './Loading';
 
 const FeaturedTopProducts = ({ title }) => {
+    const { t } = useTranslation();
     const navigation = useNavigation();
     const dispatch = useDispatch();
     const { topSoldProducts, isLoadingTopSold } = useSelector((state) => state.product);
@@ -57,7 +59,7 @@ const FeaturedTopProducts = ({ title }) => {
                         <View style={styles.titleUnderline} />
                     </View>
                 </View>
-                <Text style={styles.errorText}>Không có sản phẩm bán chạy nào.</Text>
+                <Text style={styles.errorText}>{t('home.noTopSellingProducts')}</Text>
             </View>
         );
     }

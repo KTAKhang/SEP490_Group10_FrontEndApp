@@ -13,6 +13,7 @@ import {
   Image,
   Modal,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
@@ -27,6 +28,7 @@ import { COLORS } from '../constants/colors';
 import { API_BASE_URL } from '../config/api';
 
 const ContactDetailScreen = ({ route }) => {
+  const { t } = useTranslation();
   const { contactId } = route.params;
   const dispatch = useDispatch();
   const navigation = useNavigation();
@@ -97,7 +99,7 @@ const ContactDetailScreen = ({ route }) => {
     if (!file) return null;
 
     let url = null;
-    let name = `Tệp ${idx + 1}`;
+    let name = t('contact.fileLabel', { index: idx + 1 });
     let mime = '';
 
     if (typeof file === 'string') {
@@ -129,7 +131,7 @@ const ContactDetailScreen = ({ route }) => {
         file.fileName ||
         file.filename ||
         file.name ||
-        `Tệp ${idx + 1}`;
+        t('contact.fileLabel', { index: idx + 1 });
 
       mime =
         file.mimeType ||
@@ -158,7 +160,7 @@ const ContactDetailScreen = ({ route }) => {
     return (
       <View style={styles.center}>
         <ActivityIndicator size="large" color={COLORS.primary} />
-        <Text style={styles.loadingText}>Đang tải chi tiết liên hệ...</Text>
+        <Text style={styles.loadingText}>{t('contact.loadingDetail')}</Text>
       </View>
     );
   }
@@ -202,7 +204,7 @@ const ContactDetailScreen = ({ route }) => {
             >
               <Ionicons name="arrow-back" size={22} color="#fff" />
             </TouchableOpacity>
-            <Text style={styles.headerTitle}>Chi tiết liên hệ</Text>
+            <Text style={styles.headerTitle}>{t('contact.detailTitle')}</Text>
             <View style={{ width: 42 }} />
           </View>
         </SafeAreaView>
@@ -224,7 +226,7 @@ const ContactDetailScreen = ({ route }) => {
               <Text style={styles.subject}>{contactDetail.subject}</Text>
 
               <View style={styles.originalMessageBox}>
-                <Text style={styles.originalMessageLabel}>Nội dung liên hệ</Text>
+                <Text style={styles.originalMessageLabel}>{t('contact.originalMessage')}</Text>
                 <Text style={styles.originalMessage}>
                   {contactDetail.message}
                 </Text>
@@ -360,7 +362,7 @@ const ContactDetailScreen = ({ route }) => {
                       </Text>
                     </View>
                     <Text style={styles.bubbleMetaText}>
-                      {isCustomer ? 'Bạn' : 'Hỗ trợ'}
+                      {isCustomer ? t('contact.you') : t('contact.support')}
                       {createdAtText ? ` • ${createdAtText}` : ''}
                     </Text>
                   </View>
@@ -384,10 +386,9 @@ const ContactDetailScreen = ({ route }) => {
                 size={40}
                 color="#CBD5E1"
               />
-              <Text style={styles.emptyRepliesTitle}>Chưa có phản hồi nào</Text>
+              <Text style={styles.emptyRepliesTitle}>{t('contact.noReplies')}</Text>
               <Text style={styles.emptyRepliesText}>
-                Bạn có thể gửi tin nhắn phía dưới, bộ phận hỗ trợ sẽ phản hồi
-                sớm nhất.
+                {t('contact.emptyRepliesText')}
               </Text>
             </View>
           )}
@@ -397,7 +398,7 @@ const ContactDetailScreen = ({ route }) => {
         <View style={styles.replyContainer}>
           <TextInput
             style={styles.input}
-            placeholder="Nhập phản hồi..."
+            placeholder={t('contact.replyPlaceholder')}
             placeholderTextColor={COLORS.text.light}
             value={message}
             onChangeText={setMessage}

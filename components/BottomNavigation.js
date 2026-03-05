@@ -10,32 +10,32 @@ import {
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSelector } from 'react-redux';
 import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 
 const BottomNavigation = () => {
+    const { t } = useTranslation();
     const [activeTab, setActiveTab] = useState('HomePage');
     const navigation = useNavigation();
     const route = useRoute();
     const { isAuthenticated, user } = useSelector((state) => state.auth);
 
-    // Admin không có Cart/Profile/OrderHistory trong stack — ẩn bottom nav để tránh lỗi navigate
     if (user?.role_name === 'admin') return null;
 
     const tabs = [
-        { name: 'HomePage', icon: 'home', label: 'Trang chủ', requiresAuth: false },
-        { name: 'Contact', icon: 'support-agent', label: 'Liên hệ', requiresAuth: true },
-        { name: 'OrderHistory', icon: 'local-shipping', label: 'Đơn hàng', requiresAuth: true },
-        { name: 'Vouchers', icon: 'confirmation-number', label: 'Voucher', requiresAuth: true },
-        { name: 'Profile', icon: 'person', label: 'Hồ sơ', requiresAuth: true },
+        { name: 'HomePage', icon: 'home', label: t('nav.home'), requiresAuth: false },
+        { name: 'Contact', icon: 'support-agent', label: t('nav.contact'), requiresAuth: true },
+        { name: 'OrderHistory', icon: 'local-shipping', label: t('nav.orders'), requiresAuth: true },
+        { name: 'Profile', icon: 'person', label: t('nav.profile'), requiresAuth: true },
     ];
 
     const handleTabPress = (tab) => {
         if (tab.requiresAuth && !isAuthenticated) {
             Alert.alert(
-                'Login required',
-                `You need to log in to access ${tab.label.toLowerCase()}.Would you like to log in now?`,
+                t('common.loginRequired'),
+                `You need to log in to access this. Would you like to log in now?`,
                 [
-                    { text: 'Cancel', style: 'cancel' },
-                    { text: 'Log in', onPress: () => navigation.navigate('Login') }
+                    { text: t('common.cancel'), style: 'cancel' },
+                    { text: t('common.login'), onPress: () => navigation.navigate('Login') }
                 ]
             );
             return;
@@ -56,7 +56,7 @@ const BottomNavigation = () => {
     );
 
     return (
-        <SafeAreaView style={styles.container}>
+        <SafeAreaView style={styles.container} edges={['bottom']}>
             <View style={styles.navigation}>
                 {tabs.map((tab) => (
                     <TouchableOpacity
@@ -114,13 +114,13 @@ const styles = StyleSheet.create({
     },
     navigation: {
         flexDirection: 'row',
-        height: 64,
+        height: 52,
     },
     tabItem: {
         flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
-        paddingVertical: 8,
+        paddingVertical: 6,
     },
     disabledTab: {
         opacity: 0.6,
@@ -132,8 +132,8 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     tabLabel: {
-        fontSize: 12,
-        marginTop: 4,
+        fontSize: 11,
+        marginTop: 2,
         fontWeight: '400',
     },
 });

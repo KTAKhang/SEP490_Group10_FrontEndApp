@@ -11,6 +11,7 @@ import {
     StatusBar,
     Alert,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -21,13 +22,16 @@ import { logoutUser } from '../store/slices/authSlice';
 import ProfileHeader from '../components/ProfileHeader';
 import PersonalInfoSection from '../components/PersonalInfoSection';
 import OrderHistorySection from '../components/OrderHistorySection';
+import PreOrderHistorySection from '../components/PreOrderHistorySection';
 import { changePassword, fetchUserProfile, resetChangePasswordSuccess, resetUpdateSuccess, updateUserProfile } from '../store/slices/userSlice';
 import { fetchOrderByUser } from '../store/slices/orderSlice';
+import { getMyPreOrders } from '../services/preorderService';
 import EditProfileModal from '../components/EditProfileModal';
 import ChangePasswordModal from '../components/ChangePasswordModal';
 import { InlineLoading } from '../components/Loading';
 
 const ProfileScreen = ({ navigation }) => {
+    const { t } = useTranslation();
     const [editModalVisible, setEditModalVisible] = useState(false);
     const [passwordModalVisible, setPasswordModalVisible] = useState(false);
     const [darkMode, setDarkMode] = useState(false);
@@ -44,6 +48,7 @@ const ProfileScreen = ({ navigation }) => {
         changePasswordError,
     } = useSelector((state) => state.user);
     const { orders, isLoading: orderLoading, error: orderError } = useSelector((state) => state.order);
+    const [preOrders, setPreOrders] = useState([]);
     const [currentPassword, setCurrentPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
@@ -51,17 +56,20 @@ const ProfileScreen = ({ navigation }) => {
     useEffect(() => {
         dispatch(fetchUserProfile());
         dispatch(fetchOrderByUser());
+        getMyPreOrders({ page: 1, limit: 5 })
+            .then((res) => setPreOrders(res.list || []))
+            .catch(() => setPreOrders([]));
     }, [dispatch]);
 
     useEffect(() => {
         if (isUpdateSuccess) {
             dispatch(fetchUserProfile());
             Alert.alert(
-                'Update successful',
-                'Your personal information has been updated.',
+                t('auth.updateSuccess'),
+                t('auth.updateSuccessMessage'),
                 [
                     {
-                        text: 'OK',
+                        text: t('common.ok'),
                         onPress: () => {
                             setEditModalVisible(false);
                             dispatch(resetUpdateSuccess());
@@ -75,14 +83,13 @@ const ProfileScreen = ({ navigation }) => {
     useEffect(() => {
         if (isChangePasswordSuccess) {
             Alert.alert(
-                'Password changed successfully.',
-                'Your password has been updated.',
+                t('auth.passwordChangedSuccess'),
+                t('auth.passwordChangedMessage'),
                 [
                     {
-                        text: 'OK',
+                        text: t('common.ok'),
                         onPress: () => {
                             setPasswordModalVisible(false);
-                            // Reset form
                             setCurrentPassword('');
                             setNewPassword('');
                             setConfirmPassword('');
@@ -98,14 +105,12 @@ const ProfileScreen = ({ navigation }) => {
     useEffect(() => {
         if (changePasswordError && passwordModalVisible) {
             Alert.alert(
-                'Password change error',
+                t('auth.changePasswordErrorTitle'),
                 changePasswordError,
                 [
                     {
-                        text: 'OK',
-                        onPress: () => {
-                            // Keep modal open so user can retry
-                        },
+                        text: t('common.ok'),
+                        onPress: () => {},
                     },
                 ]
             );
@@ -114,12 +119,12 @@ const ProfileScreen = ({ navigation }) => {
 
     const handleLogout = () => {
         Alert.alert(
-            'Log out',
-            'Are you sure you want to log out?',
+            t('common.logout'),
+            t('profile.logoutConfirm'),
             [
-                { text: 'Cancel', style: 'cancel' },
+                { text: t('common.cancel'), style: 'cancel' },
                 {
-                    text: 'Logout',
+                    text: t('common.logout'),
                     style: 'destructive',
                     onPress: () => dispatch(logoutUser())
                 },
@@ -133,22 +138,22 @@ const ProfileScreen = ({ navigation }) => {
     const handleChangePassword = () => {
         // Validation
         if (!currentPassword || !newPassword || !confirmPassword) {
-            Alert.alert('Error', 'Please enter all the required information.');
+            Alert.alert(t('common.error'), t('auth.enterAllRequired'));
             return;
         }
 
         if (newPassword.length < 6) {
-            Alert.alert('Error', 'The new password must have at least 6 characters.');
+            Alert.alert(t('common.error'), t('auth.newPasswordMin6'));
             return;
         }
 
         if (newPassword !== confirmPassword) {
-            Alert.alert('Error', 'The verification password does not match.');
+            Alert.alert(t('common.error'), t('auth.passwordMismatch'));
             return;
         }
 
         if (currentPassword === newPassword) {
-            Alert.alert('Error', 'The new password must be different from the current password.');
+            Alert.alert(t('common.error'), t('auth.newPasswordDifferent'));
             return;
         }
 
@@ -181,7 +186,7 @@ const ProfileScreen = ({ navigation }) => {
             >
                 <SafeAreaView>
                     <View style={styles.header}>
-                        <Text style={styles.headerTitle}>Profile</Text>
+                        <Text style={styles.headerTitle}>{t('profile.title')}</Text>
                     </View>
                 </SafeAreaView>
             </LinearGradient>
@@ -214,6 +219,11 @@ const ProfileScreen = ({ navigation }) => {
                                     onViewAll={() => navigation?.navigate('OrderHistory')}
                                     onOrderPress={(order) => navigation.navigate('OrderDetails', { orderId: order._id })}
                                 />
+                                <PreOrderHistorySection
+                                    preOrderHistory={preOrders}
+                                    onViewAll={() => navigation?.navigate('PreOrderHistory')}
+                                    onOrderPress={() => navigation?.navigate('PreOrderHistory')}
+                                />
                             </>
                         )}
 
@@ -223,7 +233,7 @@ const ProfileScreen = ({ navigation }) => {
                                 onPress={() => navigation.navigate('Vouchers')}
                             >
                                 <MaterialIcons name="confirmation-number" size={22} color={COLORS.primary} />
-                                <Text style={styles.menuText}>My voucher</Text>
+                                <Text style={styles.menuText}>{t('profile.myVoucher')}</Text>
                                 <MaterialIcons name="chevron-right" size={22} color={COLORS.text.light} />
                             </TouchableOpacity>
                             <TouchableOpacity
@@ -231,14 +241,14 @@ const ProfileScreen = ({ navigation }) => {
                                 onPress={() => navigation.navigate('PreOrder')}
                             >
                                 <MaterialIcons name="eco" size={22} color={COLORS.primary} />
-                                <Text style={styles.menuText}>Book</Text>
+                                <Text style={styles.menuText}>{t('nav.book')}</Text>
                                 <MaterialIcons name="chevron-right" size={22} color={COLORS.text.light} />
                             </TouchableOpacity>
                         </View>
 
                         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
                             <Ionicons name="log-out-outline" size={20} color="#ef4444" />
-                            <Text style={styles.logoutText}>Logout</Text>
+                            <Text style={styles.logoutText}>{t('common.logout')}</Text>
                         </TouchableOpacity>
                     </>
                 )}
