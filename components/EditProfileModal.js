@@ -366,16 +366,17 @@ const EditProfileModal = ({ visible, onClose, profile, onSave }) => {
     try {
       setLoading(true);
       await new Promise((resolve) => setTimeout(resolve, 1000));
-
       const updatedProfile = {
         user_name: name.trim(),
-        avatar: avatar,
         phone: phone.trim(),
         address: `${address.trim()}, ${ward}, ${icity}`,
         birthday: birthday || null,
         gender: gender || null,
       };
-
+      // CHỈ thêm avatar nếu là file local
+      if (avatar?.uri?.startsWith("file")) {
+        updatedProfile.avatar = avatar;
+      }
       await onSave(updatedProfile);
       // if(isUpdateSuccess){}
       onClose();
@@ -469,7 +470,9 @@ const EditProfileModal = ({ visible, onClose, profile, onSave }) => {
                     style={styles.changeAvatarButton}
                     onPress={handleChangeAvatar}
                   >
-                    <Text style={styles.changeAvatarText}>Change the image</Text>
+                    <Text style={styles.changeAvatarText}>
+                      Change the image
+                    </Text>
                   </TouchableOpacity>
                 </View>
 
