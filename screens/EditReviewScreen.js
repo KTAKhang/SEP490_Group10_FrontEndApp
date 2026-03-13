@@ -14,6 +14,7 @@ import {
     KeyboardAvoidingView,
     Platform,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { LinearGradient } from 'expo-linear-gradient';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useRoute, useNavigation } from '@react-navigation/native';
@@ -27,6 +28,7 @@ const MAX_COMMENT_LENGTH = 1000;
 const EDIT_WINDOW_DAYS = 3;
 
 export default function EditReviewScreen() {
+    const { t } = useTranslation();
     const route = useRoute();
     const navigation = useNavigation();
     const dispatch = useDispatch();
@@ -63,12 +65,12 @@ export default function EditReviewScreen() {
     useEffect(() => {
         if (!review) {
             setCanEdit(false);
-            setBlockMessage('Không tìm thấy thông tin đánh giá.');
+            setBlockMessage(t('reviews.reviewNotFound'));
             return;
         }
         if (editedCount >= 1) {
             setCanEdit(false);
-            setBlockMessage('Mỗi đánh giá chỉ được chỉnh sửa một lần.');
+            setBlockMessage(t('reviews.editOnceOnly'));
             return;
         }
         if (createdAt) {
@@ -77,24 +79,24 @@ export default function EditReviewScreen() {
             const diffDays = Math.floor((now - created) / (1000 * 60 * 60 * 24));
             if (diffDays > EDIT_WINDOW_DAYS) {
                 setCanEdit(false);
-                setBlockMessage('Chỉ được chỉnh sửa trong vòng 3 ngày kể từ ngày đăng.');
+                setBlockMessage(t('reviews.editWithin3Days'));
                 return;
             }
         }
-    }, [review, editedCount, createdAt]);
+    }, [review, editedCount, createdAt, t]);
 
     useEffect(() => {
         if (successMessage) {
             dispatch(clearReviewState());
-            Alert.alert('Thành công', 'Đánh giá đã được cập nhật.', [
-                { text: 'OK', onPress: () => navigation.goBack() },
+            Alert.alert(t('reviews.success'), t('reviews.reviewUpdated'), [
+                { text: t('common.ok'), onPress: () => navigation.goBack() },
             ]);
         }
     }, [successMessage, dispatch, navigation]);
 
     useEffect(() => {
         if (error) {
-            Alert.alert('Lỗi', error);
+            Alert.alert(t('common.error'), error);
             dispatch(clearReviewState());
         }
     }, [error, dispatch]);
@@ -103,7 +105,7 @@ export default function EditReviewScreen() {
         if (totalImages >= MAX_IMAGES) return;
         const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
         if (status !== 'granted') {
-            Alert.alert('Cần quyền', 'Vui lòng cho phép truy cập thư viện ảnh.');
+            Alert.alert(t('reviews.permissionRequired'), t('reviews.allowPhotoLibrary'));
             return;
         }
         const result = await ImagePicker.launchImageLibraryAsync({
@@ -135,7 +137,7 @@ export default function EditReviewScreen() {
     const handleSubmit = async () => {
         if (!canEdit || !reviewId) return;
         if (rating < 1 || rating > 5) {
-            Alert.alert('Lỗi', 'Vui lòng chọn từ 1 đến 5 sao.');
+            Alert.alert(t('common.error'), t('reviews.selectStarsRequired'));
             return;
         }
 
@@ -168,7 +170,7 @@ export default function EditReviewScreen() {
                 })).unwrap();
             }
         } catch (err) {
-            Alert.alert('Lỗi', err || 'Cập nhật đánh giá thất bại.');
+            Alert.alert(t('common.error'), err || t('reviews.updateFailed'));
         }
     };
 
@@ -179,10 +181,10 @@ export default function EditReviewScreen() {
                     <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
                         <Icon name="arrow-back" size={24} color="#fff" />
                     </TouchableOpacity>
-                    <Text style={styles.headerTitle}>Chỉnh sửa đánh giá</Text>
+                    <Text style={styles.headerTitle}>{t('reviews.editTitle')}</Text>
                 </LinearGradient>
                 <View style={styles.errorBox}>
-                    <Text style={styles.errorText}>Thiếu thông tin đánh giá.</Text>
+                    <Text style={styles.errorText}>{t('reviews.missingReviewInfo')}</Text>
                 </View>
             </SafeAreaView>
         );
@@ -195,9 +197,9 @@ export default function EditReviewScreen() {
                 <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
                     <Icon name="arrow-back" size={24} color="#fff" />
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>Chỉnh sửa đánh giá</Text>
+                <Text style={styles.headerTitle}>{t('reviews.editTitle')}</Text>
                 <Text style={styles.headerSubtitle}>
-                    Chỉ được sửa 1 lần, trong vòng {EDIT_WINDOW_DAYS} ngày
+                    {t('reviews.editSubtitle', { days: EDIT_WINDOW_DAYS })}
                 </Text>
             </LinearGradient>
 
@@ -214,15 +216,15 @@ export default function EditReviewScreen() {
                     {!canEdit ? (
                         <View style={styles.blockBox}>
                             <Icon name="info-outline" size={48} color={COLORS.primary} />
-                            <Text style={styles.blockTitle}>Không thể chỉnh sửa</Text>
+                            <Text style={styles.blockTitle}>{t('reviews.cannotEdit')}</Text>
                             <Text style={styles.blockMessage}>{blockMessage}</Text>
                             <TouchableOpacity style={styles.backToOrdersBtn} onPress={() => navigation.goBack()}>
-                                <Text style={styles.backToOrdersText}>Quay lại đơn hàng</Text>
+                                <Text style={styles.backToOrdersText}>{t('reviews.backToOrder')}</Text>
                             </TouchableOpacity>
                         </View>
                     ) : (
                         <>
-                            <Text style={styles.label}>Đánh giá sao</Text>
+                            <Text style={styles.label}>{t('reviews.ratingStars')}</Text>
                             <View style={styles.starsRow}>
                                 {[1, 2, 3, 4, 5].map((value) => (
                                     <TouchableOpacity
@@ -240,10 +242,10 @@ export default function EditReviewScreen() {
                                 <Text style={styles.ratingText}>{rating}/5</Text>
                             </View>
 
-                            <Text style={styles.label}>Nhận xét (tối đa {MAX_COMMENT_LENGTH} ký tự)</Text>
+                            <Text style={styles.label}>{t('reviews.commentLabel', { max: MAX_COMMENT_LENGTH })}</Text>
                             <TextInput
                                 style={styles.input}
-                                placeholder="Chia sẻ trải nghiệm của bạn..."
+                                placeholder={t('reviews.placeholder')}
                                 placeholderTextColor="#9CA3AF"
                                 value={comment}
                                 onChangeText={setComment}
@@ -253,7 +255,7 @@ export default function EditReviewScreen() {
                             />
                             <Text style={styles.charCount}>{comment.length}/{MAX_COMMENT_LENGTH}</Text>
 
-                            <Text style={styles.label}>Ảnh (tối đa {MAX_IMAGES})</Text>
+                            <Text style={styles.label}>{t('reviews.imagesLabel', { max: MAX_IMAGES })}</Text>
                             <View style={styles.imageRow}>
                                 {existingImages.map((uri, index) => (
                                     <View key={`ex-${index}`} style={styles.imageWrap}>
@@ -280,14 +282,14 @@ export default function EditReviewScreen() {
                                 {totalImages < MAX_IMAGES && (
                                     <TouchableOpacity style={styles.addImageBtn} onPress={pickImage}>
                                         <Icon name="add-a-photo" size={32} color={COLORS.primary} />
-                                        <Text style={styles.addImageText}>Thêm ảnh</Text>
+                                        <Text style={styles.addImageText}>{t('reviews.addImage')}</Text>
                                     </TouchableOpacity>
                                 )}
                             </View>
-                            <Text style={styles.imageCount}>{totalImages}/{MAX_IMAGES} ảnh</Text>
+                            <Text style={styles.imageCount}>{t('reviews.imagesCount', { current: totalImages, max: MAX_IMAGES })}</Text>
 
                             {canEdit && !hasValidRating && (
-                                <Text style={styles.validationError}>Vui lòng chọn từ 1 đến 5 sao.</Text>
+                                <Text style={styles.validationError}>{t('reviews.selectStarsRequired')}</Text>
                             )}
 
                             <TouchableOpacity
@@ -298,7 +300,7 @@ export default function EditReviewScreen() {
                                 {isLoading ? (
                                     <ActivityIndicator color="#fff" />
                                 ) : (
-                                    <Text style={styles.submitBtnText}>Cập nhật đánh giá</Text>
+                                    <Text style={styles.submitBtnText}>{t('reviews.update')}</Text>
                                 )}
                             </TouchableOpacity>
                         </>

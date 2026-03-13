@@ -1,20 +1,23 @@
 // components/PersonalInfoSection.js
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 const PersonalInfoSection = ({ profile = {}, onChangePasswordPress }) => {
+    const { t } = useTranslation();
 
     const formatDate = (date) => {
         if (!date) return '';
-        return new Date(date).toLocaleDateString('vi-VN');
+        return new Date(date).toLocaleDateString(undefined);
     };
 
     const formatGender = (gender) => {
         if (!gender) return '';
-        if (gender.toLowerCase() === 'male') return 'Nam';
-        if (gender.toLowerCase() === 'female') return 'Nữ';
-        return gender;
+        const g = gender.toLowerCase();
+        if (g === 'male') return t('auth.genderMale');
+        if (g === 'female') return t('auth.genderFemale');
+        return t('auth.genderOther');
     };
 
     const infoItems = [
@@ -25,15 +28,16 @@ const PersonalInfoSection = ({ profile = {}, onChangePasswordPress }) => {
         { icon: 'location-outline', label: 'Address', value: profile.address },
         { icon: 'calendar-outline', label: 'Birthday', value: formatDate(profile.birthday) },
         { icon: 'male-female-outline', label: 'Gender', value: formatGender(profile.gender) },
+
     ];
 
     return (
         <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Personal Information</Text>
+            <Text style={styles.sectionTitle}>{t('profile.personalInfo')}</Text>
 
-            {infoItems.map(({ icon, label, value }, index) => (
+            {infoItems.map(({ icon, labelKey, value }, index) => (
                 <View
-                    key={label}
+                    key={labelKey}
                     style={[
                         styles.infoItem,
                         index === infoItems.length - 1 && { borderBottomWidth: 0 }
@@ -44,9 +48,9 @@ const PersonalInfoSection = ({ profile = {}, onChangePasswordPress }) => {
                             <Ionicons name={icon} size={20} color="#22c55e" />
                         </View>
                         <View style={styles.infoContent}>
-                            <Text style={styles.infoLabel}>{label}</Text>
+                            <Text style={styles.infoLabel}>{t(labelKey)}</Text>
                             <Text style={styles.infoValue}>
-                                {value || 'Not updated'}
+                                {value || t('profile.notUpdated')}
                             </Text>
                         </View>
                     </View>
@@ -58,7 +62,7 @@ const PersonalInfoSection = ({ profile = {}, onChangePasswordPress }) => {
                 onPress={onChangePasswordPress}
             >
                 <Ionicons name="key-outline" size={20} color="#22c55e" />
-                <Text style={styles.changePasswordText}>Change Password</Text>
+                <Text style={styles.changePasswordText}>{t('profile.changePassword')}</Text>
             </TouchableOpacity>
         </View>
     );

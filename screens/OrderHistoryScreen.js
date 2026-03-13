@@ -12,8 +12,8 @@ import {
     RefreshControl,
     Platform,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import { Ionicons, MaterialIcons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useDispatch, useSelector } from 'react-redux';
 import { COLORS } from '../constants/colors';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -33,24 +33,23 @@ function getProductImageFromItem(item) {
     return (uri && typeof uri === 'string') ? uri : DEFAULT_PRODUCT_IMAGE;
 }
 
+const FILTER_KEYS = ['filterAll', 'filterPending', 'filterConfirmed', 'filterShipping', 'filterDelivered', 'filterCancelled', 'filterRefunded'];
+const filterToStatusMapping = {
+    filterAll: '',
+    filterPending: 'PENDING',
+    filterConfirmed: 'READY-TO-SHIP',
+    filterShipping: 'SHIPPING',
+    filterDelivered: 'COMPLETED',
+    filterCancelled: 'CANCELLED',
+    filterRefunded: 'REFUND',
+};
+
 const OrderHistoryScreen = ({ navigation }) => {
-    const [selectedFilter, setSelectedFilter] = useState('Tất cả đơn hàng');
+    const { t } = useTranslation();
+    const [selectedFilter, setSelectedFilter] = useState('filterAll');
     const [cancellingOrders, setCancellingOrders] = useState(new Set());
     const [refreshing, setRefreshing] = useState(false);
     const [filterLoading, setFilterLoading] = useState(false);
-
-    const filters = ['Tất cả đơn hàng', 'Chờ xử lý', 'Đã xác nhận', 'Đang giao', 'Đã giao', 'Đã hủy', 'Đã trả'];
-
-    // Map filter display names to backend status names (OrderStatusModel.name)
-    const filterToStatusMapping = {
-        'Tất cả đơn hàng': '',
-        'Chờ xử lý': 'PENDING',
-        'Đã xác nhận': 'READY-TO-SHIP',
-        'Đang giao': 'SHIPPING',
-        'Đã giao': 'COMPLETED',
-        'Đã hủy': 'CANCELLED',
-        'Đã trả': 'REFUND'
-    };
 
     const LIMIT = 10;
 
@@ -110,7 +109,7 @@ const OrderHistoryScreen = ({ navigation }) => {
     // Handle cancel success
     useEffect(() => {
         if (cancelSuccess && cancelMessage) {
-            Alert.alert('Thành công', cancelMessage);
+            Alert.alert(t('reviews.success'), cancelMessage);
             // Refresh current filter after successful cancel
             const statusFilter = getCurrentStatusFilter();
             dispatch(resetPagination());
@@ -156,31 +155,28 @@ const OrderHistoryScreen = ({ navigation }) => {
     const transformOrderData = (apiOrders) => {
         if (!apiOrders || !Array.isArray(apiOrders)) return [];
 
+        const statusToKey = {
+            'PENDING': 'filterPending',
+            'PAID': 'filterConfirmed',
+            'READY-TO-SHIP': 'filterConfirmed',
+            'SHIPPING': 'filterShipping',
+            'COMPLETED': 'filterDelivered',
+            'CANCELLED': 'filterCancelled',
+            'REFUND': 'filterRefunded',
+        };
+        const statusColorsByKey = {
+            filterPending: { color: '#f59e0b', bg: '#fffbeb' },
+            filterConfirmed: { color: '#8b5cf6', bg: '#f3e8ff' },
+            filterShipping: { color: '#3b82f6', bg: '#eff6ff' },
+            filterDelivered: { color: '#10b981', bg: '#ecfdf5' },
+            filterCancelled: { color: '#6b7280', bg: '#f3f4f6' },
+            filterRefunded: { color: '#ef4444', bg: '#fef2f2' },
+        };
+
         return apiOrders.map((order, index) => {
-            // Map backend order status names to display format
-            const statusMapping = {
-                'PENDING': 'Chờ xử lý',
-                'PAID': 'Đã thanh toán',
-                'READY-TO-SHIP': 'Đã xác nhận',
-                'SHIPPING': 'Đang giao',
-                'COMPLETED': 'Đã giao',
-                'CANCELLED': 'Đã hủy',
-                'REFUND': 'Đã trả'
-            };
-
-            // Map status to colors
-            const statusColors = {
-                'Chờ xử lý': { color: '#f59e0b', bg: '#fffbeb' },
-                'Đã xác nhận': { color: '#8b5cf6', bg: '#f3e8ff' },
-                'Đang giao': { color: '#3b82f6', bg: '#eff6ff' },
-                'Đã giao': { color: '#10b981', bg: '#ecfdf5' },
-                'Đã hủy': { color: '#6b7280', bg: '#f3f4f6' },
-                'Đã trả': { color: '#ef4444', bg: '#fef2f2' }
-            };
-
             const statusName = (order.order_status?.name ?? order.order_status_id?.name ?? '').toString().trim().toUpperCase().replace(/\s+/g, '-');
-            const status = statusMapping[statusName] || statusMapping[order.order_status?.name] || 'Chờ xử lý';
-            const statusColor = statusColors[status] || statusColors['Chờ xử lý'];
+            const statusKey = statusToKey[statusName] || statusToKey[order.order_status?.name] || 'filterPending';
+            const statusColor = statusColorsByKey[statusKey] || statusColorsByKey.filterPending;
 
             // Format date
             const formatDate = (dateString) => {
@@ -199,13 +195,7 @@ const OrderHistoryScreen = ({ navigation }) => {
             const shortId = `#ORD-${orderIdStr.slice(-8).toUpperCase()}`;
 
             const paymentStatus = (order.payment?.status ?? order.payment_status ?? '').toString().toUpperCase();
-            const paymentStatusLabels = {
-                PENDING: 'Chờ thanh toán',
-                SUCCESS: 'Thành công',
-                UNPAID: 'Chưa thanh toán',
-                CANCELLED: 'Đã hủy',
-                FAILED: 'Thất bại',
-            };
+            const paymentStatusKeyMap = { PENDING: 'paymentPending', SUCCESS: 'paymentSuccess', UNPAID: 'paymentUnpaid', CANCELLED: 'filterCancelled', FAILED: 'paymentFailed' };
             const paymentStatusColors = {
                 PENDING: { bg: '#fef3c7', color: '#b45309' },
                 SUCCESS: { bg: '#dbeafe', color: '#1d4ed8' },
@@ -213,7 +203,7 @@ const OrderHistoryScreen = ({ navigation }) => {
                 CANCELLED: { bg: '#fef3c7', color: '#b45309' },
                 FAILED: { bg: '#fee2e2', color: '#b91c1c' },
             };
-            const paymentStatusLabel = paymentStatusLabels[paymentStatus] || paymentStatus;
+            const paymentStatusLabelKey = paymentStatusKeyMap[paymentStatus] || 'paymentUnpaid';
             const paymentStatusStyle = paymentStatusColors[paymentStatus] || paymentStatusColors.UNPAID;
 
             const receiverName = order.receiver_name ?? order.receiverName ?? '-';
@@ -228,11 +218,11 @@ const OrderHistoryScreen = ({ navigation }) => {
                 fullDate,
                 items: items.length || 1,
                 total: order.total_price,
-                status,
+                statusKey,
                 statusColor: statusColor.color,
                 statusBg: statusColor.bg,
                 paymentStatus,
-                paymentStatusLabel,
+                paymentStatusLabelKey,
                 paymentStatusBg: paymentStatusStyle.bg,
                 paymentStatusColor: paymentStatusStyle.color,
                 paymentMethod: order.payment_method || order.paymentMethod || 'N/A',
@@ -243,7 +233,7 @@ const OrderHistoryScreen = ({ navigation }) => {
                 receiverAddress: order.receiver_address ?? order.receiverAddress ?? '',
                 product: {
                     name: firstItem?.product_name ?? firstItem?.name ?? shortId,
-                    details: receiverPhone ? `Người nhận: ${receiverName} · ${receiverPhone}` : `Người nhận: ${receiverName}`,
+                    details: receiverPhone ? `${t('order.receiverLabel')}: ${receiverName} · ${receiverPhone}` : `${t('order.receiverLabel')}: ${receiverName}`,
                     price: firstItem?.price ?? order.total_price,
                     image: getProductImageFromItem(firstItem),
                 },
@@ -255,26 +245,24 @@ const OrderHistoryScreen = ({ navigation }) => {
     const orders = transformOrderData(orderData);
 
     const canCancelOrder = (order) => {
-        if (order.status !== 'Chờ xử lý') return false;
+        if (order.statusKey !== 'filterPending') return false;
         const method = (order.paymentMethod ?? order.originalOrder?.payment_method ?? '').toString().toUpperCase();
         return method === 'COD';
     };
 
     const handleRePaymentOrder = async (order) => {
         Alert.alert(
-            'Thanh toán lại',
-            'Bạn có chắc muốn thanh toán lại đơn hàng này?',
+            t('order.retryPayment'),
+            t('order.retryPaymentConfirm'),
             [
-                { text: 'Không', style: 'cancel' },
+                { text: t('order.noCancel'), style: 'cancel' },
                 {
-                    text: 'Có',
+                    text: t('order.yes'),
                     onPress: async () => {
                         try {
-                            console.log("order.orderId",order.orderId)
                             dispatch(retryPayment(order.orderId)).unwrap();
-
                         } catch (error) {
-                            Alert.alert('Lỗi', error || 'Không thể tạo thanh toán lại.');
+                            Alert.alert(t('common.error'), error || t('order.retryPayment'));
                         }
                     },
                 },
@@ -285,22 +273,19 @@ const OrderHistoryScreen = ({ navigation }) => {
     // Handle cancel order
     const handleCancelOrder = (order) => {
         Alert.alert(
-            'Hủy đơn hàng',
-            `Bạn có chắc chắn muốn hủy đơn hàng ${order.id} không?`,
+            t('order.cancelOrder'),
+            `${t('order.cancelOrderConfirm')} (${order.id})`,
             [
+                { text: t('order.noCancel'), style: 'cancel' },
                 {
-                    text: 'Không',
-                    style: 'cancel'
-                },
-                {
-                    text: 'Có, Hủy đơn',
+                    text: t('order.yesCancel'),
                     style: 'destructive',
                     onPress: async () => {
                         try {
                             setCancellingOrders(prev => new Set([...prev, order.orderId]));
                             await dispatch(cancelOrder(order.orderId)).unwrap();
                         } catch (error) {
-                            Alert.alert('Lỗi', error || 'Không thể hủy đơn hàng');
+                            Alert.alert(t('common.error'), error || t('order.cancelOrder'));
                         } finally {
                             setCancellingOrders(prev => {
                                 const newSet = new Set(prev);
@@ -327,13 +312,13 @@ const OrderHistoryScreen = ({ navigation }) => {
                         <View style={styles.badgeBlock}>
                             <Text style={styles.badgeLabel}>Order</Text>
                             <View style={[styles.statusBadge, { backgroundColor: order.statusBg }]}>
-                                <Text style={[styles.statusBadgeText, { color: order.statusColor }]}>{order.status}</Text>
+                                <Text style={[styles.statusBadgeText, { color: order.statusColor }]}>{t('order.' + order.statusKey)}</Text>
                             </View>
                         </View>
                         <View style={styles.badgeBlock}>
                             <Text style={styles.badgeLabel}>Payment</Text>
                             <View style={[styles.paymentBadge, { backgroundColor: order.paymentStatusBg }]}>
-                                <Text style={[styles.paymentBadgeText, { color: order.paymentStatusColor }]}>{order.paymentStatusLabel}</Text>
+                                <Text style={[styles.paymentBadgeText, { color: order.paymentStatusColor }]}>{t('order.' + order.paymentStatusLabelKey)}</Text>
                             </View>
                         </View>
                     </View>
@@ -341,29 +326,29 @@ const OrderHistoryScreen = ({ navigation }) => {
                     {/* Giữa: Ngày, Người nhận, Địa chỉ */}
                     <View style={styles.cardCenter}>
                         <View style={styles.infoRow}>
-                            <Icon name="event" size={18} color="#6b7280" style={styles.infoIcon} />
+                            <MaterialIcons name="event" size={18} color="#6b7280" style={styles.infoIcon} />
                             <Text style={styles.infoText}>{order.fullDate || order.date}</Text>
                         </View>
                         <View style={styles.infoRow}>
-                            <Icon name="person" size={18} color="#6b7280" style={styles.infoIcon} />
+                            <MaterialIcons name="person" size={18} color="#6b7280" style={styles.infoIcon} />
                             <Text style={styles.infoText} numberOfLines={1}>
                                 {order.receiverName} <Text style={styles.infoMuted}>·</Text> {order.receiverPhone}
                             </Text>
                         </View>
                         <View style={styles.infoRow}>
-                            <Icon name="place" size={18} color="#6b7280" style={styles.infoIcon} />
+                            <MaterialIcons name="place" size={18} color="#6b7280" style={styles.infoIcon} />
                             <Text style={styles.infoText} numberOfLines={2}>{order.receiverAddress}</Text>
                         </View>
                         {order.paymentStatus === 'PENDING' && order.originalOrder?.payment_method === 'VNPAY' && (
                             <View style={styles.alertBox}>
-                                <Icon name="info" size={20} color="#b91c1c" />
-                                <Text style={styles.alertText}>Thanh toán chưa hoàn tất. Vui lòng thanh toán hoặc tạo đơn mới.</Text>
+                                <MaterialIcons name="info" size={20} color="#b91c1c" />
+                                <Text style={styles.alertText}>{t('order.paymentAlertUnfinished')}</Text>
                             </View>
                         )}
                         {order.paymentStatus === 'FAILED' && (
                             <View style={styles.alertBox}>
-                                <Icon name="warning" size={20} color="#b91c1c" />
-                                <Text style={styles.alertText}>Thanh toán thất bại. Đơn có thể bị xóa sau 10 phút. Vui lòng thanh toán lại!</Text>
+                                <MaterialIcons name="warning" size={20} color="#b91c1c" />
+                                <Text style={styles.alertText}>{t('order.paymentAlertFailed')}</Text>
                             </View>
                         )}
                     </View>
@@ -377,11 +362,11 @@ const OrderHistoryScreen = ({ navigation }) => {
                             </View>
                             {hasVoucher && (
                                 <Text style={styles.voucherText}>
-                                    {order.discountCode ? `Voucher: ${order.discountCode}, -${formatCurrency(order.discountAmount)}` : `Giảm ${formatCurrency(order.discountAmount)}`}
+                                    {order.discountCode ? t('order.voucherWithCode', { code: order.discountCode, amount: formatCurrency(order.discountAmount) }) : t('order.discountAmount', { amount: formatCurrency(order.discountAmount) })}
                                 </Text>
                             )}
                             <View style={styles.paymentMethodRow}>
-                                <Icon name="credit-card" size={14} color="#6b7280" />
+                                <MaterialIcons name="credit-card" size={14} color="#6b7280" />
                                 <Text style={styles.paymentMethodText}>{order.paymentMethod}</Text>
                             </View>
                         </View>
@@ -395,7 +380,7 @@ const OrderHistoryScreen = ({ navigation }) => {
                                     orderDataBg: order.statusBg
                                 })}
                             >
-                                <Text style={styles.btnViewDetailsText}>Xem chi tiết</Text>
+                                <Text style={styles.btnViewDetailsText}>{t('order.viewDetails')}</Text>
                             </TouchableOpacity>
                             {canCancelOrder(order) && (
                                 <TouchableOpacity
@@ -406,7 +391,7 @@ const OrderHistoryScreen = ({ navigation }) => {
                                     {isCancelling ? (
                                         <ActivityIndicator size="small" color="#dc2626" />
                                     ) : (
-                                        <Text style={styles.btnCancelText}>Hủy đơn</Text>
+                                        <Text style={styles.btnCancelText}>{t('order.cancelOrder')}</Text>
                                     )}
                                 </TouchableOpacity>
                             )}
@@ -415,7 +400,7 @@ const OrderHistoryScreen = ({ navigation }) => {
                                     style={[styles.btnRepay, styles.actionBtnNext]}
                                     onPress={() => handleRePaymentOrder(order)}
                                 >
-                                    <Text style={styles.btnRepayText}>Thanh toán lại</Text>
+                                    <Text style={styles.btnRepayText}>{t('order.retryPayment')}</Text>
                                 </TouchableOpacity>
                             )}
                         </View>
@@ -459,7 +444,7 @@ const OrderHistoryScreen = ({ navigation }) => {
                     onPress={() => goToPage(currentPage - 1)}
                     disabled={currentPage <= 1 || orderLoading}
                 >
-                    <Text style={styles.pagePrevNextText}>Trước</Text>
+                    <Text style={styles.pagePrevNextText}>{t('order.prev')}</Text>
                 </TouchableOpacity>
                 <View style={styles.pageNumbersRow}>
                     {pages.map((p, idx) =>
@@ -489,7 +474,7 @@ const OrderHistoryScreen = ({ navigation }) => {
                     onPress={() => goToPage(currentPage + 1)}
                     disabled={currentPage >= totalPagesComputed || orderLoading}
                 >
-                    <Text style={styles.pagePrevNextText}>Sau</Text>
+                    <Text style={styles.pagePrevNextText}>{t('order.next')}</Text>
                 </TouchableOpacity>
             </View>
         );
@@ -507,10 +492,10 @@ const OrderHistoryScreen = ({ navigation }) => {
                     style={styles.headerGradient}
                 >
                     <View style={styles.header}>
-                        <Text style={styles.headerTitle}>Lịch sử đơn hàng</Text>
+                        <Text style={styles.headerTitle}>{t('order.title')}</Text>
                     </View>
                 </LinearGradient>
-                <InlineLoading text="Đang tải đơn hàng..." style={styles.loadingContainer} />
+                <InlineLoading text={t('order.loadingOrders')} style={styles.loadingContainer} />
                 <BottomNavigation />
             </SafeAreaView>
         );
@@ -528,12 +513,12 @@ const OrderHistoryScreen = ({ navigation }) => {
                     style={styles.headerGradient}
                 >
                     <View style={styles.header}>
-                        <Text style={styles.headerTitle}>Lịch sử đơn hàng</Text>
+                        <Text style={styles.headerTitle}>{t('order.title')}</Text>
                     </View>
                 </LinearGradient>
                 <View style={styles.errorContainer}>
-                    <Icon name="error-outline" size={64} color={COLORS.error} />
-                    <Text style={styles.errorTitle}>Không thể tải đơn hàng</Text>
+                    <MaterialIcons name="error-outline" size={64} color={COLORS.error} />
+                    <Text style={styles.errorTitle}>{t('order.cannotLoadOrders')}</Text>
                     <Text style={styles.errorSubtitle}>{orderError}</Text>
                     <TouchableOpacity
                         style={styles.retryButton}
@@ -545,7 +530,7 @@ const OrderHistoryScreen = ({ navigation }) => {
                             sortOrder: 'desc',
                         }))}
                     >
-                        <Text style={styles.retryButtonText}>Thử lại</Text>
+                        <Text style={styles.retryButtonText}>{t('common.retry')}</Text>
                     </TouchableOpacity>
                 </View>
                 <BottomNavigation />
@@ -562,9 +547,9 @@ const OrderHistoryScreen = ({ navigation }) => {
                 end={{ x: 1, y: 1 }}
                 style={styles.headerGradient}
             >
-                <View style={styles.header}>
-                    <Text style={styles.headerTitle}>Lịch sử đơn hàng</Text>
-                </View>
+                    <View style={styles.header}>
+                        <Text style={styles.headerTitle}>{t('order.title')}</Text>
+                    </View>
             </LinearGradient>
 
             <ScrollView
@@ -585,22 +570,22 @@ const OrderHistoryScreen = ({ navigation }) => {
                     showsHorizontalScrollIndicator={false}
                     style={styles.filterContainer}
                 >
-                    {filters.map((filter) => (
+                    {FILTER_KEYS.map((filterKey) => (
                         <TouchableOpacity
-                            key={filter}
+                            key={filterKey}
                             style={[
                                 styles.filterButton,
-                                selectedFilter === filter && styles.selectedFilterButton,
+                                selectedFilter === filterKey && styles.selectedFilterButton,
                             ]}
-                            onPress={() => handleFilterChange(filter)}
+                            onPress={() => handleFilterChange(filterKey)}
                         >
                             <Text
                                 style={[
                                     styles.filterButtonText,
-                                    selectedFilter === filter && styles.selectedFilterButtonText,
+                                    selectedFilter === filterKey && styles.selectedFilterButtonText,
                                 ]}
                             >
-                                {filter}
+                                {t('order.' + filterKey)}
                             </Text>
                         </TouchableOpacity>
                     ))}
@@ -615,7 +600,7 @@ const OrderHistoryScreen = ({ navigation }) => {
                             {total > 0 && (
                                 <View style={styles.paginationSummary}>
                                     <Text style={styles.paginationSummaryText}>
-                                        Tổng {total} đơn · Trang {currentPage}/{totalPagesComputed}
+                                        {t('order.pageSummary', { total, page: currentPage, totalPages: totalPagesComputed })}
                                     </Text>
                                 </View>
                             )}
@@ -623,12 +608,12 @@ const OrderHistoryScreen = ({ navigation }) => {
                         </>
                     ) : (
                         <View style={styles.emptyState}>
-                            <Icon name="shopping-bag" size={64} color="#d1d5db" />
-                            <Text style={styles.emptyStateTitle}>Không tìm thấy đơn hàng</Text>
+                            <MaterialIcons name="shopping-bag" size={64} color="#d1d5db" />
+                            <Text style={styles.emptyStateTitle}>{t('order.noOrdersFound')}</Text>
                             <Text style={styles.emptyStateSubtitle}>
-                                {selectedFilter === 'Tất cả đơn hàng'
-                                    ? "Bạn chưa đặt đơn hàng nào"
-                                    : `Không có đơn hàng nào có trạng thái "${selectedFilter}"`
+                                {selectedFilter === 'filterAll'
+                                    ? t('order.noOrdersHint')
+                                    : t('order.noOrdersFilterHint', { filter: t('order.' + selectedFilter) })
                                 }
                             </Text>
                         </View>

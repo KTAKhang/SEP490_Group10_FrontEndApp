@@ -9,6 +9,7 @@ import {
     Dimensions,
     ActivityIndicator,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ArrowLeft } from 'lucide-react-native';
 import { useDispatch, useSelector } from 'react-redux';
@@ -18,7 +19,8 @@ import Toast from 'react-native-toast-message';
 const { height } = Dimensions.get('window');
 
 const RegisterConfirmOTPScreen = ({ navigation, route }) => {
-    const [otp, setOtp] = useState(['', '', '', '', '', '']); // 6 ký tự OTP
+    const { t } = useTranslation();
+    const [otp, setOtp] = useState(['', '', '', '', '', '']);
     const inputRefs = useRef([]);
     const dispatch = useDispatch();
     const { confirmOtpStatus, confirmOtpMessage, isLoading } = useSelector((state) => state.auth);
@@ -38,12 +40,10 @@ const RegisterConfirmOTPScreen = ({ navigation, route }) => {
     // Xử lý trạng thái từ Redux
     useEffect(() => {
         if (confirmOtpStatus === 'error' && confirmOtpMessage) {
-            // console.log('Confirm OTP Error from Redux:', confirmOtpMessage);
             const errorMessage = getErrorMessage(confirmOtpMessage);
-
             Toast.show({
                 type: 'error',
-                text1: 'Lỗi xác thực',
+                text1: t('auth.confirmError'),
                 text2: errorMessage,
                 visibilityTime: 4000,
             });
@@ -70,33 +70,15 @@ const RegisterConfirmOTPScreen = ({ navigation, route }) => {
         ]).start();
     }, []);
 
-    // Helper function để dịch lỗi sang tiếng Việt
     const getErrorMessage = (error) => {
-        if (!error) return 'Xác thực OTP thất bại';
-
+        if (!error) return t('auth.confirmError');
         const lowerError = error.toLowerCase();
-
-        // Các lỗi phổ biến
-        if (lowerError.includes('invalid or expired otp')) {
-            return 'Mã OTP không hợp lệ hoặc đã hết hạn';
-        }
-        if (lowerError.includes('invalid otp') || lowerError.includes('otp is invalid')) {
-            return 'Mã OTP không hợp lệ';
-        }
-        if (lowerError.includes('otp expired') || lowerError.includes('otp has expired')) {
-            return 'Mã OTP đã hết hạn';
-        }
-        if (lowerError.includes('wrong otp') || lowerError.includes('incorrect otp')) {
-            return 'Mã OTP không chính xác';
-        }
-        if (lowerError.includes('otp not found')) {
-            return 'Không tìm thấy mã OTP. Vui lòng yêu cầu gửi lại';
-        }
-        if (lowerError.includes('too many attempts')) {
-            return 'Bạn đã nhập sai quá nhiều lần. Vui lòng thử lại sau';
-        }
-
-        // Trả về message gốc nếu không match
+        if (lowerError.includes('invalid or expired otp') || lowerError.includes('invalid otp') || lowerError.includes('otp is invalid'))
+            return t('auth.invalidOtpCode');
+        if (lowerError.includes('otp expired') || lowerError.includes('otp has expired')) return t('auth.otpExpiredMsg');
+        if (lowerError.includes('wrong otp') || lowerError.includes('incorrect otp')) return t('auth.invalidOtpCode');
+        if (lowerError.includes('otp not found')) return t('auth.pleaseEnterOtp');
+        if (lowerError.includes('too many attempts')) return t('auth.tooManyAttempts');
         return error;
     };
 
@@ -128,18 +110,17 @@ const RegisterConfirmOTPScreen = ({ navigation, route }) => {
         if (!otpString.trim()) {
             Toast.show({
                 type: 'error',
-                text1: 'Lỗi',
-                text2: 'Vui lòng nhập mã OTP',
+                text1: t('common.error'),
+                text2: t('auth.pleaseEnterOtp'),
             });
             return;
         }
 
-        // Kiểm tra OTP có đủ 6 số không
         if (otpString.length < 6) {
             Toast.show({
                 type: 'error',
-                text1: 'Lỗi',
-                text2: `Mã OTP phải có đủ 6 số (hiện tại: ${otpString.length} số)`,
+                text1: t('common.error'),
+                text2: t('auth.otpMustBe6Digits', { count: otpString.length }),
             });
             return;
         }
@@ -148,8 +129,8 @@ const RegisterConfirmOTPScreen = ({ navigation, route }) => {
         if (!/^\d{6}$/.test(otpString)) {
             Toast.show({
                 type: 'error',
-                text1: 'Lỗi',
-                text2: 'Mã OTP chỉ được chứa số',
+                text1: t('common.error'),
+                text2: t('auth.otpDigitsOnly'),
             });
             return;
         }
@@ -163,8 +144,8 @@ const RegisterConfirmOTPScreen = ({ navigation, route }) => {
         if (confirmOtp.fulfilled.match(resultAction)) {
             Toast.show({
                 type: 'success',
-                text1: 'Thành công',
-                text2: 'Đăng ký thành công! Đang chuyển đến trang đăng nhập...',
+                text1: t('auth.success'),
+                text2: t('auth.registerSuccessRedirect'),
                 visibilityTime: 2000,
             });
 
@@ -177,16 +158,14 @@ const RegisterConfirmOTPScreen = ({ navigation, route }) => {
 
             Toast.show({
                 type: 'error',
-                text1: 'Lỗi xác thực',
+                text1: t('auth.confirmError'),
                 text2: errorMessage,
                 visibilityTime: 4000,
             });
 
             // Clear OTP nếu sai
-            if (errorMessage.includes('không chính xác') || errorMessage.includes('không hợp lệ')) {
-                setTimeout(() => {
-                    clearOtp();
-                }, 1000);
+            if (confirmOtp.rejected.match(resultAction)) {
+                setTimeout(() => clearOtp(), 1000);
             }
         }
     };
@@ -230,9 +209,9 @@ const RegisterConfirmOTPScreen = ({ navigation, route }) => {
                         },
                     ]}
                 >
-                    <Text style={styles.title}>Verify OTP</Text>
+                    <Text style={styles.title}>{t('auth.verifyOtp')}</Text>
                     <Text style={styles.subtitle}>
-                        Please enter the OTP sent to your email
+                        {t('auth.otpSentToEmailPrompt')}
                     </Text>
 
                     <View style={styles.otpContainer}>
@@ -256,7 +235,7 @@ const RegisterConfirmOTPScreen = ({ navigation, route }) => {
                     </View>
 
                     <TouchableOpacity style={styles.clearButton} onPress={clearOtp}>
-                        <Text style={styles.clearButtonText}>Clear and re-enter</Text>
+                        <Text style={styles.clearButtonText}>{t('auth.clearAndReenter')}</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity
@@ -267,7 +246,7 @@ const RegisterConfirmOTPScreen = ({ navigation, route }) => {
                         {isLoading ? (
                             <ActivityIndicator color="#fff" />
                         ) : (
-                            <Text style={styles.submitButtonText}>Confirm</Text>
+                            <Text style={styles.submitButtonText}>{t('common.confirm')}</Text>
                         )}
                     </TouchableOpacity>
                 </Animated.View>

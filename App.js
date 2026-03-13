@@ -1,3 +1,4 @@
+import "./i18n";
 import React from "react";
 import { View, StyleSheet, ActivityIndicator } from "react-native";
 import { useFonts } from "expo-font";

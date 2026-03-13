@@ -10,6 +10,7 @@ import {
     ActivityIndicator,
     Alert,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Mail, Lock, Eye, EyeOff, Home } from 'lucide-react-native';
 import { useDispatch, useSelector } from 'react-redux';
@@ -29,6 +30,7 @@ import {
 const { height } = Dimensions.get('window');
 
 const LoginScreen = () => {
+    const { t } = useTranslation();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
@@ -58,7 +60,7 @@ const LoginScreen = () => {
     useEffect(() => {
     if (!error) return;
 
-    Alert.alert('Login Failed', error);
+    Alert.alert(t('auth.loginFailed'), error);
     dispatch(clearError());
 }, [error, dispatch]);
 
@@ -67,8 +69,8 @@ const LoginScreen = () => {
         if (isAuthenticated && user) {
             Toast.show({
                 type: 'success',
-                text1: 'Success',
-                text2: 'Logged in successfully!',
+                text1: t('auth.success'),
+                text2: t('auth.loggedInSuccess'),
                 visibilityTime: 2000,
             });
             
@@ -80,7 +82,7 @@ const LoginScreen = () => {
     const handleLogin = () => {
         
         if (!email.trim() || !password.trim()) {
-            Alert.alert('Error', 'Please enter both email and password');
+            Alert.alert(t('common.error'), t('auth.enterEmailAndPassword'));
             return;
         }
         dispatch(loginUser({ email: email.trim(), password }));
@@ -107,11 +109,11 @@ const LoginScreen = () => {
                 // user cancelled the login flow
                 return;
             } else if (error.code === statusCodes.IN_PROGRESS) {
-                Toast.show({ type: 'info', text1: 'Processing', text2: 'Logging in with Google...' });
+                Toast.show({ type: 'info', text1: t('auth.processing'), text2: t('auth.loggingInGoogle') });
             } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
-                Alert.alert('Error', 'Google Play Services is unavailable or requires an update.');
+                Alert.alert(t('common.error'), t('auth.playServicesUnavailable'));
             } else {
-                Alert.alert('Google Sign-In Error', error.message || 'An error has occurred.');
+                Alert.alert(t('auth.googleSignInError'), error.message || t('auth.anErrorOccurred'));
             }
         }
     };
@@ -152,18 +154,18 @@ const LoginScreen = () => {
                             activeOpacity={0.7}
                         >
                             <Home color="#22c55e" size={20} />
-                            <Text style={styles.homeButtonText}>Return Home</Text>
+                            <Text style={styles.homeButtonText}>{t('auth.backToHome')}</Text>
                         </TouchableOpacity>
                     </View>
 
-                    <Text style={styles.title}>Login</Text>
+                    <Text style={styles.title}>{t('auth.login')}</Text>
 
                     {/* Email Input */}
                     <View style={styles.inputContainer}>
                         <Mail color="#22c55e" size={20} />
                         <TextInput
                             style={styles.inputField}
-                            placeholder="Email"
+                            placeholder={t('auth.email')}
                             placeholderTextColor="#aaa"
                             value={email}
                             onChangeText={setEmail}
@@ -177,7 +179,7 @@ const LoginScreen = () => {
                         <Lock color="#22c55e" size={20} />
                         <TextInput
                             style={styles.inputField}
-                            placeholder="Password"
+                            placeholder={t('auth.password')}
                             placeholderTextColor="#aaa"
                             value={password}
                             onChangeText={setPassword}
@@ -196,7 +198,7 @@ const LoginScreen = () => {
                         style={styles.forgotPasswordButton}
                         onPress={() => navigation.navigate('ForgotPassword')} // Điều hướng đến màn hình quên mật khẩu
                     >
-                        <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+                        <Text style={styles.forgotPasswordText}>{t('auth.forgotPassword')}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                         style={[styles.loginButton, isLoading && styles.disabledButton]}
@@ -206,7 +208,7 @@ const LoginScreen = () => {
                         {isLoading ? (
                             <ActivityIndicator color="#fff" />
                         ) : (
-                            <Text style={styles.loginButtonText}>Login</Text>
+                            <Text style={styles.loginButtonText}>{t('auth.login')}</Text>
                         )}
                     </TouchableOpacity>
 
@@ -221,9 +223,9 @@ const LoginScreen = () => {
                     </View>
                    
                     <View style={styles.footer}>
-                        <Text style={styles.footerText}>Don't have an account yet?</Text>
+                        <Text style={styles.footerText}>{t('auth.noAccount')}</Text>
                         <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-                            <Text style={styles.footerLink}>Register</Text>
+                            <Text style={styles.footerLink}>{t('auth.signUp')}</Text>
                         </TouchableOpacity>
                     </View>
 

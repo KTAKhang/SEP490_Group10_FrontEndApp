@@ -1,9 +1,11 @@
 import React, { useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { View, Text, StyleSheet, Animated, Dimensions } from 'react-native';
 
 const { width, height } = Dimensions.get('window');
 
 export default function SplashScreen() {
+    const { t } = useTranslation();
     const fadeAnim = useRef(new Animated.Value(0)).current;
     const scaleAnim = useRef(new Animated.Value(0.8)).current;
     const rotateAnim = useRef(new Animated.Value(0)).current;
@@ -78,7 +80,7 @@ export default function SplashScreen() {
                     <View style={styles.loaderRing} />
                 </Animated.View>
 
-                <Text style={styles.loadingText}>Đang khởi tạo...</Text>
+                <Text style={styles.loadingText}>{t('common.initializing')}</Text>
             </Animated.View>
 
             {/* Version info */}

@@ -1,7 +1,9 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 const OrderHistorySection = ({ orderHistory, onViewAll, onOrderPress }) => {
+    const { t } = useTranslation();
     const simplifiedOrders = orderHistory
         .map(order => ({
             order_id: order.order_id,
@@ -41,9 +43,9 @@ const OrderHistorySection = ({ orderHistory, onViewAll, onOrderPress }) => {
     return (
         <View style={styles.section}>
             <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>Order History</Text>
+                <Text style={styles.sectionTitle}>{t('order.title')}</Text>
                 <TouchableOpacity onPress={onViewAll}>
-                    <Text style={styles.viewAllText}>View Order</Text>
+                    <Text style={styles.viewAllText}>{t('order.viewOrder')}</Text>
                 </TouchableOpacity>
             </View>
             {Array.isArray(orderHistory) && orderHistory.length > 0 ? (
@@ -75,7 +77,7 @@ const OrderHistorySection = ({ orderHistory, onViewAll, onOrderPress }) => {
                     );
                 })
             ) : (
-                <Text style={styles.emptyText}>Không có đơn hàng nào.</Text>
+                <Text style={styles.emptyText}>{t('order.noOrders')}</Text>
             )}
         </View>
     );

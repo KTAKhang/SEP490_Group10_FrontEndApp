@@ -27,7 +27,7 @@ export const sendMessageToBot = createAsyncThunk(
 const initialState = {
     messages: [
         {
-            text: "Xin chào! Tôi là Gemini AI. Tôi có thể giúp gì cho bạn?",
+            text: "Hello! I'm Gemini AI. How can I help you?",
             role: 'assistant',
             timestamp: new Date().toISOString()
         }
@@ -52,7 +52,7 @@ const chatbotSlice = createSlice({
         clearChat: (state) => {
             state.messages = [
                 {
-                    text: "Xin chào! Tôi là Gemini AI. Tôi có thể giúp gì cho bạn?",
+                    text: "Hello! I'm Gemini AI. How can I help you?",
                     role: 'assistant',
                     timestamp: new Date().toISOString()
                 }
@@ -91,7 +91,7 @@ const chatbotSlice = createSlice({
                 } else {
                     // Fallback message if response is malformed
                     state.messages.push({
-                        text: "Xin lỗi, tôi không thể tạo phản hồi phù hợp. Vui lòng thử lại.",
+                        text: "Sorry, I couldn't generate a proper response. Please try again.",
                         role: 'assistant',
                         timestamp: new Date().toISOString()
                     });
@@ -99,11 +99,11 @@ const chatbotSlice = createSlice({
             })
             .addCase(sendMessageToBot.rejected, (state, action) => {
                 state.isLoading = false;
-                state.error = action.payload || 'Đã xảy ra lỗi không xác định';
+                state.error = action.payload || 'An unexpected error occurred';
 
                 // Add error message to chat
                 state.messages.push({
-                    text: `❌ Lỗi: ${action.payload || 'Không thể kết nối với AI'}`,
+                    text: `❌ Error: ${action.payload || 'Could not connect to AI'}`,
                     role: 'system',
                     timestamp: new Date().toISOString(),
                     isError: true

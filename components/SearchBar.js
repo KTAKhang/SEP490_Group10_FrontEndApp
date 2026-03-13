@@ -10,14 +10,17 @@ import {
     Modal,
     ActivityIndicator
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { searchCategories } from '../services/categoryService';
 import { searchProducts } from '../services/productService';
 import { COLORS } from '../constants/colors';
 import { getProductImageUrl } from '../utils/productImage';
+import { removeVietnameseTone } from '../utils/searchUtils';
 
 const SearchBar = () => {
+    const { t } = useTranslation();
     const navigation = useNavigation();
     const [searchText, setSearchText] = useState('');
     const [searchResults, setSearchResults] = useState([]);
@@ -35,21 +38,24 @@ const SearchBar = () => {
 
         setIsLoading(true);
         try {
-            // Search both categories and products
+            const normalizedQuery = removeVietnameseTone(query);
             const [categoriesResponse, productsResponse] = await Promise.all([
-                searchCategories({ search: query, limit: 5 }),
-                searchProducts({ search: query, limit: 10 })
+                searchCategories({ search: normalizedQuery, limit: 5 }),
+                searchProducts({ search: normalizedQuery, limit: 10 })
             ]);
 
-            // Filter only active items (status = true)
-            const activeCategories = categoriesResponse.data.categories
+            // API: categoriesResponse = { data: Category[] }, productsResponse = { data: Product[] }
+            const categoriesList = Array.isArray(categoriesResponse?.data) ? categoriesResponse.data : [];
+            const productsList = Array.isArray(productsResponse?.data) ? productsResponse.data : [];
+
+            const activeCategories = categoriesList
                 .filter(category => category.status === true)
                 .map(category => ({
                     ...category,
                     type: 'category'
                 }));
 
-            const activeProducts = productsResponse.data.products
+            const activeProducts = productsList
                 .filter(product => product.status === true)
                 .map(product => ({
                     ...product,
@@ -121,7 +127,7 @@ const SearchBar = () => {
                         styles.itemType,
                         { color: item.type === 'category' ? '#10B981' : '#3B82F6' }
                     ]}>
-                        {item.type === 'category' ? 'Danh mục' : 'Sản phẩm'}
+                        {item.type === 'category' ? t('search.categoryLabel') : t('search.productLabel')}
                     </Text>
                 </View>
             </View>
@@ -135,7 +141,7 @@ const SearchBar = () => {
                 <MaterialIcons name="search" size={20} color="#9CA3AF" style={styles.searchIcon} />
                 <TextInput
                     style={styles.input}
-                    placeholder="Tìm kiếm sản phẩm hoặc danh mục..."
+                    placeholder={t('search.searchCategoriesAndProducts')}
                     value={searchText}
                     onChangeText={setSearchText}
                     placeholderTextColor="#9CA3AF"
@@ -171,7 +177,7 @@ const SearchBar = () => {
                     <View style={styles.resultsContainer}>
                         <View style={styles.resultsHeader}>
                             <Text style={styles.resultsTitle}>
-                                Kết quả tìm kiếm ({searchResults.length})
+                                {t('search.searchResultsCount', { count: searchResults.length })}
                             </Text>
                             <TouchableOpacity onPress={() => setShowResults(false)}>
                                 <MaterialIcons name="close" size={24} color="#6B7280" />
@@ -188,9 +194,9 @@ const SearchBar = () => {
                             ListEmptyComponent={() => (
                                 <View style={styles.emptyContainer}>
                                     <MaterialIcons name="search-off" size={48} color="#D1D5DB" />
-                                    <Text style={styles.emptyText}>Không tìm thấy kết quả</Text>
+                                    <Text style={styles.emptyText}>{t('search.noResults')}</Text>
                                     <Text style={styles.emptySubText}>
-                                        Thử tìm kiếm với từ khóa khác
+                                        {t('search.tryOtherKeyword')}
                                     </Text>
                                 </View>
                             )}

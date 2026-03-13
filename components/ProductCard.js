@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { View, Text, Image, TouchableOpacity, StyleSheet, ActivityIndicator, Modal, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -44,6 +45,7 @@ const renderStars = (rating) => {
 };
 
 const ProductCard = ({ product, onRemoveFavorite }) => {
+    const { t } = useTranslation();
     const navigation = useNavigation();
     const dispatch = useDispatch();
     const [showLoadingModal, setShowLoadingModal] = useState(false);
@@ -77,11 +79,11 @@ const ProductCard = ({ product, onRemoveFavorite }) => {
         // Check if user is authenticated
         if (!isAuthenticated) {
             Alert.alert(
-                'Yêu cầu đăng nhập',
-                'Bạn cần đăng nhập để thêm sản phẩm vào giỏ hàng. Bạn có muốn đăng nhập ngay không?',
+                t('common.loginRequired'),
+                t('product.loginToAddCart'),
                 [
-                    { text: 'Hủy', style: 'cancel' },
-                    { text: 'Đăng nhập', onPress: () => navigation.navigate('Login') }
+                    { text: t('common.cancel'), style: 'cancel' },
+                    { text: t('common.login'), onPress: () => navigation.navigate('Login') }
                 ]
             );
             return;
@@ -103,8 +105,8 @@ const ProductCard = ({ product, onRemoveFavorite }) => {
             setShowLoadingModal(false);
             Toast.show({
                 type: 'error',
-                text1: 'Không thể thêm vào giỏ hàng',
-                text2: error?.toString() || 'Có lỗi xảy ra khi thêm sản phẩm',
+                text1: t('product.cannotAddToCart'),
+                text2: error?.toString() || t('product.addToCartError'),
                 position: 'top',
                 visibilityTime: 2500,
             });
@@ -126,7 +128,7 @@ const ProductCard = ({ product, onRemoveFavorite }) => {
                     {/* Out of stock overlay */}
                     {isOutOfStock && (
                         <View style={styles.outOfStockOverlay}>
-                            <Text style={styles.outOfStockText}>Hết hàng</Text>
+                            <Text style={styles.outOfStockText}>{t('product.outOfStock')}</Text>
                         </View>
                     )}
                 </View>
@@ -177,7 +179,7 @@ const ProductCard = ({ product, onRemoveFavorite }) => {
                             styles.stockText,
                             isOutOfStock && styles.stockTextOutOfStock
                         ]}>
-                            {isOutOfStock ? 'Hết hàng' : `Còn ${product.quantity} sản phẩm`}
+                            {isOutOfStock ? t('product.outOfStock') : t('product.leftInStock', { count: product.quantity })}
                         </Text>
                     </View>
                 </View>
@@ -192,7 +194,7 @@ const ProductCard = ({ product, onRemoveFavorite }) => {
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalContent}>
                         <ActivityIndicator size="large" color={COLORS.primary} />
-                        <Text style={styles.modalText}>Đang thêm vào giỏ hàng...</Text>
+                        <Text style={styles.modalText}>{t('product.addingToCart')}</Text>
                     </View>
                 </View>
             </Modal>
@@ -206,7 +208,7 @@ const ProductCard = ({ product, onRemoveFavorite }) => {
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalContent}>
                         <MaterialIcons name="check-circle" size={50} color="#4CAF50" />
-                        <Text style={styles.modalText}>Thêm vào giỏ hàng thành công!</Text>
+                        <Text style={styles.modalText}>{t('product.addToCartSuccess')}</Text>
                     </View>
                 </View>
             </Modal>

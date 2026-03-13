@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, StatusBar, Alert } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { COLORS } from '../constants/colors';
@@ -9,6 +10,7 @@ import { getUnreadCount } from '../services/notificationService';
 import { fetchCartByUser } from '../store/slices/cartSlice';
 
 const TopNavBar = () => {
+    const { t } = useTranslation();
     const navigation = useNavigation();
     const dispatch = useDispatch();
     const { sum,item_count } = useSelector((state) => state.cart);
@@ -34,9 +36,9 @@ const TopNavBar = () => {
     const handleNotiPress = () => {
         if (isAuthenticated) navigation.navigate('Notifications');
         else {
-            Alert.alert('Yêu cầu đăng nhập', 'Bạn cần đăng nhập để xem thông báo.', [
-                { text: 'Hủy', style: 'cancel' },
-                { text: 'Đăng nhập', onPress: () => navigation.navigate('Login') },
+            Alert.alert(t('common.loginRequired'), t('auth.loginToViewNotifications'), [
+                { text: t('common.cancel'), style: 'cancel' },
+                { text: t('common.login'), onPress: () => navigation.navigate('Login') },
             ]);
         }
     };
@@ -44,9 +46,9 @@ const TopNavBar = () => {
     const handleFavoritesPress = () => {
         if (isAuthenticated) navigation.navigate('Favorites');
         else {
-            Alert.alert('Yêu cầu đăng nhập', 'Bạn cần đăng nhập để xem sản phẩm yêu thích.', [
-                { text: 'Hủy', style: 'cancel' },
-                { text: 'Đăng nhập', onPress: () => navigation.navigate('Login') },
+            Alert.alert(t('common.loginRequired'), t('auth.loginToViewFavorites'), [
+                { text: t('common.cancel'), style: 'cancel' },
+                { text: t('common.login'), onPress: () => navigation.navigate('Login') },
             ]);
         }
     };
@@ -55,13 +57,12 @@ const TopNavBar = () => {
         if (isAuthenticated) {
             navigation.navigate('Cart');
         } else {
-            // Hiển thị thông báo yêu cầu đăng nhập
             Alert.alert(
-                'Yêu cầu đăng nhập',
-                'Bạn cần đăng nhập để xem giỏ hàng. Bạn có muốn đăng nhập ngay không?',
+                t('common.loginRequired'),
+                t('product.loginToViewCart'),
                 [
-                    { text: 'Hủy', style: 'cancel' },
-                    { text: 'Đăng nhập', onPress: () => navigation.navigate('Login') }
+                    { text: t('common.cancel'), style: 'cancel' },
+                    { text: t('common.login'), onPress: () => navigation.navigate('Login') }
                 ]
             );
         }
@@ -89,7 +90,7 @@ const TopNavBar = () => {
                             onPress={handleLoginPress}
                         >
                             <MaterialIcons name="person" size={20} color={COLORS.white} />
-                            <Text style={styles.loginText}>Đăng nhập</Text>
+                            <Text style={styles.loginText}>{t('auth.login')}</Text>
                         </TouchableOpacity>
                     )}
                     {isAuthenticated && (

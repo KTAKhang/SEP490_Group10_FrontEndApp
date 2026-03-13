@@ -7,14 +7,14 @@ import { Alert } from 'react-native';
  * @param {string} featureName - Name of the feature requiring authentication
  * @returns {boolean} - True if authenticated, false if not
  */
-export const requireAuth = (isAuthenticated, navigation, featureName = 'tính năng này') => {
+export const requireAuth = (isAuthenticated, navigation, featureName = 'this feature') => {
     if (!isAuthenticated) {
         Alert.alert(
-            'Yêu cầu đăng nhập',
-            `Bạn cần đăng nhập để sử dụng ${featureName}. Bạn có muốn đăng nhập ngay không?`,
+            'Login required',
+            `You need to log in to use ${featureName}. Do you want to log in now?`,
             [
-                { text: 'Hủy', style: 'cancel' },
-                { text: 'Đăng nhập', onPress: () => navigation.navigate('Login') }
+                { text: 'Cancel', style: 'cancel' },
+                { text: 'Log in', onPress: () => navigation.navigate('Login') }
             ]
         );
         return false;
@@ -42,14 +42,14 @@ export const withAuth = (isAuthenticated, navigation, featureName, onSuccess) =>
  */
 export const getAuthMessage = (featureName) => {
     const messages = {
-        'giỏ hàng': 'xem giỏ hàng',
-        'thêm vào giỏ hàng': 'thêm sản phẩm vào giỏ hàng',
-        'thanh toán': 'tiến hành thanh toán',
-        'mua hàng': 'mua sản phẩm',
-        'xem đơn hàng': 'xem lịch sử đơn hàng',
-        'hồ sơ': 'xem hồ sơ cá nhân',
-        'đánh giá': 'đánh giá sản phẩm',
-        'default': 'sử dụng tính năng này'
+        'cart': 'view cart',
+        'add to cart': 'add product to cart',
+        'checkout': 'proceed to checkout',
+        'buy': 'buy product',
+        'order history': 'view order history',
+        'profile': 'view profile',
+        'review': 'review product',
+        'default': 'use this feature'
     };
     
     return messages[featureName] || messages.default;
@@ -74,7 +74,7 @@ export const navigateAfterLogin = (navigation, user) => {
  * @param {Object} user - User object
  * @param {string} successMessage - Optional success message
  */
-export const handleLoginSuccess = (navigation, user, successMessage = 'Đăng nhập thành công!') => {
+export const handleLoginSuccess = (navigation, user, successMessage = 'Login successful!') => {
     // Show success message if provided
     if (successMessage) {
         // You can use Toast here if available

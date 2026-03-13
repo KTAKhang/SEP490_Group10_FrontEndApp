@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { API_BASE_URL } from '../config/api';
+import { removeVietnameseTone } from '../utils/searchUtils';
 
 /**
  * Backend: GET /categories
@@ -13,7 +14,7 @@ export async function getCategories({ page = 1, limit = 100, search = '', sortBy
             limit: String(Math.min(limit, 100)),
         });
         if (search && search.trim() !== '') {
-            params.append('search', search.trim());
+            params.append('search', removeVietnameseTone(search.trim()));
         }
         if (sortBy) params.append('sortBy', sortBy);
         if (sortOrder) params.append('sortOrder', sortOrder);

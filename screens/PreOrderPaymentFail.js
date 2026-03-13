@@ -1,13 +1,11 @@
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { useTranslation } from "react-i18next";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 
-/**
- * Màn hình thất bại thanh toán Pre-order.
- * Dùng riêng cho tính năng pre-order; order thường dùng PaymentFail.
- */
 export default function PreOrderPaymentFail({ navigation }) {
+  const { t } = useTranslation();
   return (
     <LinearGradient
       colors={["#0f0f1a", "#12111f", "#0d1320"]}
@@ -19,23 +17,21 @@ export default function PreOrderPaymentFail({ navigation }) {
         </View>
       </View>
 
-      <Text style={styles.title}>Thanh toán đặt trước thất bại</Text>
-      <Text style={styles.subtitle}>
-        Giao dịch chưa thành công. Bạn có thể thử lại từ màn "Đơn của tôi" hoặc liên hệ hỗ trợ.
-      </Text>
+      <Text style={styles.title}>{t('payment.preOrderFailTitle')}</Text>
+      <Text style={styles.subtitle}>{t('payment.preOrderFailSubtitle')}</Text>
 
       <TouchableOpacity
         style={styles.primaryBtn}
-        onPress={() => navigation.navigate("PreOrder")}
+        onPress={() => navigation.navigate("PreOrderHistory")}
       >
-        <Text style={styles.primaryText}>Về đơn đặt trước</Text>
+        <Text style={styles.primaryText}>{t('payment.viewPreOrders')}</Text>
       </TouchableOpacity>
 
       <TouchableOpacity
         style={styles.secondaryBtn}
         onPress={() => navigation.navigate("HomePage")}
       >
-        <Text style={styles.secondaryText}>Về trang chủ</Text>
+        <Text style={styles.secondaryText}>{t('payment.backHome')}</Text>
       </TouchableOpacity>
     </LinearGradient>
   );

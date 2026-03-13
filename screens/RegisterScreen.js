@@ -11,6 +11,7 @@ import {
     ActivityIndicator,
     Platform,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Mail, Lock, User, Phone, Home, Key, MapPin, Calendar, Eye, EyeOff } from 'lucide-react-native';
 import { useDispatch, useSelector } from 'react-redux';
@@ -36,6 +37,7 @@ const Field = ({ icon, error, children }) => (
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 const RegisterScreen = () => {
+    const { t } = useTranslation();
     const dispatch = useDispatch();
     const navigation = useNavigation();
     const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -114,31 +116,31 @@ const RegisterScreen = () => {
 
     useEffect(() => {
         if (otpStatus === 'success') {
-            Toast.show({ type: 'success', text1: 'Success', text2: otpMessage });
+            Toast.show({ type: 'success', text1: t('auth.success'), text2: otpMessage });
             setStep(2);
             setTimeout(() => dispatch(resetOtpState()), 100);
         } else if (otpStatus === 'error') {
             const errorType = getErrorType(otpMessage);
             const msg =
                 errorType === 'username'
-                    ? 'Username already taken'
+                    ? t('auth.usernameTaken')
                     : errorType === 'email'
-                    ? 'Email already taken'
-                    : otpMessage || 'Registration failed';
-            Toast.show({ type: 'error', text1: 'Error', text2: msg });
+                    ? t('auth.emailTaken')
+                    : otpMessage || t('auth.registrationFailed');
+            Toast.show({ type: 'error', text1: t('common.error'), text2: msg });
             setTimeout(() => dispatch(resetOtpState()), 100);
         }
-    }, [otpStatus, otpMessage]);
+    }, [otpStatus, otpMessage, t]);
 
     // ── Redux OTP confirm response ──────────────────────────────────────────
     useEffect(() => {
         if (confirmOtpStatus === 'success') {
-            Toast.show({ type: 'success', text1: 'Success', text2: confirmOtpMessage });
+            Toast.show({ type: 'success', text1: t('auth.success'), text2: confirmOtpMessage });
             setTimeout(() => navigation.navigate('Login'), 1200);
         } else if (confirmOtpStatus === 'error') {
-            Toast.show({ type: 'error', text1: 'Lỗi', text2: confirmOtpMessage  });
+            Toast.show({ type: 'error', text1: t('common.error'), text2: confirmOtpMessage });
         }
-    }, [confirmOtpStatus, confirmOtpMessage]);
+    }, [confirmOtpStatus, confirmOtpMessage, t]);
 
     // ── Helpers ─────────────────────────────────────────────────────────────
     const setField = (key, value) => {
@@ -161,14 +163,13 @@ const RegisterScreen = () => {
     // ── Step 1 Validation & Submit ──────────────────────────────────────────
     const handleSendOTP = () => {
         const err = {};
-        if (!formData.user_name.trim()) err.user_name = 'Please enter username!';
-        else if (formData.user_name.trim().length < 3) err.user_name = 'Username must be at least 3 characters';
+        if (!formData.user_name.trim()) err.user_name = t('auth.errUsernameRequired');
+        else if (formData.user_name.trim().length < 3) err.user_name = t('auth.errUsernameMin');
         else if (/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>\/?]/.test(formData.user_name))
-            err.user_name = 'Username must not contain special characters';
+            err.user_name = t('auth.errUsernameSpecial');
 
-        if (!formData.email.trim()) err.email = 'Please enter email!';
-        else if (!validateEmail(formData.email)) err.email = 'Invalid email';
-
+        if (!formData.email.trim()) err.email = t('auth.errEmailRequired');
+        else if (!validateEmail(formData.email)) err.email = t('auth.errEmailInvalid');
         if (!formData.password) err.password = 'Please enter password!';
         if (!formData.fullName.trim()) err.fullName = 'Please enter username!';
         else if (formData.fullName.trim().length < 3) err.fullName = 'Username must be at least 3 characters';
@@ -176,23 +177,23 @@ const RegisterScreen = () => {
             err.fullName = 'Username must not contain special characters';
         if (!formData.phone.trim()) err.phone = 'Please enter phone number!';
 
-        if (!formData.city) err.city = 'Please select a province/city!';
-        if (!formData.ward) err.ward = 'Please select a ward!';
-        if (!formData.address.trim()) err.address = 'Please enter address!';
+        if (!formData.city) err.city = t('auth.errCityRequired');
+        if (!formData.ward) err.ward = t('auth.errWardRequired');
+        if (!formData.address.trim()) err.address = t('auth.errAddressRequired');
 
         if (!formData.birthday) {
-            err.birthday = 'Please select date of birth!';
+            err.birthday = t('auth.errBirthdayRequired');
         } else {
             const dob = new Date(formData.birthday);
-            if (isNaN(dob.getTime())) err.birthday = 'Invalid date of birth!';
-            else if (dob > new Date()) err.birthday = 'Date of birth cannot be in the future!';
+            if (isNaN(dob.getTime())) err.birthday = t('auth.errBirthdayInvalid');
+            else if (dob > new Date()) err.birthday = t('auth.errBirthdayFuture');
         }
 
-        if (!formData.gender) err.gender = 'Please select gender!';
+        if (!formData.gender) err.gender = t('auth.errGenderRequired');
 
         if (Object.keys(err).length) {
             setErrors(err);
-            Toast.show({ type: 'error', text1: 'Error', text2: 'Please check your information' });
+            Toast.show({ type: 'error', text1: t('common.error'), text2: t('auth.errCheckInfo') });
             return;
         }
 
@@ -214,7 +215,7 @@ const RegisterScreen = () => {
     // ── Step 2 Confirm OTP ──────────────────────────────────────────────────
     const handleConfirmOTP = () => {
         if (!formData.otp || formData.otp.length !== 6) {
-            setErrors({ otp: 'The OTP must be 6 digits long.' });
+            setErrors({ otp: t('auth.otpMustBe6') });
             return;
         }
         console.log("formData.otp",formData.otp)
@@ -239,7 +240,7 @@ const RegisterScreen = () => {
                         ))}
                     </ScrollView>
                     <TouchableOpacity style={styles.pickerClose} onPress={onClose}>
-                        <Text style={{ color: '#22c55e', fontWeight: '600' }}>Close</Text>
+                        <Text style={{ color: '#22c55e', fontWeight: '600' }}>{t('common.close')}</Text>
                     </TouchableOpacity>
                 </View>
             </View>
@@ -247,9 +248,9 @@ const RegisterScreen = () => {
     };
 
     const genderOptions = [
-        { name: 'Nam', value: 'male' },
-        { name: 'Nữ', value: 'female' },
-        { name: 'Khác', value: 'other' },
+        { name: t('auth.genderMale'), value: 'male' },
+        { name: t('auth.genderFemale'), value: 'female' },
+        { name: t('auth.genderOther'), value: 'other' },
     ];
 
     // ── Render ──────────────────────────────────────────────────────────────
@@ -283,12 +284,12 @@ const RegisterScreen = () => {
                             : <Key color="#fff" size={28} />}
                     </View>
                     <Text style={styles.title}>
-                        {step === 1 ? 'Register' : 'Confirm OTP'}
+                        {step === 1 ? t('auth.register') : t('auth.confirmOtpTitle')}
                     </Text>
                     <Text style={styles.subtitle}>
                         {step === 1
-                            ? 'Create a new account'
-                            : `Enter the OTP sent to\n${formData.email}`}
+                            ? t('auth.createAccount')
+                            : t('auth.otpSentTo', { email: formData.email })}
                     </Text>
 
                     {/* ══════════ STEP 1 ══════════ */}
@@ -298,7 +299,7 @@ const RegisterScreen = () => {
                             <Field icon={<User color="#22c55e" size={20} />} error={errors.user_name}>
                                 <TextInput
                                     style={styles.inputField}
-                                    placeholder="Username"
+                                    placeholder={t('auth.usernamePlaceholder')}
                                     placeholderTextColor="#aaa"
                                     value={formData.user_name}
                                     onChangeText={(v) => setField('user_name', v)}
@@ -310,7 +311,7 @@ const RegisterScreen = () => {
                             <Field icon={<Mail color="#22c55e" size={20} />} error={errors.email}>
                                 <TextInput
                                     style={styles.inputField}
-                                    placeholder="Email"
+                                    placeholder={t('auth.email')}
                                     placeholderTextColor="#aaa"
                                     value={formData.email}
                                     onChangeText={(v) => setField('email', v)}
@@ -323,7 +324,7 @@ const RegisterScreen = () => {
                             <Field icon={<Lock color="#22c55e" size={20} />} error={errors.password}>
                                 <TextInput
                                     style={styles.inputField}
-                                    placeholder="Password"
+                                    placeholder={t('auth.password')}
                                     placeholderTextColor="#aaa"
                                     value={formData.password}
                                     onChangeText={(v) => setField('password', v)}
@@ -351,7 +352,7 @@ const RegisterScreen = () => {
                             <Field icon={<Phone color="#22c55e" size={20} />} error={errors.phone}>
                                 <TextInput
                                     style={styles.inputField}
-                                    placeholder="Phone number"
+                                    placeholder={t('auth.phonePlaceholder')}
                                     placeholderTextColor="#aaa"
                                     value={formData.phone}
                                     onChangeText={(v) => setField('phone', v)}
@@ -366,7 +367,7 @@ const RegisterScreen = () => {
                                     onPress={() => setShowProvincePicker(true)}
                                 >
                                     <Text style={formData.city ? styles.pickerValue : styles.pickerPlaceholder}>
-                                            {selectedProvinceName || 'Select province/city'}
+                                            {selectedProvinceName || t('auth.selectProvince')}
                                         </Text>
                                 </TouchableOpacity>
                             </Field>
@@ -378,7 +379,7 @@ const RegisterScreen = () => {
                                     onPress={() => formData.city && setShowWardPicker(true)}
                                 >
                                     <Text style={formData.ward ? styles.pickerValue : styles.pickerPlaceholder}>
-                                        {formData.ward || (formData.city ? 'Select ward' : 'Select a province/city first')}
+                                        {formData.ward || (formData.city ? t('auth.selectWard') : t('auth.selectWardFirst'))}
                                     </Text>
                                 </TouchableOpacity>
                             </Field>
@@ -387,7 +388,7 @@ const RegisterScreen = () => {
                             <Field icon={<Home color="#22c55e" size={20} />} error={errors.address}>
                                 <TextInput
                                     style={styles.inputField}
-                                    placeholder="Address (house number, street name...)"
+                                    placeholder={t('auth.addressPlaceholder')}
                                     placeholderTextColor="#aaa"
                                     value={formData.address}
                                     onChangeText={(v) => setField('address', v)}
@@ -401,7 +402,7 @@ const RegisterScreen = () => {
                                     onPress={() => setShowDatePicker(true)}
                                 >
                                     <Text style={formData.birthday ? styles.pickerValue : styles.pickerPlaceholder}>
-                                            {formData.birthday || 'Select date of birth'}
+                                            {formData.birthday || t('auth.selectBirthday')}
                                         </Text>
                                 </TouchableOpacity>
                             </Field>
@@ -429,7 +430,7 @@ const RegisterScreen = () => {
                                     onPress={() => setShowGenderPicker(true)}
                                 >
                                     <Text style={formData.gender ? styles.pickerValue : styles.pickerPlaceholder}>
-                                            {genderOptions.find((g) => g.value === formData.gender)?.name || 'Select gender'}
+                                            {genderOptions.find((g) => g.value === formData.gender)?.name || t('auth.selectGender')}
                                         </Text>
                                 </TouchableOpacity>
                             </Field>
@@ -442,14 +443,14 @@ const RegisterScreen = () => {
                                 {isLoading ? (
                                     <ActivityIndicator color="#fff" />
                                 ) : (
-                                    <Text style={styles.loginButtonText}>Send OTP</Text>
+                                    <Text style={styles.loginButtonText}>{t('auth.sendOtp')}</Text>
                                 )}
                             </TouchableOpacity>
 
                             <View style={styles.footer}>
-                                <Text style={styles.footerText}>Already have an account?</Text>
+                                <Text style={styles.footerText}>{t('auth.alreadyHaveAccount')}</Text>
                                 <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-                                    <Text style={styles.footerLink}> Login</Text>
+                                    <Text style={styles.footerLink}> {t('auth.login')}</Text>
                                 </TouchableOpacity>
                             </View>
                         </>
@@ -461,7 +462,7 @@ const RegisterScreen = () => {
                             <Field icon={<Key color="#22c55e" size={20} />} error={errors.otp}>
                                 <TextInput
                                     style={styles.inputField}
-                                    placeholder="Enter OTP (6 digits)"
+                                    placeholder={t('auth.enterOtp6')}
                                     placeholderTextColor="#aaa"
                                     value={formData.otp}
                                     onChangeText={(v) =>
@@ -480,7 +481,7 @@ const RegisterScreen = () => {
                                 {confirmOtpLoading ? (
                                     <ActivityIndicator color="#fff" />
                                 ) : (
-                                    <Text style={styles.loginButtonText}>OTP Verification</Text>
+                                    <Text style={styles.loginButtonText}>{t('auth.otpVerification')}</Text>
                                 )}
                             </TouchableOpacity>
 
@@ -488,7 +489,7 @@ const RegisterScreen = () => {
                                 style={styles.backButton}
                                 onPress={() => setStep(1)}
                             >
-                                <Text style={styles.backButtonText}>← Back to edit information</Text>
+                                <Text style={styles.backButtonText}>{t('auth.backToEdit')}</Text>
                             </TouchableOpacity>
                         </>
                     )}

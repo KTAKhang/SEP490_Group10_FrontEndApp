@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { Alert } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
+import { useTranslation } from 'react-i18next';
 import { useDispatch, useSelector } from 'react-redux';
 import { checkAuthStatus } from '../store/slices/authSlice';
 import CustomerChat from '../components/CustomerChat';
@@ -32,6 +33,7 @@ import VouchersScreen from '../screens/VouchersScreen';
 import PreOrderScreen from '../screens/PreOrderScreen';
 import PreOrderDetailScreen from '../screens/PreOrderDetailScreen';
 import PreOrderCheckoutScreen from '../screens/PreOrderCheckoutScreen';
+import PreOrderHistoryScreen from '../screens/PreOrderHistoryScreen';
 import ContactFormScreen from '../screens/ContactFormScreen';
 import PaymentSuccess from '../screens/PaymentSuccess';
 import PaymentFail from '../screens/PaymentFail';
@@ -59,6 +61,7 @@ const linking = {
 };
 
 export default function AppNavigator() {
+  const { t } = useTranslation();
   const dispatch = useDispatch();
   const { isAuthenticated, user } = useSelector((state) => state.auth);
   const [isInitializing, setIsInitializing] = React.useState(true);
@@ -111,11 +114,11 @@ export default function AppNavigator() {
       });
       const code = params.vnp_ResponseCode || params.vnp_TransactionStatus;
       if (code === '00') {
-        Alert.alert('Thanh toán thành công', 'Đơn đặt trước của bạn đã được thanh toán đặt cọc. Bạn có thể xem tại "Đặt trước" > "Đơn của tôi".', [
-          { text: 'OK', onPress: () => navigationRef.navigate('PreOrder', { remaining: 'success' }) },
+        Alert.alert(t('payment.success'), t('preOrder.depositSuccess') + ' ' + t('payment.viewPreOrders'), [
+          { text: t('common.ok'), onPress: () => navigationRef.navigate('PreOrderHistory', { remaining: 'success' }) },
         ]);
       } else {
-        Alert.alert('Thanh toán thất bại', 'Giao dịch chưa thành công. Vui lòng thử lại hoặc liên hệ hỗ trợ.', [{ text: 'OK' }]);
+        Alert.alert(t('payment.fail'), t('payment.preOrderFailSubtitle'), [{ text: t('common.ok') }]);
       }
     } catch (e) {
       // ignore parse error
@@ -200,6 +203,7 @@ export default function AppNavigator() {
                 <Stack.Screen name="Favorites" component={FavoritesScreen} />
                 <Stack.Screen name="Vouchers" component={VouchersScreen} />
                 <Stack.Screen name="PreOrder" component={PreOrderScreen} />
+                <Stack.Screen name="PreOrderHistory" component={PreOrderHistoryScreen} />
                 <Stack.Screen name="PreOrderDetail" component={PreOrderDetailScreen} />
                 <Stack.Screen name="PreOrderCheckout" component={PreOrderCheckoutScreen} />
               </>

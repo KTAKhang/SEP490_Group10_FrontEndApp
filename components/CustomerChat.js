@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { PanResponder } from "react-native";
 import {
   View,
@@ -35,14 +36,15 @@ const isSameDay = (a, b) => {
   );
 };
 
-const formatDateHeader = (dateStr) => {
+const formatDateHeader = (dateStr, t) => {
+  if (!t) return String(dateStr);
   const d = new Date(dateStr);
   const today = new Date();
   const yesterday = new Date();
   yesterday.setDate(today.getDate() - 1);
-  if (isSameDay(dateStr, today.toISOString())) return "Today";
-  if (isSameDay(dateStr, yesterday.toISOString())) return "Yesterday";
-  return d.toLocaleDateString("vi-VN", {
+  if (isSameDay(dateStr, today.toISOString())) return t("chat.today");
+  if (isSameDay(dateStr, yesterday.toISOString())) return t("chat.yesterday");
+  return d.toLocaleDateString(undefined, {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
@@ -67,7 +69,7 @@ const formatTime = (dateStr) =>
 // ─────────────────────────────────────────────
 // SENDING DOTS ANIMATION
 // ─────────────────────────────────────────────
-const SendingDots = () => {
+const SendingDots = ({ t }) => {
   const dot1 = useRef(new Animated.Value(0)).current;
   const dot2 = useRef(new Animated.Value(0)).current;
   const dot3 = useRef(new Animated.Value(0)).current;
@@ -116,7 +118,7 @@ const SendingDots = () => {
 
   return (
     <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-      <Text style={styles.sendingText}>Đang gửi</Text>
+      <Text style={styles.sendingText}>{t ? t("chat.sending") : "Sending"}</Text>
       <Animated.View style={dotStyle(dot1)} />
       <Animated.View style={dotStyle(dot2)} />
       <Animated.View style={dotStyle(dot3)} />
@@ -138,7 +140,7 @@ const DateSeparator = ({ label }) => (
 // ─────────────────────────────────────────────
 // MESSAGE BUBBLE
 // ─────────────────────────────────────────────
-const MessageBubble = ({ message, prevMessage }) => {
+const MessageBubble = ({ message, prevMessage, t }) => {
   const isCustomer = message.senderRole === "customer";
   const showDate =
     !prevMessage || !isSameDay(prevMessage.createdAt, message.createdAt);
@@ -146,7 +148,7 @@ const MessageBubble = ({ message, prevMessage }) => {
   return (
     <>
       {showDate && (
-        <DateSeparator label={formatDateHeader(message.createdAt)} />
+        <DateSeparator label={formatDateHeader(message.createdAt, t)} />
       )}
       <View
         style={[
@@ -200,6 +202,7 @@ const MessageBubble = ({ message, prevMessage }) => {
 // MAIN COMPONENT
 // ─────────────────────────────────────────────
 export default function CustomerChat() {
+  const { t } = useTranslation();
   // Drag state
   const pan = useRef(new Animated.ValueXY()).current;
 
@@ -461,13 +464,13 @@ export default function CustomerChat() {
     try {
       const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (perm.status !== "granted") {
-        Alert.alert("The right to be denied", "You need photo access to select images.");
+        Alert.alert(t("chat.permissionDenied"), t("chat.needPhotoAccess"));
         return;
       }
 
       const remaining = 3 - selectedImages.length;
       if (remaining <= 0) {
-        Alert.alert("Limit", "You can only select a maximum of 3 photos.");
+        Alert.alert(t("chat.limit"), t("chat.limitMaxPhotos"));
         return;
       }
 
@@ -505,7 +508,7 @@ export default function CustomerChat() {
       setSelectedImages((prev) => [...prev, ...picked].slice(0, 3));
     } catch (err) {
       console.error("pickImages error:", err);
-      Alert.alert("Error", "Cannot select image");
+      Alert.alert(t("common.error"), t("chat.errorSelectImage"));
     }
   };
 
@@ -538,7 +541,7 @@ export default function CustomerChat() {
           style={styles.fab}
           onPress={() => {
             if (!isAuthenticated) {
-              Alert.alert("Notification", "Please log in to chat.");
+              Alert.alert(t("chat.notification"), t("chat.loginToChat"));
               return;
             }
             setIsOpen(true);
@@ -578,14 +581,14 @@ export default function CustomerChat() {
                 )}
                 <View>
                   <Text style={styles.headerTitle}>
-                    {selectedStaff ? selectedStaff.userName : "Chat Support"}
+                    {selectedStaff ? selectedStaff.userName : t("chat.chatSupport")}
                   </Text>
                   <Text style={styles.headerSub}>
                     {selectedStaff
                       ? isReadOnly
-                        ? "🔒 View only — offline staff"
-                        : "🟢 Online"
-                      : `${onlineStaffs.length} online staff`}
+                        ? t("chat.viewOnlyOffline")
+                        : t("chat.online")
+                      : t("chat.onlineStaffCount", { count: onlineStaffs.length })}
                   </Text>
                 </View>
               </View>
@@ -615,8 +618,8 @@ export default function CustomerChat() {
                         ]}
                       >
                         {tab === "online"
-                          ? "👥 online staff"
-                          : "🕐 History"}
+                          ? t("chat.onlineStaff")
+                          : t("chat.history")}
                       </Text>
                     </TouchableOpacity>
                   ))}
@@ -626,7 +629,7 @@ export default function CustomerChat() {
                 {activeTab === "online" && (
                   <ScrollView contentContainerStyle={styles.onlineTab}>
                     <Text style={styles.sectionLabel}>
-                      SELECT A STAFF MEMBER TO CHAT WITH
+                      {t("chat.selectStaffToChat")}
                     </Text>
                     <View style={styles.staffGrid}>
                       {onlineStaffs.map((staff) => (
@@ -666,7 +669,7 @@ export default function CustomerChat() {
                     ) : historyRooms.length === 0 ? (
                       <View style={styles.centerBox}>
                         <Text style={styles.emptyText}>
-                          Chưa có lịch sử chat
+                          {t("chat.noHistory")}
                         </Text>
                       </View>
                     ) : (
@@ -714,7 +717,7 @@ export default function CustomerChat() {
                                   style={styles.historyLastMsg}
                                   numberOfLines={1}
                                 >
-                                  {r.lastMessage || "Chưa có tin nhắn"}
+                                  {r.lastMessage || t("chat.noMessages")}
                                 </Text>
                                 <Text
                                   style={[
@@ -727,8 +730,8 @@ export default function CustomerChat() {
                                   ]}
                                 >
                                   {staffOnline
-                                    ? "🟢 Online — press to chat"
-                                    : "🔒 Only view chat history"}
+                                    ? t("chat.onlinePressToChat")
+                                    : t("chat.onlyViewHistory")}
                                 </Text>
                               </View>
                             </TouchableOpacity>
@@ -751,8 +754,7 @@ export default function CustomerChat() {
                 {isReadOnly && (
                   <View style={styles.readonlyBanner}>
                     <Text style={styles.readonlyText}>
-                      🔒 Nhân viên đang offline. Bạn chỉ có thể xem lịch sử hội
-                      thoại.
+                      🔒 {t("chat.staffOfflineReadonly")}
                     </Text>
                   </View>
                 )}
@@ -771,6 +773,7 @@ export default function CustomerChat() {
                       <MessageBubble
                         message={item}
                         prevMessage={messages[index - 1]}
+                        t={t}
                       />
                     )}
                     contentContainerStyle={styles.messageList}
@@ -787,7 +790,7 @@ export default function CustomerChat() {
                           }}
                         >
                           <Text style={styles.loadMoreText}>
-                            {loadingMore ? "Đang tải..." : "Tải thêm"}
+                            {loadingMore ? t("common.loading") : t("chat.loadMore")}
                           </Text>
                         </TouchableOpacity>
                       ) : null
@@ -802,7 +805,7 @@ export default function CustomerChat() {
                           ]}
                         >
                           <View style={[styles.bubble, styles.bubbleSending]}>
-                            <SendingDots />
+                            <SendingDots t={t} />
                           </View>
                         </View>
                       ) : null
@@ -842,7 +845,7 @@ export default function CustomerChat() {
                 {isReadOnly ? (
                   <View style={styles.readonlyFooter}>
                     <Text style={styles.readonlyFooterText}>
-                      🔒 Nhân viên offline — không thể gửi tin nhắn
+                      🔒 {t("chat.staffOfflineCannotSend")}
                     </Text>
                   </View>
                 ) : (
@@ -858,7 +861,7 @@ export default function CustomerChat() {
                       value={text}
                       onChangeText={setText}
                       placeholder={
-                        isSending ? "Đang gửi..." : "Nhập tin nhắn..."
+                        isSending ? t("chat.sending") : t("chat.placeholder")
                       }
                       placeholderTextColor="#9ca3af"
                       style={[styles.input, isSending && { opacity: 0.6 }]}
