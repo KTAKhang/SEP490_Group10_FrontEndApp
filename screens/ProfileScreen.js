@@ -118,6 +118,7 @@ const ProfileScreen = ({ navigation }) => {
     }, [changePasswordError, passwordModalVisible]);
 
     const handleLogout = () => {
+        console.log("logout")
         Alert.alert(
             t('common.logout'),
             t('profile.logoutConfirm'),

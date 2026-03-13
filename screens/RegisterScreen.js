@@ -65,6 +65,7 @@ const RegisterScreen = () => {
         user_name: '',
         email: '',
         password: '',
+        fullName:'',
         phone: '',
         address: '',
         city: '',
@@ -169,10 +170,12 @@ const RegisterScreen = () => {
 
         if (!formData.email.trim()) err.email = t('auth.errEmailRequired');
         else if (!validateEmail(formData.email)) err.email = t('auth.errEmailInvalid');
-
-        if (!formData.password) err.password = t('auth.errPasswordRequired');
-
-        if (!formData.phone.trim()) err.phone = t('auth.errPhoneRequired');
+        if (!formData.password) err.password = 'Please enter password!';
+        if (!formData.fullName.trim()) err.fullName = 'Please enter username!';
+        else if (formData.fullName.trim().length < 3) err.fullName = 'Username must be at least 3 characters';
+        else if (/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>\/?]/.test(formData.fullName))
+            err.fullName = 'Username must not contain special characters';
+        if (!formData.phone.trim()) err.phone = 'Please enter phone number!';
 
         if (!formData.city) err.city = t('auth.errCityRequired');
         if (!formData.ward) err.ward = t('auth.errWardRequired');
@@ -200,6 +203,7 @@ const RegisterScreen = () => {
                 user_name: formData.user_name,
                 email: formData.email,
                 password: formData.password,
+                fullName: formData.fullName,
                 phone: formData.phone,
                 address: fullAddress,
                 birthday: formData.birthday,
@@ -334,7 +338,16 @@ const RegisterScreen = () => {
                                     )}
                                 </TouchableOpacity>
                             </Field>
-
+<Field icon={<User color="#22c55e" size={20} />} error={errors.fullName}>
+                                <TextInput
+                                    style={styles.inputField}
+                                    placeholder="Full Name"
+                                    placeholderTextColor="#aaa"
+                                    value={formData.fullName}
+                                    onChangeText={(v) => setField('fullName', v)}
+                                    autoCapitalize="none"
+                                />
+                            </Field>
                             {/* Phone */}
                             <Field icon={<Phone color="#22c55e" size={20} />} error={errors.phone}>
                                 <TextInput

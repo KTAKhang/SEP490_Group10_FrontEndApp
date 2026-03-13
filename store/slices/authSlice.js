@@ -81,6 +81,7 @@ export const logoutUser = createAsyncThunk(
     const response = await logoutApi({  });
     await AsyncStorage.removeItem("token");
     await AsyncStorage.removeItem("user");
+    await AsyncStorage.removeItem("refreshToken");
     return response.message;
   },
 );

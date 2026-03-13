@@ -16,15 +16,33 @@ export const fetchUserProfile = createAsyncThunk(
 
 
 export const updateUserProfile = createAsyncThunk(
-    'user/updateUserProfile',
-    async ({ user_name, phone, address, birthday, gender, avatar }, { rejectWithValue }) => {
-        try {
-            const response = await updateUserProfileApi({ user_name, phone, address, birthday, gender, avatar });
-            return response;
-        } catch (error) {
-            return rejectWithValue(error.message);
-        }
+  "user/updateUserProfile",
+  async (
+    { user_name, fullName, phone, address, birthday, gender, avatar },
+    { rejectWithValue }
+  ) => {
+    try {
+      const response = await updateUserProfileApi({
+        user_name,
+        fullName,
+        phone,
+        address,
+        birthday,
+        gender,
+        avatar,
+      });
+
+      return response;
+    } catch (error) {
+      console.log("FULL ERROR:", error);
+      console.log("ERROR RESPONSE:", error?.response);
+      console.log("ERROR DATA:", error?.response?.data);
+
+      return rejectWithValue(
+        error?.response?.data?.message || error.message
+      );
     }
+  }
 );
 
 export const changePassword = createAsyncThunk(

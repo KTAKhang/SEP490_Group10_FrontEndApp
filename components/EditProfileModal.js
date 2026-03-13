@@ -21,6 +21,7 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 const EditProfileModal = ({ visible, onClose, profile, onSave }) => {
   const { t } = useTranslation();
   const [name, setName] = useState("");
+  const [fullName, setFullName] = useState("");
   const [avatar, setAvatar] = useState(null);
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
@@ -44,6 +45,7 @@ const EditProfileModal = ({ visible, onClose, profile, onSave }) => {
   useEffect(() => {
     if (visible) {
       setName(profile?.user_name || "");
+      setFullName(profile?.fullName|| "")
       if (profile?.avatar) {
         setAvatar({
           uri: profile.avatar,
@@ -146,10 +148,18 @@ const EditProfileModal = ({ visible, onClose, profile, onSave }) => {
 
     if (!name.trim()) {
       newErrors.name = "Please enter your username.";
-    } else if (name.trim().length < 2) {
-      newErrors.name = "The name must have at least 2 characters.";
+    } else if (name.trim().length < 3) {
+      newErrors.name = "The name must have at least 3 characters.";
     } else if (name.trim().length > 50) {
       newErrors.name = "Names must not exceed 50 characters.";
+    }
+
+    if (!fullName.trim()) {
+      newErrors.fullName = "Please enter your full name.";
+    } else if (fullName.trim().length < 3) {
+      newErrors.fullName = "The name must have at least 3 characters.";
+    } else if (fullName.trim().length > 50) {
+      newErrors.fullName = "Names must not exceed 50 characters.";
     }
 
     if (!phone || !/^[0-9]{9,11}$/.test(phone)) {
@@ -368,6 +378,7 @@ const EditProfileModal = ({ visible, onClose, profile, onSave }) => {
       await new Promise((resolve) => setTimeout(resolve, 1000));
       const updatedProfile = {
         user_name: name.trim(),
+        fullName: fullName.trim(),
         phone: phone.trim(),
         address: `${address.trim()}, ${ward}, ${icity}`,
         birthday: birthday || null,
@@ -496,6 +507,26 @@ const EditProfileModal = ({ visible, onClose, profile, onSave }) => {
                     <ErrorText error={errors.name} />
                     <Text style={styles.charCount}>{name.length}/50</Text>
                   </View>
+                  <View style={styles.inputGroup}>
+                    <Text style={styles.label}>Full name *</Text>
+                    <TextInput
+                      style={[styles.input, errors.fullName && styles.inputError]}
+                      placeholder="Enter your full name"
+                      value={fullName}
+                      onChangeText={(text) => {
+                        setFullName(text);
+                        if (errors.fullName) {
+                          setErrors({ ...errors, fullName: null });
+                        }
+                      }}
+                      maxLength={50}
+                      editable={!loading}
+                    />
+                    <ErrorText error={errors.fullName} />
+                    <Text style={styles.charCount}>{fullName.length}/50</Text>
+                  </View>
+
+                  
 
                   <View style={styles.inputGroup}>
                     <Text style={styles.label}>Phone number *</Text>

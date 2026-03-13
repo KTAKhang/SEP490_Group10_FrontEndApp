@@ -100,11 +100,11 @@ export async function logoutApi() {
 }
 
 // ✅ Hàm gửi OTP
-export async function sendOtpApi({ user_name, email, password, phone, address,birthday,gender }) {
+export async function sendOtpApi({ user_name, email, password,fullName, phone, address,birthday,gender }) {
     try {
         const response = await axios.post(
             `${API_BASE_URL}/auth/register/send-otp`,
-            { user_name, email, password, phone, address,birthday,gender },
+            { user_name, email, password,fullName, phone, address,birthday,gender },
             {
                 headers: {
                     "Content-Type": "application/json",

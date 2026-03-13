@@ -21,12 +21,14 @@ const PersonalInfoSection = ({ profile = {}, onChangePasswordPress }) => {
     };
 
     const infoItems = [
-        { icon: 'person-outline', labelKey: 'profile.fullName', value: profile.user_name },
-        { icon: 'mail-outline', labelKey: 'profile.email', value: profile.email },
-        { icon: 'call-outline', labelKey: 'profile.phone', value: profile.phone },
-        { icon: 'location-outline', labelKey: 'profile.address', value: profile.address },
-        { icon: 'calendar-outline', labelKey: 'profile.birthday', value: formatDate(profile.birthday) },
-        { icon: 'male-female-outline', labelKey: 'profile.gender', value: formatGender(profile.gender) },
+        { icon: 'person-outline', label: 'User Name', value: profile.user_name },
+        { icon: 'person-outline', label: 'Full Name', value: profile.fullName },
+        { icon: 'mail-outline', label: 'Email', value: profile.email },
+        { icon: 'call-outline', label: 'Phone', value: profile.phone },
+        { icon: 'location-outline', label: 'Address', value: profile.address },
+        { icon: 'calendar-outline', label: 'Birthday', value: formatDate(profile.birthday) },
+        { icon: 'male-female-outline', label: 'Gender', value: formatGender(profile.gender) },
+
     ];
 
     return (
