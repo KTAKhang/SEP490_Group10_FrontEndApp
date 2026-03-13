@@ -18,7 +18,8 @@ const PersonalInfoSection = ({ profile = {}, onChangePasswordPress }) => {
     };
 
     const infoItems = [
-        { icon: 'person-outline', label: 'Full Name', value: profile.user_name },
+        { icon: 'person-outline', label: 'User Name', value: profile.user_name },
+        { icon: 'person-outline', label: 'Full Name', value: profile.fullName },
         { icon: 'mail-outline', label: 'Email', value: profile.email },
         { icon: 'call-outline', label: 'Phone', value: profile.phone },
         { icon: 'location-outline', label: 'Address', value: profile.address },
