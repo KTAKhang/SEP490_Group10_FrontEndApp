@@ -57,7 +57,7 @@ const PasswordRulesModal = ({ visible, onAccept, onDecline }) => {
     });
 
     const MANDATORY_RULES = [
-        { icon: 'text-outline', text: 'At least 8 characters long' },
+        { icon: 'text-outline', text: 'Must be 8 characters long' },
         { icon: 'arrow-up-circle-outline', text: 'At least one uppercase letter (A–Z)' },
         { icon: 'arrow-down-circle-outline', text: 'At least one lowercase letter (a–z)' },
         { icon: 'calculator-outline', text: 'At least one number (0–9)' },

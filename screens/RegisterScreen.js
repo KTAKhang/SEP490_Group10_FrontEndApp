@@ -198,6 +198,16 @@ const RegisterScreen = () => {
         }
 
         const fullAddress = `${formData.address}, ${formData.ward}, ${selectedProvinceName}`;
+        console.log("Register",{
+                user_name: formData.user_name,
+                email: formData.email,
+                password: formData.password,
+                fullName: formData.fullName,
+                phone: formData.phone,
+                address: fullAddress,
+                birthday: formData.birthday,
+                gender: formData.gender,
+            })
         dispatch(
             sendOtp({
                 user_name: formData.user_name,

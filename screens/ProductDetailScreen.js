@@ -62,8 +62,8 @@ const ProductDetailScreen = ({ navigation, route }) => {
     const { product, isLoading: productLoading, error } = useSelector((state) => state.product);
 
     // Get cart state for badge
-    const { cart } = useSelector((state) => state.cart);
-    const itemCount = cart?.item_count || 0;
+    const { sum,item_count } = useSelector((state) => state.cart);
+    const itemCount = item_count || 0;
 
     // Get authentication state
     const { isAuthenticated } = useSelector((state) => state.auth);
