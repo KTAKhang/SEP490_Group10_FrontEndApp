@@ -143,7 +143,7 @@ const ProfileScreen = ({ navigation }) => {
             return;
         }
 
-        if (newPassword.length < 6) {
+        if (newPassword.length !== 8) {
             Alert.alert(t('common.error'), t('auth.newPasswordMin6'));
             return;
         }

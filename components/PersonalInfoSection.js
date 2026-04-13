@@ -35,9 +35,9 @@ const PersonalInfoSection = ({ profile = {}, onChangePasswordPress }) => {
         <View style={styles.section}>
             <Text style={styles.sectionTitle}>{t('profile.personalInfo')}</Text>
 
-            {infoItems.map(({ icon, labelKey, value }, index) => (
+            {infoItems.map(({ icon, label, value }, index) => (
                 <View
-                    key={labelKey}
+                    key={label}
                     style={[
                         styles.infoItem,
                         index === infoItems.length - 1 && { borderBottomWidth: 0 }
@@ -48,7 +48,7 @@ const PersonalInfoSection = ({ profile = {}, onChangePasswordPress }) => {
                             <Ionicons name={icon} size={20} color="#22c55e" />
                         </View>
                         <View style={styles.infoContent}>
-                            <Text style={styles.infoLabel}>{t(labelKey)}</Text>
+                            <Text style={styles.infoLabel}>{t(label)}</Text>
                             <Text style={styles.infoValue}>
                                 {value || t('profile.notUpdated')}
                             </Text>
@@ -96,7 +96,7 @@ const styles = StyleSheet.create({
     },
     infoItemLeft: {
         flexDirection: 'row',
-        alignItems: 'center',
+        alignItems: 'flex-start',
         flex: 1,
     },
     iconContainer: {
@@ -106,6 +106,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#E6FFFB',
         justifyContent: 'center',
         alignItems: 'center',
+        marginTop: 2,
     },
     infoContent: {
         marginLeft: 12,
@@ -114,7 +115,7 @@ const styles = StyleSheet.create({
     infoLabel: {
         fontSize: 12,
         color: '#6b7280',
-        marginBottom: 2,
+        marginBottom: 5,
     },
     infoValue: {
         fontSize: 14,

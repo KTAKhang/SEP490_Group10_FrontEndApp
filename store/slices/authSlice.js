@@ -50,9 +50,9 @@ export const loginByGoogle = createAsyncThunk(
 // Async thunk for sending OTP
 export const sendOtp = createAsyncThunk(
   "auth/sendOtp",
-  async ({ user_name, email, password, phone, address,birthday,gender }, { rejectWithValue }) => {
+  async ({ user_name, email, password, fullName, phone, address,birthday,gender }, { rejectWithValue }) => {
     try {
-      const response = await sendOtpApi({ user_name, email, password, phone, address,birthday,gender });
+      const response = await sendOtpApi({ user_name, email, password,fullName, phone, address,birthday,gender });
       return response.message;
     } catch (error) {
       return rejectWithValue(error.message);

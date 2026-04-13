@@ -22,8 +22,8 @@ import * as Linking from "expo-linking";
 import {
   createOrder,
   clearOrderState,
-  checkShipping,
 } from "../store/slices/orderSlice"; // Adjust path as needed
+import { fetchUserProfile } from "../store/slices/userSlice";
 import { OverlayLoading, MinimalLoading } from "../components/Loading";
 import { formatCurrency } from "../utils/formatCurrency";
 import Toast from "react-native-toast-message";
@@ -75,6 +75,7 @@ const PaymentScreen = ({ navigation, route }) => {
     }
   };
 
+  console.log("receiverInfo",receiverInfo)
   // Validate field on blur
   const validateField = (fieldName, value) => {
     let error = null;
@@ -107,8 +108,8 @@ const PaymentScreen = ({ navigation, route }) => {
     error,
     order_id,
     payment_url,
-    shippingFee,
   } = useSelector((state) => state.order);
+  const profile = useSelector((state) => state.user?.user || null);
   const checkout = useSelector((state) => state.checkout || {});
   const cart = useSelector((state) => state.cart || {});
   // Get data from navigation params or use default values
@@ -123,8 +124,7 @@ const PaymentScreen = ({ navigation, route }) => {
     (sum, item) => sum + (item.price || 0) * (item.quantity || 1),
     0,
   );
-  const shippingCost = shippingFee || 0;
-  const total = subtotal + shippingCost;
+  const total = subtotal;
 
   const discountData =
     validationResult?.discountAmount != null && validationResult?.finalAmount != null
@@ -152,32 +152,6 @@ const PaymentScreen = ({ navigation, route }) => {
     },
   ];
 
-  // Handle order creation success
-  // useEffect(() => {
-  //     if (createSuccess && newOrderId) {
-  //         Alert.alert(
-  //             'Đặt hàng thành công! 🎉',
-  //             `Mã đơn hàng của bạn: ${newOrderId}\nĐơn hàng của bạn đã được đặt và sẽ được xử lý sớm.`,
-  //             [
-  //                 {
-  //                     text: 'Tiếp tục mua sắm',
-  //                     style: 'cancel',
-  //                     onPress: () => {
-  //                         dispatch(clearOrderState());
-  //                         navigation.navigate('HomePage');
-  //                     },
-  //                 },
-  //                 {
-  //                     text: 'Xem đơn hàng',
-  //                     onPress: () => {
-  //                         dispatch(clearOrderState());
-  //                         navigation.navigate('OrderHistory');
-  //                     },
-  //                 },
-  //             ]
-  //         );
-  //     }
-  // }, [createSuccess, newOrderId, dispatch, navigation]);
 
   // Handle order creation error
   useEffect(() => {
@@ -190,6 +164,33 @@ const PaymentScreen = ({ navigation, route }) => {
       ]);
     }
   }, [error, dispatch]);
+
+  // Load profile on mount
+  useEffect(() => {
+    dispatch(fetchUserProfile());
+  }, [dispatch]);
+
+  // Auto-fill receiverInfo from profile when available and fields are empty
+  useEffect(() => {
+    if (!profile) return;
+    const hasReceiverData = !!(
+      receiverInfo.receiver_name || receiverInfo.receiver_phone || receiverInfo.receiver_address
+    );
+    if (hasReceiverData) return; // don't overwrite if user already edited
+
+    const name = profile.fullName || profile.user_name || "";
+    const phone = profile.phone || "";
+    const address = profile.address || "";
+
+    const newReceiver = {
+      ...receiverInfo,
+      receiver_name: name,
+      receiver_phone: phone,
+      receiver_address: address,
+    };
+    setReceiverInfo(newReceiver);
+    setTempReceiverInfo((prev) => ({ ...prev, ...newReceiver }));
+  }, [profile]);
 
   // Load provinces on mount
   useEffect(() => {
@@ -233,21 +234,7 @@ const PaymentScreen = ({ navigation, route }) => {
 
   // Ensure there's an active checkout session (created by checkoutHold)
   const [checkoutSessionId, setCheckoutSessionId] = useState(null);
-  // useEffect(() => {
-  //     const checkSession = async () => {
-  //         try {
-  //             const sessionId = await AsyncStorage.getItem('checkout_session_id');
-  //             setCheckoutSessionId(sessionId);
-  //             if (!sessionId) {
-  //                 // No active checkout session — send user back to cart
-  //                 navigation.navigate('Cart');
-  //             }
-  //         } catch (e) {
-  //             console.error('Error checking checkout session', e);
-  //         }
-  //     };
-  //     checkSession();
-  // }, [navigation]);
+
 
   const handleCancel = async () => {
     try {
@@ -324,7 +311,7 @@ const PaymentScreen = ({ navigation, route }) => {
   };
 
   const validatePhone = (phone) => {
-    const phoneRegex = /^0[0-9]{9}$/;
+    const phoneRegex = /^0[0-9]{8,10}$/;
     if (!phone.trim()) {
       return t("payment.enterPhone");
     }
@@ -463,12 +450,11 @@ const PaymentScreen = ({ navigation, route }) => {
           text: t("common.confirm"),
           style: "default",
           onPress: () => {
-            dispatch(
+                dispatch(
               createOrder({
                 selected_product_ids: selectedIds,
                 receiverInfo,
                 payment_method: selectedPayment,
-                city: icity,
                 discount_id: selectedDiscount?.discountId || null,
               }),
             );
@@ -495,25 +481,7 @@ const PaymentScreen = ({ navigation, route }) => {
     }
   }, [payment_url]);
 
-  // When province changes in the mobile address modal, trigger shipping fee check
-  useEffect(() => {
-    const selected_product_ids = selectedItems.map(
-      (item) =>
-        (item.product_id && item.product_id._id) ||
-        item.product_id ||
-        item.productId ||
-        item._id,
-    );
 
-    if (
-      icity &&
-      typeof icity === "string" &&
-      tempReceiverInfo.province_code &&
-      selected_product_ids.length > 0
-    ) {
-      dispatch(checkShipping({ selected_product_ids, city: icity }));
-    }
-  }, [tempReceiverInfo.province_code, selectedItems, icity, dispatch]);
 
   // Load mã giảm giá phù hợp đơn hàng (minOrderValue <= total)
   useEffect(() => {
@@ -839,17 +807,7 @@ const PaymentScreen = ({ navigation, route }) => {
                 {formatCurrency(subtotal)}
               </Text>
             </View>
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Transport</Text>
-              <Text
-                style={[
-                  styles.summaryValue,
-                  shippingCost === 0 && styles.freeShipping,
-                ]}
-              >
-                {shippingCost === 0 ? "Free of charge" : formatCurrency(shippingCost)}
-              </Text>
-            </View>
+            
             {selectedDiscount && discountAmount > 0 && (
               <View style={styles.summaryRow}>
                 <Text style={styles.summaryLabel}>

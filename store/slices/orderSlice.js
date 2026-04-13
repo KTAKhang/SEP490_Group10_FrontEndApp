@@ -67,7 +67,7 @@ export const fetchOrderDetailByUser = createAsyncThunk(
 export const createOrder = createAsyncThunk(
   "order/createOrder",
   async (
-    { selected_product_ids, receiverInfo, payment_method, city, discount_id },
+    { selected_product_ids, receiverInfo, payment_method, discount_id },
     { rejectWithValue,dispatch }
 
   ) => {
@@ -76,7 +76,6 @@ export const createOrder = createAsyncThunk(
         selected_product_ids,
         receiverInfo,
         payment_method,
-        city,
         discount_id: discount_id || undefined,
       });
 
