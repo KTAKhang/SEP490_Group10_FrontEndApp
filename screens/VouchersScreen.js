@@ -9,6 +9,7 @@ import {
     Alert,
     Platform,
     Modal,
+    StatusBar,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import * as Clipboard from 'expo-clipboard';
@@ -83,7 +84,6 @@ const VoucherCard = ({ voucher, onCopy, onPressDetail, t }) => {
                     {t('vouchers.validPeriod', { start: formatDate(voucher.startDate), end: formatDate(voucher.endDate) })}
                 </Text>
                 <TouchableOpacity
-                    style={styles.detailBtnBlock}
                     onPress={() => onPressDetail?.(voucher)}
                     activeOpacity={0.7}
                     style={[styles.detailBtnBlock, { borderColor: VOUCHER_CARD_GREEN }]}
@@ -271,6 +271,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingHorizontal: 12,
         paddingVertical: 14,
+        paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 0) + 10 : 10,
     },
     backBtn: { padding: 8, marginRight: 8 },
     headerTitle: { flex: 1, fontSize: 18, fontWeight: '700', color: '#fff' },

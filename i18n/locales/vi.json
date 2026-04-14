@@ -713,5 +713,30 @@
     "searchResultsCount": "Kết quả tìm kiếm ({{count}})",
     "categoryLabel": "Danh mục",
     "productLabel": "Sản phẩm"
+  },
+  "fruitAi": {
+    "title": "Fruit AI",
+    "subtitle": "Quét & gợi ý dinh dưỡng",
+    "openAriaLabel": "Mở trợ lý Fruit AI",
+    "emptyIntro": "Tải ảnh trái cây lên. Chúng tôi sẽ nhận diện, kiểm tra còn hàng, sau đó bạn có thể xem dinh dưỡng, công thức hoặc lợi ích sức khỏe.",
+    "uploadPhoto": "Tải ảnh trái cây",
+    "clear": "Xóa",
+    "footerHint": "Tối đa 5 MB · Cần đăng nhập khách hàng",
+    "analyzing": "Đang tải & phân tích…",
+    "loginToUse": "Vui lòng đăng nhập để dùng Fruit AI.",
+    "customerOnly": "Chỉ tài khoản khách hàng mới dùng được Fruit AI.",
+    "topicIntro": "Bạn muốn biết thêm về loại trái cây này?",
+    "topicHint": "Chọn chủ đề bên dưới để xem dinh dưỡng, gợi ý công thức hoặc lợi ích sức khỏe.",
+    "topicNutrition": "Giá trị dinh dưỡng",
+    "topicRecipes": "Công thức & cách dùng",
+    "topicHealth": "Lợi ích sức khỏe",
+    "topicFailed": "Không tải được chủ đề này.",
+    "tryClearerPhoto": "Hãy thử ảnh rõ hơn, đủ sáng về trái cây rồi tải lại.",
+    "notInShopExtra": "Hiện shop chưa bán loại này, bạn vẫn có thể tìm hiểu thêm qua các lựa chọn bên dưới.",
+    "inShopMessage": "Tin tốt — shop đang có bán loại trái cây này. Chạm sản phẩm bên dưới để xem chi tiết và mua.",
+    "inShopTap": "Mở sản phẩm để xem chi tiết và đặt mua.",
+    "shopSection": "Cửa hàng",
+    "imageTooLarge": "Ảnh quá lớn ({{size}} MB). Tối đa {{max}} MB.",
+    "requestFailed": "Yêu cầu thất bại."
   }
 }

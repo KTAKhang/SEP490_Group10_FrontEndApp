@@ -7,6 +7,8 @@ import {
     StyleSheet,
     RefreshControl,
     Alert,
+    Platform,
+    StatusBar,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -162,7 +164,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingHorizontal: 12,
         paddingVertical: 14,
-        paddingTop: (typeof window !== 'undefined' ? 0 : 44) + 14,
+        paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 0) + 10 : 10,
     },
     backBtn: { padding: 8, marginRight: 8 },
     headerTitle: { flex: 1, fontSize: 18, fontWeight: '700', color: '#fff' },
