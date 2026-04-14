@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { useDispatch, useSelector } from 'react-redux';
 import { checkAuthStatus } from '../store/slices/authSlice';
 import CustomerChat from '../components/CustomerChat';
+import FruitAiChatbot from '../components/FruitAiChatbot';
 import { navigateAfterLogin } from '../utils/authUtils';
 import { registerFCMTokenWithBackend } from '../utils/registerFCM';
 // Import screens
@@ -157,7 +158,12 @@ export default function AppNavigator() {
 
   return (
     <NavigationContainer ref={navigationRef} theme={navTheme} linking={linking}>
-      {isAuthenticated && user?.role_name !== 'admin' && <CustomerChat />}
+      {isAuthenticated && user?.role_name !== 'admin' && (
+        <>
+          <CustomerChat />
+          <FruitAiChatbot />
+        </>
+      )}
       <Stack.Navigator
         screenOptions={{ headerShown: false, cardStyle: { backgroundColor: '#F8F9FA' } }}
         initialRouteName="HomePage"

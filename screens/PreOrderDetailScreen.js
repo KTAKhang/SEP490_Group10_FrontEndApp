@@ -9,6 +9,8 @@ import {
     StyleSheet,
     TextInput,
     Dimensions,
+    Platform,
+    StatusBar,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -251,6 +253,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingHorizontal: 12,
         paddingVertical: 14,
+        paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 0) + 10 : 10,
     },
     backBtn: { padding: 8, marginRight: 8 },
     headerTitle: { flex: 1, fontSize: 18, fontWeight: '700', color: '#fff' },

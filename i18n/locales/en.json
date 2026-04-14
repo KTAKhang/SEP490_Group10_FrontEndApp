@@ -713,5 +713,30 @@
     "searchResultsCount": "Search results ({{count}})",
     "categoryLabel": "Category",
     "productLabel": "Product"
+  },
+  "fruitAi": {
+    "title": "Fruit AI",
+    "subtitle": "Scan & nutrition tips",
+    "openAriaLabel": "Open Fruit AI assistant",
+    "emptyIntro": "Upload a fruit photo. We'll recognize it, check if we stock it, then you can ask for nutrition facts, recipes, or health benefits.",
+    "uploadPhoto": "Upload fruit photo",
+    "clear": "Clear",
+    "footerHint": "Max 5 MB · Log in as customer",
+    "analyzing": "Uploading & analyzing…",
+    "loginToUse": "Log in to use Fruit AI.",
+    "customerOnly": "Only customer accounts can use Fruit AI.",
+    "topicIntro": "Would you like to know more about this fruit?",
+    "topicHint": "Pick a topic below for nutrition facts, recipe ideas, or health benefits.",
+    "topicNutrition": "Nutritional value",
+    "topicRecipes": "Recipes & formulas",
+    "topicHealth": "Health benefits",
+    "topicFailed": "Could not load this topic.",
+    "tryClearerPhoto": "Try a clearer, well-lit photo of the fruit and upload again.",
+    "notInShopExtra": "We don't list this fruit right now, but you can still learn more using the options below.",
+    "inShopMessage": "Good news — this fruit is available in our shop right now. Tap a product below to open details and buy.",
+    "inShopTap": "You can open a product to view details and purchase.",
+    "shopSection": "Shop",
+    "imageTooLarge": "Image is too large ({{size}} MB). Maximum allowed is {{max}} MB.",
+    "requestFailed": "Request failed."
   }
 }
