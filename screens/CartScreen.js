@@ -60,6 +60,10 @@ const checkout = useSelector((state) => state.checkout || {});
         in_stock: item.in_stock,
         is_available: item.is_available,
         status: item.status,
+        expired : item.isExpired ?? false,
+        warning : item?.warning,
+        originalPrice : item.originalPrice ?? item.product?.originalPrice ?? null,
+        isNearExpiry : item.isNearExpiry ?? item.product?.isNearExpiry ?? false,            
       }));
       setCartItems(transformedItems);
 
@@ -539,6 +543,9 @@ const checkout = useSelector((state) => state.checkout || {});
     const isOutOfStock = item.in_stock === 0;
     const isDiscontinued = item.status === false;
     const isUnavailable = isOutOfStock || isDiscontinued;
+    const isNearExpiry = item.isNearExpiry;
+    const isExpired = item.expired;
+    const originalPrice = item.originalPrice;
 
     return (
       <View style={[styles.cartItem, isUnavailable && styles.unavailableItem]}>
@@ -600,6 +607,18 @@ const checkout = useSelector((state) => state.checkout || {});
                   <Text style={styles.statusBadgeText}>{t("cart.soldOut")}</Text>
                 </View>
               )}
+
+              {isNearExpiry && !isUnavailable && (
+                <View style={[styles.statusBadge, styles.nearExpiryBadge]}>
+                  <Text style={styles.statusBadgeText}>{t("cart.nearExpiry")}</Text>
+                </View>
+              )}
+
+              {isExpired && (
+                <View style={[styles.statusBadge, styles.expiredBadge]}>
+                  <Text style={styles.statusBadgeText}>{t("cart.expired")}</Text>
+                </View>
+              )}
             </View>
             <TouchableOpacity
               onPress={() => showRemoveConfirmation(item.id)}
@@ -625,15 +644,23 @@ const checkout = useSelector((state) => state.checkout || {});
           </Text>
 
           <View style={styles.itemFooter}>
-            <Text
-              style={[
-                styles.itemPrice,
-                !isSelected && styles.itemPriceUnselected,
-                isUnavailable && styles.unavailableText,
-              ]}
-            >
-              {formatCurrency(item.price)}
-            </Text>
+            <View style={{ alignItems: "flex-end" }}>
+              <Text
+                style={[
+                  styles.itemPrice,
+                  !isSelected && styles.itemPriceUnselected,
+                  isUnavailable && styles.unavailableText,
+                ]}
+              >
+                {formatCurrency(item.price)}
+              </Text>
+
+              {originalPrice && originalPrice > item.price && (
+                <Text style={styles.originalPriceText}>
+                  {formatCurrency(originalPrice)}
+                </Text>
+              )}
+            </View>
 
             {/* Quantity controls - disabled nếu hết hàng hoặc ngừng bán */}
             <View
@@ -699,6 +726,10 @@ const checkout = useSelector((state) => state.checkout || {});
               </TouchableOpacity>
             </View>
           </View>
+
+          {item.warning ? (
+            <Text style={styles.itemWarningText}>{item.warning}</Text>
+          ) : null}
 
           {itemIsUpdating && (
             <Text style={styles.updatingText}>
@@ -1386,6 +1417,33 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     color: "#ef4444",
     textTransform: "uppercase",
+  },
+
+  nearExpiryBadge: {
+    backgroundColor: "#fff7ed",
+    borderColor: "#fcd34d",
+  },
+
+  expiredBadge: {
+    backgroundColor: "#fff1f2",
+    borderColor: "#fb7185",
+  },
+
+  originalPriceText: {
+    fontSize: 12,
+    color: "#9ca3af",
+    textDecorationLine: "line-through",
+    marginTop: 2,
+  },
+
+  itemWarningText: {
+    fontSize: 12,
+    color: "#b45309",
+    backgroundColor: "#fffbeb",
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: 6,
+    marginTop: 8,
   },
 
   disabledQuantityContainer: {
