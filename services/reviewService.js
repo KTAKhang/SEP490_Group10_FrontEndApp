@@ -77,8 +77,24 @@ export async function getProductReviewsByProductId(product_id, { page = 1, limit
     }
 
     const list = (result.data || []).map(normalizeReview);
-    const pagination = result.pagination || { page: 1, limit: 10, total: list.length, totalPages: 1 };
-    return { list, pagination };
+
+    // Normalize pagination keys because backend naming can differ (total_pages, totalPage, etc.)
+    const p = result.pagination || {};
+    const normalizedPagination = {
+      page: Number(p.page ?? p.currentPage ?? p.current_page ?? 1),
+      limit: Number(p.limit ?? p.pageSize ?? p.page_size ?? limit ?? 10),
+      total: Number(p.total ?? p.count ?? p.totalItems ?? p.total_items ?? list.length ?? 0),
+      totalPages: Number(p.totalPages ?? p.total_pages ?? p.totalPage ?? p.total_page ?? 1),
+    };
+    if (!normalizedPagination.totalPages || normalizedPagination.totalPages < 1) {
+      normalizedPagination.totalPages = Math.max(
+        1,
+        Math.ceil((normalizedPagination.total || list.length || 0) / (normalizedPagination.limit || 10))
+      );
+    }
+    if (!normalizedPagination.page || normalizedPagination.page < 1) normalizedPagination.page = 1;
+
+    return { list, pagination: normalizedPagination };
   } catch (error) {
     console.error('getProductReviewsByProductId error:', error);
     throw new Error(
