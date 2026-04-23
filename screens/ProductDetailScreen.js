@@ -9,6 +9,7 @@ import {
     StyleSheet,
     SafeAreaView,
     StatusBar,
+    Platform,
     Dimensions,
     Modal,
     FlatList,
@@ -35,6 +36,8 @@ import {
 import { InlineLoading, OverlayLoading } from '../components/Loading';
 import { COLORS } from '../constants/colors';
 import Toast from 'react-native-toast-message';
+import { API_BASE_URL as API_BASE_URL_LOCAL } from '../config/api';
+import { API_BASE_URL as API_BASE_URL_ENV } from '../config/apiConfig';
 
 function formatPrice(amount) {
     if (amount == null || isNaN(Number(amount))) return '0 VND';
@@ -55,6 +58,18 @@ const ProductDetailScreen = ({ navigation, route }) => {
     const [reviewSearch, setReviewSearch] = useState('');
     const [reviewRatingFilter, setReviewRatingFilter] = useState(''); // '' = all, 1-5 = star filter
     const [showAllReviews, setShowAllReviews] = useState(false);
+
+    // Inline reviews preview: show 1 initially, "Load more" expands in-place
+    const [inlineReviewVisibleCount, setInlineReviewVisibleCount] = useState(1);
+    const INLINE_REVIEWS_PAGE_SIZE = 4;
+
+    const resolveMediaUrl = useCallback((uri) => {
+        if (!uri || typeof uri !== 'string') return null;
+        if (uri.startsWith('http://') || uri.startsWith('https://')) return uri;
+        const base = (API_BASE_URL_ENV || API_BASE_URL_LOCAL || '').replace(/\/$/, '');
+        if (!base) return uri;
+        return `${base}${uri.startsWith('/') ? uri : `/${uri}`}`;
+    }, []);
 
     const productId = route?.params?.productId;
 
@@ -92,9 +107,24 @@ const ProductDetailScreen = ({ navigation, route }) => {
         dispatch(fetchProductReviewsByProductId({
             product_id: productId,
             page: 1,
-            limit: 10,
+            // Fetch a small page for inline load-more, but preview only 1 initially
+            limit: INLINE_REVIEWS_PAGE_SIZE,
+            rating: reviewRatingFilter || undefined,
         }));
-    }, [dispatch, productId]);
+        setInlineReviewVisibleCount(1);
+    }, [dispatch, productId, reviewRatingFilter]);
+
+    // When opening "All reviews", fetch a bigger page for that modal.
+    useEffect(() => {
+        if (!showAllReviews) return;
+        if (!productId || productId === 'undefined') return;
+        dispatch(fetchProductReviewsByProductId({
+            product_id: productId,
+            page: 1,
+            limit: 10,
+            rating: reviewRatingFilter || undefined,
+        }));
+    }, [dispatch, productId, showAllReviews, reviewRatingFilter]);
 
     useEffect(() => {
         if (product && product.quantity > 0 && quantity > product.quantity) {
@@ -123,10 +153,12 @@ const ProductDetailScreen = ({ navigation, route }) => {
                 ? [product.image]
                 : [];
 
-    // Calculate average rating from reviews của sản phẩm hiện tại
-    const averageRating = reviews && reviews.length > 0
-        ? reviews.reduce((acc, review) => acc + review.rating, 0) / reviews.length
-        : 0;
+    // Average rating: prefer product.avgRating from API (because reviews list is paginated/preview)
+    const averageRating = (product?.avgRating != null && !isNaN(Number(product.avgRating)))
+        ? Number(product.avgRating)
+        : (reviews && reviews.length > 0
+            ? reviews.reduce((acc, review) => acc + (Number(review.rating) || 0), 0) / reviews.length
+            : 0);
 
     const renderStars = (rating) => {
         const stars = [];
@@ -157,7 +189,15 @@ const ProductDetailScreen = ({ navigation, route }) => {
 
     // Render Avatar component
     const renderUserAvatar = (user) => {
-        const avatarUrl = user?.avatar;
+        const rawAvatar =
+            user?.avatar ||
+            user?.avatarUrl ||
+            user?.photo ||
+            user?.image ||
+            user?.profileImage ||
+            user?.profile_image ||
+            user?.profile_picture;
+        const avatarUrl = resolveMediaUrl(rawAvatar);
         const userName = user?.name || user?.user_name || user?.username || 'Anonymous';
 
         if (avatarUrl) {
@@ -183,6 +223,13 @@ const ProductDetailScreen = ({ navigation, route }) => {
 
     // Render individual review item
     const renderReviewItem = ({ item: review, index }) => {
+        const rawImages =
+            (Array.isArray(review?.images) && review.images) ||
+            (Array.isArray(review?.image_urls) && review.image_urls) ||
+            (Array.isArray(review?.imageUrls) && review.imageUrls) ||
+            [];
+        const imageUrls = rawImages.map(resolveMediaUrl).filter(Boolean);
+
         return (
             <View key={review._id || index} style={styles.reviewItem}>
                 <View style={styles.reviewHeader}>
@@ -207,6 +254,13 @@ const ProductDetailScreen = ({ navigation, route }) => {
                     </View>
                 </View>
                 <Text style={styles.reviewText}>{review.comment || review.content || ''}</Text>
+                {imageUrls.length > 0 && (
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.reviewImagesRow}>
+                        {imageUrls.map((img, idx) => (
+                            <Image key={idx} source={{ uri: img }} style={styles.reviewImage} resizeMode="cover" />
+                        ))}
+                    </ScrollView>
+                )}
             </View>
         );
     };
@@ -374,11 +428,26 @@ const ProductDetailScreen = ({ navigation, route }) => {
         dispatch(fetchProductReviewsByProductId({
             product_id: productId,
             page: page + 1,
-            limit: 10,
+            limit: reviewsPagination?.limit ?? INLINE_REVIEWS_PAGE_SIZE,
             rating: reviewRatingFilter || undefined,
             isLoadMore: true,
         }));
     }, [dispatch, productId, reviewsPagination, reviewsLoadingMore, reviewsLoading, reviewRatingFilter]);
+
+    const handleInlineLoadMore = useCallback(() => {
+        // Expand what we already have
+        setInlineReviewVisibleCount((prev) => prev + INLINE_REVIEWS_PAGE_SIZE);
+
+        // Fetch next page if there are more reviews on server
+        const limit = reviewsPagination?.limit ?? INLINE_REVIEWS_PAGE_SIZE;
+        const hasMoreByPages = (reviewsPagination?.page ?? 1) < (reviewsPagination?.totalPages ?? 1);
+        const hasMoreByTotal = (reviewsPagination?.total != null) && (Number(reviewsPagination.total) > (reviews?.length ?? 0));
+        const loadedAtLeastOnePage = (reviews?.length ?? 0) >= limit;
+
+        if (!reviewsLoadingMore && !reviewsLoading && (hasMoreByPages || hasMoreByTotal) && loadedAtLeastOnePage) {
+            loadMoreReviews();
+        }
+    }, [INLINE_REVIEWS_PAGE_SIZE, reviewsPagination, reviews, reviewsLoadingMore, reviewsLoading, loadMoreReviews]);
 
     if (error) {
         return (
@@ -657,13 +726,13 @@ const ProductDetailScreen = ({ navigation, route }) => {
                             {isOutOfStock ? t('product.outOfStock') : t('product.inStock')}
                         </Text>
                     </View>
-                    {(reviews?.length > 0 || (product.avgRating != null && product.avgRating > 0)) && (
+                    {((reviewsPagination?.total ?? 0) > 0 || (product.avgRating != null && product.avgRating > 0)) && (
                         <View style={[styles.infoRow, { borderBottomWidth: 0 }]}>
                             <Text style={styles.infoLabel}>{t('product.reviewsLabel')}:</Text>
                             <View style={styles.ratingRow}>
                                 {renderStars(averageRating)}
                                 <Text style={styles.ratingValue}>{Number(averageRating).toFixed(1)}</Text>
-                                <Text style={styles.ratingCount}>({t('product.ratingCount', { count: reviews?.length ?? 0 })})</Text>
+                                <Text style={styles.ratingCount}>({t('product.ratingCount', { count: reviewsPagination?.total ?? (reviews?.length ?? 0) })})</Text>
                             </View>
                         </View>
                     )}
@@ -837,7 +906,7 @@ const ProductDetailScreen = ({ navigation, route }) => {
                                             ? t('product.noReviewsStarFilter', { star: reviewRatingFilter })
                                             : t('product.noReviewsMatch')}
                                     </Text>
-                                ) : displayedReviews.map((review, index) => (
+                                ) : displayedReviews.slice(0, inlineReviewVisibleCount).map((review, index) => (
                                     <View key={review._id || index} style={styles.reviewCard}>
                                         <View style={styles.reviewCardHeader}>
                                             <View style={styles.reviewerInfo}>
@@ -869,21 +938,21 @@ const ProductDetailScreen = ({ navigation, route }) => {
                                         )}
                                     </View>
                                 ))}
-                                {reviewsLoadingMore ? (
-                                    <View style={styles.reviewLoadMoreFooter}>
-                                        <Text style={styles.reviewLoadMoreText}>{t('product.loadingMore')}</Text>
-                                    </View>
-                                ) : reviewsPagination.page < reviewsPagination.totalPages && reviews.length > 0 ? (
-                                    <TouchableOpacity style={styles.reviewLoadMoreButton} onPress={loadMoreReviews} disabled={reviewsLoadingMore}>
-                                        <Text style={styles.reviewLoadMoreButtonText}>{t('product.loadMoreReviews')}</Text>
-                                    </TouchableOpacity>
-                                ) : null}
                             </ScrollView>
                         </View>
                     )}
-                    {reviews && reviews.length > 0 && (
+                    {!reviewsLoading && displayedReviews.length > 1 && inlineReviewVisibleCount < displayedReviews.length && (
+                        <TouchableOpacity
+                            style={styles.reviewLoadMoreButton}
+                            onPress={handleInlineLoadMore}
+                            disabled={reviewsLoadingMore}
+                        >
+                            <Text style={styles.reviewLoadMoreButtonText}>{t('product.loadMoreReviews')}</Text>
+                        </TouchableOpacity>
+                    )}
+                    {(reviewsPagination?.total ?? reviews?.length ?? 0) > 0 && (
                         <TouchableOpacity style={styles.showAllButton} onPress={() => setShowAllReviews(true)}>
-                            <Text style={styles.showAllButtonText}>{t('product.viewAllReviews', { count: reviews.length })}</Text>
+                            <Text style={styles.showAllButtonText}>{t('product.viewAllReviews', { count: reviewsPagination?.total ?? reviews.length })}</Text>
                             <Icon name="keyboard-arrow-right" size={20} color={COLORS.primary} />
                         </TouchableOpacity>
                     )}
@@ -902,7 +971,7 @@ const ProductDetailScreen = ({ navigation, route }) => {
                         <TouchableOpacity onPress={() => setShowAllReviews(false)} style={styles.modalCloseButton}>
                             <Icon name="close" size={24} color={COLORS.text?.primary || '#333'} />
                         </TouchableOpacity>
-                        <Text style={styles.modalTitle}>{t('product.allReviewsTitle', { count: reviews?.length ?? 0 })}</Text>
+                        <Text style={styles.modalTitle}>{t('product.allReviewsTitle', { count: reviewsPagination?.total ?? (reviews?.length ?? 0) })}</Text>
                         <TouchableOpacity style={styles.modalRefreshButton} onPress={handleRefresh}>
                             <Icon name="refresh" size={20} color={COLORS.primary} />
                         </TouchableOpacity>
@@ -915,6 +984,25 @@ const ProductDetailScreen = ({ navigation, route }) => {
                         style={styles.modalFlatList}
                         contentContainerStyle={[styles.modalContent, (!reviews || reviews.length === 0) && styles.modalContentEmpty]}
                         ItemSeparatorComponent={() => <View style={styles.reviewSeparator} />}
+                        onEndReached={() => {
+                            if (reviewsPagination?.page < reviewsPagination?.totalPages) loadMoreReviews();
+                        }}
+                        onEndReachedThreshold={0.4}
+                        ListFooterComponent={
+                            reviewsLoadingMore ? (
+                                <View style={styles.reviewLoadMoreFooter}>
+                                    <Text style={styles.reviewLoadMoreText}>{t('product.loadingMore')}</Text>
+                                </View>
+                            ) : (reviewsPagination?.page < reviewsPagination?.totalPages) ? (
+                                <TouchableOpacity
+                                    style={styles.reviewLoadMoreButton}
+                                    onPress={loadMoreReviews}
+                                    disabled={reviewsLoadingMore}
+                                >
+                                    <Text style={styles.reviewLoadMoreButtonText}>{t('product.loadMoreReviews')}</Text>
+                                </TouchableOpacity>
+                            ) : null
+                        }
                         ListEmptyComponent={() => (
                             <View style={styles.emptyReviewsContainer}>
                                 <Icon name="rate-review" size={48} color="#ccc" />
@@ -1643,6 +1731,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         paddingHorizontal: 16,
         paddingVertical: 12,
+        paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 0) + 10 : 10,
         borderBottomWidth: 1,
         borderBottomColor: '#e0e0e0',
         backgroundColor: '#fff',

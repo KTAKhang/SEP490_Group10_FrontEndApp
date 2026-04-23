@@ -8,7 +8,7 @@ import {
     getProductReviewsByProductId,
 } from '../../services/reviewService';
 
-const DEFAULT_REVIEW_LIMIT = 10;
+const DEFAULT_REVIEW_LIMIT = 4;
 
 // Async thunk: arg = productId (string) OR { product_id, page?, limit?, rating?, isLoadMore? }
 export const fetchProductReviewsByProductId = createAsyncThunk(
