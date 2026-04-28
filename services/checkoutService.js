@@ -1,29 +1,16 @@
-// cartService.js
-import axios from 'axios';
+// checkoutService.js
 import AsyncStorage from '@react-native-async-storage/async-storage';
-const API_BASE_URL = 'http://10.0.2.2:3001';
+import apiClient from '../utils/mobileAxiosConfig';
 
 export async function checkoutHoldApi({ selected_product_ids, checkout_session_id }) {
     try {
         const token = await AsyncStorage.getItem('token');
         if (!token) {
-            throw new Error('Bạn cần đăng nhập để checkout');
+            throw new Error('You need to log in to checkout.');
         }
         // console.log("checkoutHoldApi",selected_product_ids, checkout_session_id)
 
-        const response = await axios.post(
-             `${API_BASE_URL}/checkout/hold`,
-            { selected_product_ids, checkout_session_id },
-            {
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`,
-                },
-                withCredentials: true
-            }
-        );
-
-     
+        const response = await apiClient.post(`/checkout/hold`, { selected_product_ids, checkout_session_id });
 
         return response.data;
     } catch (error) {
@@ -38,20 +25,10 @@ export async function checkoutCancelApi({ checkout_session_id}) {
     try {
         const token = await AsyncStorage.getItem('token');
         if (!token) {
-            throw new Error('Bạn cần đăng nhập để checkout');
+            throw new Error('You need to log in to checkout.');
         }
 
-        const response = await axios.post(
-             `${API_BASE_URL}/checkout/cancel`,
-            { checkout_session_id },
-            {
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`,
-                },
-                withCredentials: true
-            }
-        );
+        const response = await apiClient.post(`/checkout/cancel`, { checkout_session_id });
 
         console.log(" checkoutCancelApi",response.data)
 

@@ -1,5 +1,6 @@
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import apiClient from "../utils/mobileAxiosConfig";
 
 //import { API_BASE_URL } from '../config/api';
 
@@ -204,17 +205,13 @@ export async function createOrderApi({ selected_product_ids, receiverInfo, payme
 
         const isMobile = true;
 
-        const response = await axios.post(
-            `${API_BASE_URL}/order/create`,
-            { selected_product_ids, receiverInfo, payment_method, isMobile, discount_id: discount_id || undefined },
-            {
-               headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`,
-                },
-                withCredentials: true
-            }
-        );
+        const response = await apiClient.post(`/order/create`, {
+          selected_product_ids,
+          receiverInfo,
+          payment_method,
+          isMobile,
+          discount_id: discount_id || undefined,
+        });
 
         const data = response.data;
         if (!data.success) {
@@ -312,17 +309,10 @@ export async function retryPaymentApi(order_id) {
     if (!token) throw new Error("Vui lòng đăng nhập.");
      console.log("order_id",order_id)
     const isMobile = true;
-    const response = await axios.post(
-      `${API_BASE_URL}/order/retry-payment`,
-      { order_id,isMobile },
-      {
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      },
-    );
+    const response = await apiClient.post(`/order/retry-payment`, {
+      order_id,
+      isMobile,
+    });
 // console.log("retryPaymentApi",response.data)
     const data = response.data;
     
