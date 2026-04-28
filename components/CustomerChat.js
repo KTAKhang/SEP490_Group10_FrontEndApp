@@ -19,7 +19,7 @@ import {
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as ImagePicker from "expo-image-picker";
-import api from "../api";
+import api from "../utils/mobileAxiosConfig";
 import { socket } from "../socket";
 
 // ─────────────────────────────────────────────
