@@ -17,7 +17,9 @@ export const loginUser = createAsyncThunk(
   async ({ email, password }, { rejectWithValue }) => {
     try {
       const response = await loginApi({ email, password });
-console.log("response",response)
+      if (response.user?.role_name !== "customer") {
+        return rejectWithValue("Only customer can login");
+      }
       // Save token to AsyncStorage
       await AsyncStorage.setItem("token", response.token);
       await AsyncStorage.setItem("refreshToken", response.refresh_token);
@@ -34,7 +36,9 @@ export const loginByGoogle = createAsyncThunk(
   async ({ idToken }, { rejectWithValue }) => {
     try {
       const response = await loginByGoogleApi(idToken);
-
+      if (response.user?.role_name !== "customer") {
+        return rejectWithValue("Only customer can login");
+      }
       // ✅ đúng cấu trúc backend trả về
       await AsyncStorage.setItem("token", response.token);
       await AsyncStorage.setItem("refreshToken", response.refresh_token);
@@ -44,15 +48,27 @@ export const loginByGoogle = createAsyncThunk(
     } catch (error) {
       return rejectWithValue(error.message);
     }
-  }
+  },
 );
 
 // Async thunk for sending OTP
 export const sendOtp = createAsyncThunk(
   "auth/sendOtp",
-  async ({ user_name, email, password, fullName, phone, address,birthday,gender }, { rejectWithValue }) => {
+  async (
+    { user_name, email, password, fullName, phone, address, birthday, gender },
+    { rejectWithValue },
+  ) => {
     try {
-      const response = await sendOtpApi({ user_name, email, password,fullName, phone, address,birthday,gender });
+      const response = await sendOtpApi({
+        user_name,
+        email,
+        password,
+        fullName,
+        phone,
+        address,
+        birthday,
+        gender,
+      });
       return response.message;
     } catch (error) {
       return rejectWithValue(error.message);
@@ -65,7 +81,7 @@ export const confirmOtp = createAsyncThunk(
   "auth/confirmOtp",
   async ({ email, otp }, { rejectWithValue }) => {
     try {
-      console.log("otp",otp)
+      console.log("otp", otp);
       const response = await confirmOtpApi(email, otp);
       return response.message;
     } catch (error) {
@@ -78,7 +94,7 @@ export const confirmOtp = createAsyncThunk(
 export const logoutUser = createAsyncThunk(
   "auth/logoutUser",
   async (_, { dispatch }) => {
-    const response = await logoutApi({  });
+    const response = await logoutApi({});
     await AsyncStorage.removeItem("token");
     await AsyncStorage.removeItem("user");
     await AsyncStorage.removeItem("refreshToken");
