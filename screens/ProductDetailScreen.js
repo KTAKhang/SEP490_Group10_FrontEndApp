@@ -906,38 +906,49 @@ const ProductDetailScreen = ({ navigation, route }) => {
                                             ? t('product.noReviewsStarFilter', { star: reviewRatingFilter })
                                             : t('product.noReviewsMatch')}
                                     </Text>
-                                ) : displayedReviews.slice(0, inlineReviewVisibleCount).map((review, index) => (
-                                    <View key={review._id || index} style={styles.reviewCard}>
-                                        <View style={styles.reviewCardHeader}>
-                                            <View style={styles.reviewerInfo}>
-                                                <View style={styles.avatarFallback}>
-                                                    <Text style={styles.avatarFallbackText}>
-                                                        {(review.user?.user_name || review.user_id?.user_name || 'U').charAt(0).toUpperCase()}
-                                                    </Text>
+                                ) : displayedReviews.slice(0, inlineReviewVisibleCount).map((review, index) => {
+                                    const userAvatarUrl = review.user?.avatar ? resolveMediaUrl(review.user.avatar) : null;
+                                    return (
+                                        <View key={review._id || index} style={styles.reviewCard}>
+                                            <View style={styles.reviewCardHeader}>
+                                                <View style={styles.reviewerInfo}>
+                                                    {userAvatarUrl ? (
+                                                        <Image
+                                                            source={{ uri: userAvatarUrl }}
+                                                            style={styles.userAvatar}
+                                                            onError={() => {}}
+                                                        />
+                                                    ) : (
+                                                        <View style={styles.avatarFallback}>
+                                                            <Text style={styles.avatarFallbackText}>
+                                                                {(review.user?.user_name || review.user_id?.user_name || 'U').charAt(0).toUpperCase()}
+                                                            </Text>
+                                                        </View>
+                                                    )}
+                                                    <View>
+                                                        <Text style={styles.reviewerName}>
+                                                            {review.user?.user_name || review.user_id?.user_name || t('product.guest')}
+                                                        </Text>
+                                                        <Text style={styles.reviewDate}>
+                                                            {review.createdAt ? new Date(review.createdAt).toLocaleString('vi-VN') : 'N/A'}
+                                                        </Text>
+                                                    </View>
                                                 </View>
-                                                <View>
-                                                    <Text style={styles.reviewerName}>
-                                                        {review.user?.user_name || review.user_id?.user_name || t('product.guest')}
-                                                    </Text>
-                                                    <Text style={styles.reviewDate}>
-                                                        {review.createdAt ? new Date(review.createdAt).toLocaleString('vi-VN') : 'N/A'}
-                                                    </Text>
-                                                </View>
+                                                <View style={styles.starsContainer}>{renderStars(review.rating)}</View>
                                             </View>
-                                            <View style={styles.starsContainer}>{renderStars(review.rating)}</View>
+                                            {(review.comment || review.content) ? (
+                                                <Text style={styles.reviewText}>{review.comment || review.content}</Text>
+                                            ) : null}
+                                            {Array.isArray(review.images) && review.images.length > 0 && (
+                                                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.reviewImagesRow}>
+                                                    {review.images.map((img, idx) => (
+                                                        <Image key={idx} source={{ uri: img }} style={styles.reviewImage} resizeMode="cover" />
+                                                    ))}
+                                                </ScrollView>
+                                            )}
                                         </View>
-                                        {(review.comment || review.content) ? (
-                                            <Text style={styles.reviewText}>{review.comment || review.content}</Text>
-                                        ) : null}
-                                        {Array.isArray(review.images) && review.images.length > 0 && (
-                                            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.reviewImagesRow}>
-                                                {review.images.map((img, idx) => (
-                                                    <Image key={idx} source={{ uri: img }} style={styles.reviewImage} resizeMode="cover" />
-                                                ))}
-                                            </ScrollView>
-                                        )}
-                                    </View>
-                                ))}
+                                    );
+                                })}
                             </ScrollView>
                         </View>
                     )}
