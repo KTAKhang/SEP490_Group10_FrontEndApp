@@ -72,14 +72,41 @@ export async function getProductReviewsByProductId(product_id, { page = 1, limit
     );
 
     const result = response.data;
-    if (result.status !== 'OK') {
-      throw new Error(result.message || 'Failed to fetch reviews');
+    // Some backends return:
+    // - { status:"OK", data:[...] }
+    // - { status:"ERR", message:"No reviews" } (or similar) even though "no reviews" is not an error for UI.
+    // - { data:{ reviews:[...] } }
+    // - raw array
+    const rawList =
+      (Array.isArray(result) && result) ||
+      (Array.isArray(result?.data) && result.data) ||
+      (Array.isArray(result?.reviews) && result.reviews) ||
+      (Array.isArray(result?.data?.reviews) && result.data.reviews) ||
+      [];
+
+    const isOk =
+      result?.status === 'OK' ||
+      result?.success === true ||
+      result?.ok === true ||
+      Array.isArray(result);
+
+    // If response is not OK but list is empty, treat it as "no reviews" (valid state).
+    if (!isOk && rawList.length === 0) {
+      return {
+        list: [],
+        pagination: {
+          page: Number(page) || 1,
+          limit: Number(limit) || 10,
+          total: 0,
+          totalPages: 1,
+        },
+      };
     }
 
-    const list = (result.data || []).map(normalizeReview);
+    const list = rawList.map(normalizeReview);
 
     // Normalize pagination keys because backend naming can differ (total_pages, totalPage, etc.)
-    const p = result.pagination || {};
+    const p = result?.pagination || result?.data?.pagination || result?.meta?.pagination || {};
     const normalizedPagination = {
       page: Number(p.page ?? p.currentPage ?? p.current_page ?? 1),
       limit: Number(p.limit ?? p.pageSize ?? p.page_size ?? limit ?? 10),
@@ -97,9 +124,21 @@ export async function getProductReviewsByProductId(product_id, { page = 1, limit
     return { list, pagination: normalizedPagination };
   } catch (error) {
     console.error('getProductReviewsByProductId error:', error);
-    throw new Error(
-      error.response?.data?.message || error.message || 'Failed to fetch reviews'
-    );
+    const status = error?.response?.status;
+    // Backend may return 404/204 for "no reviews" – treat as empty.
+    if (status === 404 || status === 204) {
+      return {
+        list: [],
+        pagination: {
+          page: Number(page) || 1,
+          limit: Number(limit) || 10,
+          total: 0,
+          totalPages: 1,
+        },
+      };
+    }
+
+    throw new Error(error.response?.data?.message || error.message || 'Failed to fetch reviews');
   }
 }
 
